@@ -1,0 +1,707 @@
+enum Environment {
+  sandbox,
+  production,
+}
+
+enum MerchantType {
+  shopify,
+  custom,
+}
+
+class InitializeSdkProps {
+  final String mid;
+  final Environment environment; // 'sandbox' or 'production'
+  final String? shopDomain;
+  final bool? isSnowplowTrackingEnabled;
+  final MerchantType? merchantType; // 'shopify' or 'custom'
+  final String? kcMerchantId;
+  final String? kcMerchantToken;
+
+  InitializeSdkProps({
+    required this.mid,
+    required this.environment,
+    this.shopDomain,
+    this.isSnowplowTrackingEnabled,
+    this.merchantType,
+    this.kcMerchantId,
+    this.kcMerchantToken,
+  });
+}
+
+class SendVerificationCodeProps {
+  final String phoneNumber;
+  final bool notifications;
+
+  SendVerificationCodeProps({
+    required this.phoneNumber,
+    required this.notifications,
+  });
+}
+
+class VerifyCodeProps {
+  final String phoneNumber;
+  final String code;
+
+  VerifyCodeProps({
+    required this.phoneNumber,
+    required this.code,
+  });
+}
+
+class Token {
+  final bool isValid;
+
+  Token({required this.isValid});
+}
+
+class VerifyCodeResponseData {
+  final String? kpToken;
+  final String? token;
+  final String? coreToken;
+
+  VerifyCodeResponseData({this.kpToken, this.token, this.coreToken});
+}
+
+class VerifyCodeResponse {
+  final VerifyCodeResponseData data;
+  final String error;
+  final bool isSuccess;
+  final int statusCode;
+  final bool success;
+  final int timestamp;
+
+  VerifyCodeResponse({
+    required this.data,
+    required this.error,
+    required this.isSuccess,
+    required this.statusCode,
+    required this.success,
+    required this.timestamp,
+  });
+}
+
+class OtpSentResponseData {
+  final int interval;
+  final bool otpRequired;
+  final String? token;
+  final String userType;
+
+  OtpSentResponseData({
+    required this.interval,
+    required this.otpRequired,
+    this.token,
+    required this.userType,
+  });
+}
+
+class OtpSentResponse {
+  final OtpSentResponseData data;
+  final String error;
+  final bool isSuccess;
+  final int statusCode;
+  final bool success;
+  final int timestamp;
+
+  OtpSentResponse({
+    required this.data,
+    required this.error,
+    required this.isSuccess,
+    required this.statusCode,
+    required this.success,
+    required this.timestamp,
+  });
+
+  factory OtpSentResponse.fromJson(Map<String, dynamic> json) {
+    return OtpSentResponse(
+      data: OtpSentResponseData(
+        interval: json['data']['interval'],
+        otpRequired: json['data']['otpRequired'],
+        token: json['data']['token'],
+        userType: json['data']['userType'],
+      ),
+      error: json['error'],
+      isSuccess: json['isSuccess'],
+      statusCode: json['statusCode'],
+      success: json['success'],
+      timestamp: json['timestamp'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'data': {
+        'interval': data.interval,
+        'otpRequired': data.otpRequired,
+        'token': data.token,
+        'userType': data.userType,
+      },
+      'error': error,
+      'isSuccess': isSuccess,
+      'statusCode': statusCode,
+      'success': success,
+      'timestamp': timestamp,
+    };
+  }
+}
+
+class LoginResponse {
+  final LoginResponseData data;
+  final bool success;
+  final int statusCode;
+  final int timestamp;
+  final bool isSuccess;
+  final String error;
+
+  LoginResponse({
+    required this.data,
+    required this.success,
+    required this.statusCode,
+    required this.timestamp,
+    required this.isSuccess,
+    required this.error,
+  });
+
+  factory LoginResponse.fromJson(Map<String, dynamic> json) {
+    return LoginResponse(
+      data: LoginResponseData(
+        phone: json['data']['phone'],
+        emailRequired: json['data']['emailRequired'],
+        email: json['data']['email'],
+        merchantResponse: MerchantResponse(
+          email: json['data']['merchantResponse']['email'],
+          id: json['data']['merchantResponse']['id'],
+          token: json['data']['merchantResponse']['token'],
+          refreshToken: json['data']['merchantResponse']['refreshToken'],
+          csrfToken: json['data']['merchantResponse']['csrfToken'],
+        ),
+        isSuccess: json['data']['isSuccess'],
+        message: json['data']['message'],
+      ),
+      success: json['success'],
+      statusCode: json['statusCode'],
+      timestamp: json['timestamp'],
+      isSuccess: json['isSuccess'],
+      error: json['error'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'data': {
+        'phone': data.phone,
+        'emailRequired': data.emailRequired,
+        'email': data.email,
+        'merchantResponse': {
+          'email': data.merchantResponse.email,
+          'id': data.merchantResponse.id,
+          'token': data.merchantResponse.token,
+          'refreshToken': data.merchantResponse.refreshToken,
+          'csrfToken': data.merchantResponse.csrfToken,
+        },
+        'isSuccess': data.isSuccess,
+        'message': data.message,
+      },
+      'success': success,
+      'statusCode': statusCode,
+      'timestamp': timestamp,
+      'isSuccess': isSuccess,
+      'error': error,
+    };
+  }
+}
+
+class ValidateUserTokenResponseData {
+  final String? coreToken;
+  final Token token;
+  final String phone;
+  final String? email;
+
+  ValidateUserTokenResponseData({
+    this.coreToken,
+    required this.token,
+    required this.phone,
+    this.email,
+  });
+}
+
+class ValidateUserTokenResponse {
+  final ValidateUserTokenResponseData data;
+  final bool success;
+  final int statusCode;
+  final int timestamp;
+  final bool isSuccess;
+  final String error;
+
+  ValidateUserTokenResponse({
+    required this.data,
+    required this.success,
+    required this.statusCode,
+    required this.timestamp,
+    required this.isSuccess,
+    required this.error,
+  });
+}
+
+class TrackProductEventContext {
+  final String productId;
+  final String imgUrl;
+  final String variantId;
+  final String productName;
+  final String productPrice;
+  final String productHandle;
+  final String type;
+
+  TrackProductEventContext({
+    required this.productId,
+    required this.imgUrl,
+    required this.variantId,
+    required this.productName,
+    required this.productPrice,
+    required this.productHandle,
+    required this.type,
+  });
+}
+
+class TrackCollectionEventContext {
+  final String collectionId;
+  final String? imgUrl;
+  final String collectionName;
+  final String collectionHandle;
+  final String type;
+
+  TrackCollectionEventContext({
+    required this.collectionId,
+    this.imgUrl,
+    required this.collectionName,
+    required this.collectionHandle,
+    required this.type,
+  });
+}
+
+class TrackProductEventArgs {
+  final String cartId;
+  final String productId;
+  final String pageUrl;
+  final String variantId;
+  final String? imgUrl;
+  final String? name;
+  final String? price;
+  final String? handle;
+
+  TrackProductEventArgs({
+    required this.cartId,
+    required this.productId,
+    required this.pageUrl,
+    required this.variantId,
+    this.imgUrl,
+    this.name,
+    this.price,
+    this.handle,
+  });
+
+  factory TrackProductEventArgs.fromJson(Map<String, dynamic> json) {
+    return TrackProductEventArgs(
+      cartId: json['cartId'],
+      productId: json['productId'],
+      pageUrl: json['pageUrl'],
+      variantId: json['variantId'],
+      imgUrl: json['imgUrl'],
+      name: json['name'],
+      price: json['price'],
+      handle: json['handle'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'cartId': cartId,
+      'productId': productId,
+      'pageUrl': pageUrl,
+      'variantId': variantId,
+      'imgUrl': imgUrl,
+      'name': name,
+      'price': price,
+      'handle': handle,
+    };
+  }
+}
+
+class TrackCartEventArgs {
+  final String cartId;
+
+  TrackCartEventArgs({required this.cartId});
+}
+
+class TrackCollectionsEventArgs {
+  final String cartId;
+  final String collectionId;
+  final String name;
+  final String? imageUrl;
+  final String? handle;
+
+  TrackCollectionsEventArgs({
+    required this.cartId,
+    required this.collectionId,
+    required this.name,
+    this.imageUrl,
+    this.handle,
+  });
+}
+
+class TrackOtherEventArgs {
+  final String? cartId;
+  final String pageUrl;
+
+  TrackOtherEventArgs({
+    this.cartId,
+    required this.pageUrl,
+  });
+}
+
+class LoginResponseData {
+  final String phone;
+  final bool emailRequired;
+  final String email;
+  final MerchantResponse merchantResponse;
+  final bool isSuccess;
+  final String? message;
+
+  LoginResponseData({
+    required this.phone,
+    required this.emailRequired,
+    required this.email,
+    required this.merchantResponse,
+    required this.isSuccess,
+    this.message,
+  });
+
+  factory LoginResponseData.fromJson(Map<String, dynamic> json) {
+    return LoginResponseData(
+      phone: json['phone'],
+      emailRequired: json['emailRequired'],
+      email: json['email'],
+      merchantResponse: MerchantResponse(
+        email: json['merchantResponse']['email'],
+        id: json['merchantResponse']['id'],
+        token: json['merchantResponse']['token'],
+        refreshToken: json['merchantResponse']['refreshToken'],
+        csrfToken: json['merchantResponse']['csrfToken'],
+      ),
+      isSuccess: json['isSuccess'],
+      message: json['message'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'phone': phone,
+      'emailRequired': emailRequired,
+      'email': email,
+      'merchantResponse': {
+        'email': merchantResponse.email,
+        'id': merchantResponse.id,
+        'token': merchantResponse.token,
+        'refreshToken': merchantResponse.refreshToken,
+        'csrfToken': merchantResponse.csrfToken,
+      },
+      'isSuccess': isSuccess,
+      'message': message,
+    };
+  }
+}
+
+class MerchantResponse {
+  final String email;
+  final String id;
+  final String token;
+  final String refreshToken;
+  final String csrfToken;
+
+  MerchantResponse({
+    required this.email,
+    required this.id,
+    required this.token,
+    required this.refreshToken,
+    required this.csrfToken,
+  });
+}
+
+class CheckoutEventResponse {
+  final String eventName;
+  final CheckoutData data;
+
+  CheckoutEventResponse({
+    required this.eventName,
+    required this.data,
+  });
+}
+
+class CheckoutData {
+  final MerchantParams merchantParams;
+
+  CheckoutData({
+    required this.merchantParams,
+  });
+}
+
+class ShopifyVerifyCodeResponse {
+  final ShopifyVerifyCodeData data;
+  final bool success;
+  final int statusCode;
+  final int timestamp;
+  final bool isSuccess;
+  final String error;
+
+  ShopifyVerifyCodeResponse({
+    required this.data,
+    required this.success,
+    required this.statusCode,
+    required this.timestamp,
+    required this.isSuccess,
+    required this.error,
+  });
+}
+
+class VerifiedUser {
+  final String? coreToken;
+  final Token token;
+  final String phone;
+  final String? email;
+
+  VerifiedUser({
+    this.coreToken,
+    required this.token,
+    required this.phone,
+    this.email,
+  });
+
+  factory VerifiedUser.fromJson(Map<String, dynamic> json) {
+    return VerifiedUser(
+      coreToken: json['coreToken'],
+      token: Token(isValid: json['token']['isValid']),
+      phone: json['phone'],
+      email: json['email'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'coreToken': coreToken,
+      'token': {'isValid': token.isValid},
+      'phone': phone,
+      'email': email,
+    };
+  }
+}
+
+class ShopifyVerifyCodeData {
+  final dynamic affluence;
+  final String email;
+  final String? phone;
+  final bool isNewUser;
+  final String? token;
+  final String? coreToken;
+  final String? kpToken;
+  final String? shopifyCustomerId;
+  final String? state;
+  final String? accountActivationUrl;
+
+  ShopifyVerifyCodeData({
+    this.affluence,
+    required this.email,
+    this.phone,
+    required this.isNewUser,
+    this.token,
+    this.coreToken,
+    this.kpToken,
+    this.shopifyCustomerId,
+    this.state,
+    this.accountActivationUrl,
+  });
+}
+
+class MerchantConfig {
+  final int id;
+  final String merchantId;
+  final String name;
+  final String host;
+  final String platform;
+  final bool kwikpassEnabled;
+  final bool isWhatsappOtpLessActive;
+  final bool isTruecallerActive;
+  final String integrationType;
+  final bool isLogoutBtnDisabled;
+  final String popupBreakpoint;
+  final String apiKey;
+  final bool isPublicAppInstalled;
+  final List<ThirdPartyServiceProvider> thirdPartyServiceProviders;
+  final String kpRequestId;
+
+  MerchantConfig({
+    required this.id,
+    required this.merchantId,
+    required this.name,
+    required this.host,
+    required this.platform,
+    required this.kwikpassEnabled,
+    required this.isWhatsappOtpLessActive,
+    required this.isTruecallerActive,
+    required this.integrationType,
+    required this.isLogoutBtnDisabled,
+    required this.popupBreakpoint,
+    required this.apiKey,
+    required this.isPublicAppInstalled,
+    required this.thirdPartyServiceProviders,
+    required this.kpRequestId,
+  });
+}
+
+class ThirdPartyServiceProvider {
+  final String name;
+  final String type;
+  final String identifier;
+  final List<dynamic> events;
+  final List<dynamic> marketingEvents;
+  final dynamic rules;
+
+  ThirdPartyServiceProvider({
+    required this.name,
+    required this.type,
+    required this.identifier,
+    required this.events,
+    required this.marketingEvents,
+    this.rules,
+  });
+}
+
+class CheckoutShopifyProps {
+  final String? cartId;
+  final String? storefrontToken;
+  final String? storeId;
+  final String? fbPixel;
+  final String? gaTrackingID;
+  final String? webEngageID;
+  final String? moEngageID;
+  final String? sessionId;
+  final Map<String, String>? utmParams;
+
+  CheckoutShopifyProps({
+    this.cartId,
+    this.storefrontToken,
+    this.storeId,
+    this.fbPixel,
+    this.gaTrackingID,
+    this.webEngageID,
+    this.moEngageID,
+    this.sessionId,
+    this.utmParams,
+  });
+}
+
+class MerchantParams extends CheckoutShopifyProps {
+  final String? merchantCheckoutId;
+
+  MerchantParams({
+    this.merchantCheckoutId,
+    super.cartId,
+    super.storefrontToken,
+    super.storeId,
+    super.fbPixel,
+    super.gaTrackingID,
+    super.webEngageID,
+    super.moEngageID,
+    super.sessionId,
+    super.utmParams,
+  });
+}
+
+class KPCheckoutProps {
+  final CheckoutData checkoutData;
+  final Function(dynamic)? onEvent;
+  final Function(dynamic)? onError;
+
+  KPCheckoutProps({
+    required this.checkoutData,
+    this.onEvent,
+    this.onError,
+  });
+}
+
+class CheckoutProps extends CheckoutShopifyProps {
+  final String? checkoutId;
+  final Function(dynamic)? onMessage;
+  final Function(dynamic)? onError;
+
+  CheckoutProps({
+    this.checkoutId,
+    this.onMessage,
+    this.onError,
+    String? cartId,
+    String? storefrontToken,
+    String? storeId,
+    String? fbPixel,
+    String? gaTrackingID,
+    String? webEngageID,
+    String? moEngageID,
+    String? sessionId,
+    Map<String, String>? utmParams,
+  }) : super(
+          cartId: cartId,
+          storefrontToken: storefrontToken,
+          storeId: storeId,
+          fbPixel: fbPixel,
+          gaTrackingID: gaTrackingID,
+          webEngageID: webEngageID,
+          moEngageID: moEngageID,
+          sessionId: sessionId,
+          utmParams: utmParams,
+        );
+}
+
+class ApiErrorResponseData {
+  final ResponseData data;
+  final int status;
+  final Map<String, String> headers;
+  final Map<String, String> config;
+  final Map<String, String> request;
+  final Map<String, String> responseHeaders;
+
+  ApiErrorResponseData({
+    required this.data,
+    required this.status,
+    required this.headers,
+    required this.config,
+    required this.request,
+    required this.responseHeaders,
+  });
+}
+
+class ResponseData {
+  final bool isSuccess;
+  final String? error;
+  final dynamic data;
+
+  ResponseData({
+    required this.isSuccess,
+    this.error,
+    this.data,
+  });
+}
+
+class ApiErrorResponse {
+  final String message;
+  final dynamic messageLBL;
+  final int? errorCode;
+  final String requestId;
+  final bool result;
+  final dynamic? response;
+
+  ApiErrorResponse({
+    required this.message,
+    this.messageLBL,
+    this.errorCode,
+    required this.requestId,
+    this.result = false,
+    this.response,
+  });
+}
