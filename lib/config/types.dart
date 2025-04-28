@@ -285,7 +285,7 @@ class TrackProductEventArgs {
   final String variantId;
   final String? imgUrl;
   final String? name;
-  final String? price;
+  final double? price;
   final String? handle;
 
   TrackProductEventArgs({
