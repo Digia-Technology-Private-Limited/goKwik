@@ -122,10 +122,6 @@ class _LoginState extends State<Login> {
             decoration: InputDecoration(
               labelText: widget.placeholderText,
               border: const OutlineInputBorder(),
-              prefixIcon: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                child: Text('+1', style: TextStyle(fontSize: 16)),
-              ),
               errorStyle: const TextStyle(color: Colors.red),
             ),
             style: widget.inputStyle,

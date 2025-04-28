@@ -115,9 +115,9 @@ class OtpSentResponse {
     return OtpSentResponse(
       data: OtpSentResponseData(
         interval: json['data']['interval'],
-        otpRequired: json['data']['otpRequired'],
+        otpRequired: json['data']['otp_required'],
         token: json['data']['token'],
-        userType: json['data']['userType'],
+        userType: json['data']['user_type'],
       ),
       error: json['error'],
       isSuccess: json['isSuccess'],
