@@ -713,6 +713,8 @@ abstract class ApiService {
         isSnowplowTrackingEnabled: isSnowplowTrackingEnabled,
       ));
 
+      Logger().clearLogs();
+
       return true;
     } catch (error) {
       throw await handleApiError(error);
