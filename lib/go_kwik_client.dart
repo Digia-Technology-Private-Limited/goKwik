@@ -17,4 +17,8 @@ class GoKwikClient {
     Logger();
     await ApiService.initializeSdk(props);
   }
+
+  Future<bool> logout() async {
+    return await ApiService.checkout();
+  }
 }
