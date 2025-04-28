@@ -21,6 +21,20 @@ import '../config/types.dart';
 import 'sdk_config.dart';
 import 'shopify_service.dart';
 
+sealed class Result<T> {
+  const Result();
+}
+
+class Success<T> extends Result<T> {
+  final T data;
+  const Success(this.data);
+}
+
+class Failure<T> extends Result<T> {
+  final String message;
+  const Failure(this.message);
+}
+
 abstract class ApiService {
   static Future<ApiErrorResponse> handleApiError(dynamic error) {
     String message = 'An unknown error occurred';
@@ -28,12 +42,12 @@ abstract class ApiService {
     if (error is DioException) {
       final response = error.response;
       if (response != null) {
-        final data = response.data;
+        final data = jsonDecode(response.data);
         final status = response.statusCode;
         final requestId = response.headers['request-id']?.first ?? 'N/A';
 
-        if (data != null && data['error'] != null) {
-          message = data['error'].toString();
+        if (data != null && data?['error_msg'] != null) {
+          message = data['error_msg'].toString();
         } else {
           message = 'Unexpected error with status: $status';
         }
@@ -61,13 +75,17 @@ abstract class ApiService {
     return regex.firstMatch(url)?.group(1) ?? '';
   }
 
-  static Future<dynamic> customerIntelligence() async {
+  static Future<Result<dynamic>> customerIntelligence() async {
     final merchantJson =
         await cacheInstance.getValue(KeyConfig.gkMerchantConfig);
-    if (merchantJson == null) return null;
+    if (merchantJson == null) {
+      return const Success(null); // No merchant config, not an error.
+    }
 
     final merchant = jsonDecode(merchantJson);
-    if (merchant['customerIntelligenceEnabled'] != true) return null;
+    if (merchant['customerIntelligenceEnabled'] != true) {
+      return const Success(null);
+    }
 
     final customerIntelligenceMetrics =
         merchant['customerIntelligenceMetrics'] ?? {};
@@ -87,16 +105,18 @@ abstract class ApiService {
     final trueKeys = reduceKeys(customerIntelligenceMetrics).toSet().toList();
 
     try {
-      final response = await gokwik.get('customer-intelligence',
-          queryParameters: {'cstmr-mtrcs': trueKeys.join(',')});
-      return response.data;
+      final response = await gokwik.get(
+        'customer-intelligence',
+        queryParameters: {'cstmr-mtrcs': trueKeys.join(',')},
+      );
+      return Success(response.data);
     } catch (err) {
-      print('Error in API call: $err');
-      throw await handleApiError(err);
+      final apiError = await handleApiError(err);
+      return Failure(apiError.message);
     }
   }
 
-  static Future<Response> activateUserAccount(
+  static Future<Result<Response>> activateUserAccount(
       String id, String url, String password, String token) async {
     final data = {
       'form_type': 'activate_customer_password',
@@ -117,7 +137,7 @@ abstract class ApiService {
         'value': int.tryParse(phone ?? '0') ?? 0,
       });
 
-      return await Dio().post(
+      final response = await Dio().post(
         'https://$url/account/activate',
         data: data,
         options: Options(
@@ -125,12 +145,14 @@ abstract class ApiService {
           followRedirects: false,
         ),
       );
+      return Success(response);
     } catch (err) {
-      throw await handleApiError(err);
+      final apiError = await handleApiError(err);
+      return Failure(apiError.message);
     }
   }
 
-  static Future<dynamic> getBrowserToken() async {
+  static Future<Result<dynamic>> getBrowserToken() async {
     final gokwik = DioClient().getClient();
 
     try {
@@ -153,9 +175,10 @@ abstract class ApiService {
         cacheInstance.setValue(KeyConfig.gkAuthTokenKey, token),
       ]);
 
-      return response.data;
+      return Success(response.data);
     } catch (err) {
-      throw await handleApiError(err);
+      final apiError = await handleApiError(err);
+      return Failure(apiError.message);
     }
   }
 
@@ -172,7 +195,7 @@ abstract class ApiService {
         jsonEncode(merchantRes),
       );
 
-      return merchantRes;
+      return MerchantConfig.fromJson(merchantRes);
     } catch (error) {
       print('Error fetching merchant configuration: $error');
       throw await handleApiError(error);
@@ -187,14 +210,15 @@ abstract class ApiService {
       final kcMerchantId = args.kcMerchantId ?? '';
       final kcMerchantToken = args.kcMerchantToken ?? '';
       final isSnowplowTrackingEnabled = args.isSnowplowTrackingEnabled ?? true;
+      await DioClient().initialize(args.environment.name);
 
       final gokwik = DioClient().getClient();
 
       await Logger().log(
         'SDK Initialized',
-        jsonEncode({
+        data: jsonEncode({
           'mid': mid,
-          'environment': environment,
+          'environment': environment.name,
         }),
       );
 
@@ -286,7 +310,7 @@ abstract class ApiService {
         KeyConfig.gkTimeZone: DateTime.now().timeZoneName,
       };
 
-      final advertisingInfo = await AdvertisingInfo().getAdvertisingInfo();
+      final advertisingInfo = await AdvertisingInfo.getAdvertisingInfo();
       if (advertisingInfo.id != null) {
         deviceInfoDetails[KeyConfig.gkGoogleAdId] = advertisingInfo.id!;
       }

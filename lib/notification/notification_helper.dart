@@ -8,11 +8,18 @@ import 'package:permission_handler/permission_handler.dart';
 import '../config/key_congif.dart';
 
 class NotificationHelper {
-  static Future<bool> checkUserPermission() async {
-    if (Platform.isAndroid) {
+  static Future<bool> checkAndRequestUserPermission() async {
+    if (Platform.isAndroid || Platform.isIOS) {
       var status = await Permission.notification.status;
-      return status.isGranted;
+      if (status.isGranted) {
+        return true;
+      } else {
+        // Request permission if not granted
+        var result = await Permission.notification.request();
+        return result.isGranted;
+      }
     }
+    // For other platforms (web, windows, etc.), you can decide default behavior
     return false;
   }
 

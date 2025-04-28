@@ -1,8 +1,19 @@
+import 'package:gokwik/config/types.dart';
 import 'package:gokwik/screens/root.dart';
+
+enum RootScreenStep {
+  phoneInput,
+  phoneOtpVerification,
+  emailInput,
+  emailOtpVerification,
+  multipleEmailsScreen,
+  newUserRegistration,
+  loggedIn,
+}
 
 class RootState {
   final bool isUserLoggedIn;
-  final String? merchantType;
+  final MerchantType merchantType;
   final String? createAccountError;
   final bool isLoading;
 
@@ -13,10 +24,11 @@ class RootState {
   final bool isSuccess;
   final List<MultipleEmail> multipleEmails;
   final String? gender;
+  final RootScreenStep currentStep;
 
   const RootState({
     this.isUserLoggedIn = false,
-    this.merchantType,
+    this.merchantType = MerchantType.shopify,
     this.createAccountError,
     this.isLoading = false,
     this.notifications = true,
@@ -26,11 +38,12 @@ class RootState {
     this.isSuccess = false,
     this.multipleEmails = const [],
     this.gender,
+    this.currentStep = RootScreenStep.phoneInput,
   });
 
   RootState copyWith({
     bool? isUserLoggedIn,
-    String? merchantType,
+    MerchantType? merchantType,
     String? createAccountError,
     bool? isLoading,
     bool? notifications,
@@ -40,6 +53,7 @@ class RootState {
     bool? isSuccess,
     List<MultipleEmail>? multipleEmails,
     String? gender,
+    RootScreenStep? currentStep,
   }) {
     return RootState(
       isUserLoggedIn: isUserLoggedIn ?? this.isUserLoggedIn,
@@ -53,6 +67,7 @@ class RootState {
       isSuccess: isSuccess ?? this.isSuccess,
       multipleEmails: multipleEmails ?? this.multipleEmails,
       gender: gender ?? this.gender,
+      currentStep: currentStep ?? this.currentStep,
     );
   }
 }

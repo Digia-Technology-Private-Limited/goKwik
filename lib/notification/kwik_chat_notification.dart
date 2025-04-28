@@ -16,7 +16,8 @@ class KwikChatNotification {
     String channel,
   ) async {
     try {
-      final hasPermission = await NotificationHelper.checkUserPermission();
+      final hasPermission =
+          await NotificationHelper.checkAndRequestUserPermission();
 
       final messageId = rawData['data']?['message_id'];
       if (hasPermission) {

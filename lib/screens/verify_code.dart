@@ -5,7 +5,7 @@ class VerifyCodeForm extends StatefulWidget {
   final String otpLabel;
   final VoidCallback onResend;
   final VoidCallback onEdit;
-  final VoidCallback onVerify;
+  final ValueChanged<String> onVerify;
   final String? Function(String?)? validator;
   final String? initialValue;
   final BoxDecoration? submitButtonStyle;
@@ -141,7 +141,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
       final error = widget.validator?.call(otp) ?? _defaultValidator(otp);
       setState(() => _errorText = error);
       if (error == null) {
-        widget.onVerify();
+        widget.onVerify(otp);
       }
     } else {
       setState(() => _errorText = null);
@@ -331,7 +331,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
               onPressed: () {
                 final otp = _controllers.map((c) => c.text).join();
                 if (_formKey.currentState!.validate()) {
-                  widget.onVerify();
+                  widget.onVerify(otp);
                 }
               },
               child: widget.isLoading

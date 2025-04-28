@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gokwik/config/types.dart';
 import 'package:gokwik/screens/cubit/root_cubit.dart';
 import 'package:gokwik/screens/root.dart';
 
@@ -41,7 +42,7 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
   final TextInputConfig? inputProps;
 
   // Merchant type
-  final String? merchantType;
+  final MerchantType? merchantType;
   const GoKwikLoginAndSignUpFlow({
     super.key,
     this.bannerImage,
@@ -70,7 +71,10 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => RootCubit(),
+      create: (context) => RootCubit(
+        onSuccessData: onSuccess,
+        onErrorData: onError,
+      ),
       child: RootScreen(
         bannerImage: bannerImage,
         logo: logo,
@@ -84,15 +88,15 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
         footerUrls: footerUrls,
         footerTextStyle: footerTextStyle,
         footerHyperlinkStyle: footerHyperlinkStyle,
-        onSuccess: onSuccess,
-        onError: onError,
+        // onSuccess: onSuccess,
+        // onError: onError,
         createUserConfig: createUserConfig,
         enableGuestLogin: enableGuestLogin,
         guestLoginButtonLabel: guestLoginButtonLabel,
         onGuestLoginPress: onGuestLoginPress,
         guestContainerStyle: guestContainerStyle,
         inputProps: inputProps,
-        merchantType: merchantType ?? '',
+        merchantType: merchantType ?? MerchantType.shopify,
       ),
     );
   }

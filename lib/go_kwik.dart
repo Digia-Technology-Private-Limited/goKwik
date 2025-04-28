@@ -1,4 +1,4 @@
-library go_kwik;
+library gokwik;
 
 export 'go_kwik_client.dart';
 export 'checkout/checkout.dart';
@@ -7,7 +7,7 @@ export 'checkout/checkout.dart';
 
 // Component exports
 export 'checkout/kp_checkout.dart';
-export './screens/root.dart';
+export './screens/main_screen.dart';
 export './notification/kwik_chat_notification.dart';
 
 // DOWNLOAD LOGS

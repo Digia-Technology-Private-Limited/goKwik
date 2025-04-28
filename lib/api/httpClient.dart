@@ -39,6 +39,8 @@ class DioClient {
         'appplatform': appPlatform,
         'appversion': appVersion,
         'source': source,
+        // 'origin': 'https://pdp.gokwik.co',
+        // 'referer': 'https://pdp.gokwik.co',
       },
     ));
   }

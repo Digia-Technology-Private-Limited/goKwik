@@ -8,8 +8,8 @@ class ShopifyEmailForm extends StatefulWidget {
   final bool isSuccess;
   final BoxDecoration? inputContainerStyle;
   final InputDecoration? inputStyle;
-  final BoxDecoration? dropdownContainerStyle;
-  final BoxDecoration? dropdownStyle;
+  // final BoxDecoration? dropdownContainerStyle;
+  // final BoxDecoration? dropdownStyle;
   final TextStyle? dropdownPlaceholderStyle;
   final TextStyle? dropdownSelectedTextStyle;
   final String dropdownPlaceholder;
@@ -32,8 +32,8 @@ class ShopifyEmailForm extends StatefulWidget {
     this.isSuccess = false,
     this.inputContainerStyle,
     this.inputStyle,
-    this.dropdownContainerStyle,
-    this.dropdownStyle,
+    // this.dropdownContainerStyle,
+    // this.dropdownStyle,
     this.dropdownPlaceholderStyle,
     this.dropdownSelectedTextStyle,
     this.dropdownPlaceholder = 'Select your email',

@@ -1,75 +1,42 @@
-import 'dart:math';
+import 'dart:convert';
 
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:gokwik/api/api_service.dart';
 import 'package:gokwik/api/shopify_service.dart';
+import 'package:gokwik/api/snowplow_events.dart';
+import 'package:gokwik/config/cache_instance.dart';
+import 'package:gokwik/config/key_congif.dart';
+import 'package:gokwik/config/types.dart';
+import 'package:gokwik/screens/create_account.dart';
+import 'package:gokwik/screens/cubit/root_model.dart';
 // Removed unused import
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:gokwik/screens/root.dart';
-
-class RootState {
-  final bool isUserLoggedIn;
-  final String? merchantType;
-  final String? createAccountError;
-  final bool isLoading;
-
-  final bool notifications;
-  final bool otpSent;
-  final bool isNewUser;
-  final bool emailOtpSent;
-  final bool isSuccess;
-  final List<MultipleEmail> multipleEmails;
-  final String? gender;
-
-  const RootState({
-    this.isUserLoggedIn = false,
-    this.merchantType,
-    this.createAccountError,
-    this.isLoading = false,
-    this.notifications = true,
-    this.otpSent = false,
-    this.isNewUser = false,
-    this.emailOtpSent = false,
-    this.isSuccess = false,
-    this.multipleEmails = const [],
-    this.gender,
-  });
-
-  RootState copyWith({
-    bool? isUserLoggedIn,
-    String? merchantType,
-    String? createAccountError,
-    bool? isLoading,
-    bool? notifications,
-    bool? otpSent,
-    bool? isNewUser,
-    bool? emailOtpSent,
-    bool? isSuccess,
-    List<MultipleEmail>? multipleEmails,
-    String? gender,
-  }) {
-    return RootState(
-      isUserLoggedIn: isUserLoggedIn ?? this.isUserLoggedIn,
-      merchantType: merchantType ?? this.merchantType,
-      createAccountError: createAccountError ?? this.createAccountError,
-      isLoading: isLoading ?? this.isLoading,
-      notifications: notifications ?? this.notifications,
-      otpSent: otpSent ?? this.otpSent,
-      isNewUser: isNewUser ?? this.isNewUser,
-      emailOtpSent: emailOtpSent ?? this.emailOtpSent,
-      isSuccess: isSuccess ?? this.isSuccess,
-      multipleEmails: multipleEmails ?? this.multipleEmails,
-      gender: gender ?? this.gender,
-    );
-  }
-}
+import '../root.dart';
 
 class RootCubit extends Cubit<RootState> {
-  RootCubit() : super(const RootState());
+  final phoneController = TextEditingController();
+  final otpController = TextEditingController();
+  final shopifyEmailController = TextEditingController();
+  final shopifyOtpController = TextEditingController();
+  final emailController = TextEditingController();
+  final usernameController = TextEditingController();
+  final dobController = ValueNotifier<DateTime?>(null);
+  final genderController = ValueNotifier<String?>(null);
 
-  Future<void> resendPhoneOtp(String phoneNumber) async {
+  final formKey = GlobalKey<FormState>();
+
+  final Function(dynamic)? onSuccessData;
+  final Function(dynamic)? onErrorData;
+  final MerchantType merchantType = MerchantType.shopify;
+  RootCubit({this.onSuccessData, this.onErrorData})
+      : super(const RootState(merchantType: MerchantType.shopify)) {
+    _listenMerchantType();
+    _listenUserStateUpdated();
+  }
+
+  Future<void> resendPhoneOtp() async {
     emit(state.copyWith(isLoading: true));
     try {
       emit(state.copyWith(isLoading: false));
@@ -78,12 +45,11 @@ class RootCubit extends Cubit<RootState> {
     }
   }
 
-  Future<void> handleOtpSend(
-      String phoneNumber, GlobalKey<FormState> formKey) async {
+  Future<void> handleOtpSend() async {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
     try {
-      await ApiService.sendVerificationCode(phoneNumber, true);
+      await ApiService.sendVerificationCode(phoneController.text, true);
       emit(state.copyWith(otpSent: true, isLoading: false));
     } catch (err) {
       emit(
@@ -91,12 +57,13 @@ class RootCubit extends Cubit<RootState> {
     }
   }
 
-  Future<void> handleEmailOtpVerification(
-      String email, String otp, GlobalKey<FormState> formKey) async {
+  Future<void> handleEmailOtpVerification(String value) async {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
+    otpController.text = value;
     try {
-      final response = await ShopifyService.shopifyVerifyEmail(email, otp);
+      final response = await ShopifyService.shopifyVerifyEmail(
+          emailController.text, otpController.text);
       // if(response['phone']!=null) {
       //   emit(state.copyWith(otpSent: true, isNewUser: true, isLoading: false));
       // }
@@ -106,13 +73,18 @@ class RootCubit extends Cubit<RootState> {
     }
   }
 
+  void updateNotification(bool value) {
+    emit(state.copyWith(notifications: value));
+  }
+
   Future<void> handleOtpVerification(
-      String phoneNumber, String otp, GlobalKey<FormState> formKey) async {
+    String otp,
+  ) async {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
     try {
-      final response = await ApiService.verifyCode(phoneNumber, otp);
-      if (state.merchantType == 'shopify' && response['email'] != null) {
+      final response = await ApiService.verifyCode(phoneController.text, otp);
+      if (state.merchantType.name == 'shopify' && response['email'] != null) {
         // if(response['phone']!=null) {
         //   emit(state.copyWith(otpSent: true, isNewUser: true, isLoading: false));
         // }
@@ -158,13 +130,16 @@ class RootCubit extends Cubit<RootState> {
     }
   }
 
-  Future<void> handleCreateUser(String email, String username, String dob,
-      String gender, GlobalKey<FormState> formKey) async {
+  Future<void> handleCreateUser() async {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
     try {
       final response = await ApiService.createUserApi(
-          email: email, name: username, dob: dob, gender: gender);
+        email: emailController.text,
+        name: usernameController.text,
+        dob: dobController.value?.toIso8601String(),
+        gender: genderController.value,
+      );
 
       emit(state.copyWith(
           isSuccess: true, isUserLoggedIn: true, isLoading: false));
@@ -175,7 +150,8 @@ class RootCubit extends Cubit<RootState> {
   }
 
   Future<void> handleShopifySubmit(
-      String email, GlobalKey<FormState> formKey) async {
+    String email,
+  ) async {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
 
@@ -189,10 +165,11 @@ class RootCubit extends Cubit<RootState> {
     }
   }
 
-  Future<void> resendShopifyEmailOtp(String email) async {
+  Future<void> resendShopifyEmailOtp() async {
     emit(state.copyWith(isLoading: true));
     try {
-      await ShopifyService.shopifySendEmailVerificationCode(email);
+      await ShopifyService.shopifySendEmailVerificationCode(
+          emailController.text);
       emit(state.copyWith(
           emailOtpSent: true, isNewUser: true, isLoading: false));
     } catch (err) {
@@ -205,5 +182,110 @@ class RootCubit extends Cubit<RootState> {
     if (onGuestLoginPress != null) {
       onGuestLoginPress();
     }
+  }
+
+  //Listeners
+  void _listenMerchantType() async {
+    // This mimics DeviceEventEmitter listening
+    final merchantType =
+        await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
+    if (merchantType != null) {
+      emit(state.copyWith(
+          merchantType: merchantType == 'shopify'
+              ? MerchantType.shopify
+              : MerchantType.custom));
+    }
+    // immediately emit event after adding listener
+    onMerchantTypeUpdated();
+  }
+
+  void _listenUserStateUpdated() {
+    // You can just trigger when merchantType updates or manually call
+    onUserStateUpdated();
+  }
+
+  Future<void> onMerchantTypeUpdated() async {
+    final merchantType =
+        await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
+    if (merchantType != null) {
+      emit(state.copyWith(
+          merchantType: merchantType == 'shopify'
+              ? MerchantType.shopify
+              : MerchantType.custom));
+    }
+  }
+
+  Future<void> onUserStateUpdated() async {
+    final response = await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
+    if (response == null) return;
+
+    final Map<String, dynamic> responseData = jsonDecode(response);
+
+    if (state.merchantType == MerchantType.shopify) {
+      if (responseData['emailRequired'] == true &&
+          (responseData['email'] == null || responseData['email'].isEmpty)) {
+        emit(state.copyWith(isNewUser: true));
+        if (responseData['multipleEmail'] != null) {
+          final multipleEmails = (responseData['multipleEmail'] as String)
+              .split(',')
+              .map((email) => email.trim())
+              .toList();
+          emit(state.copyWith(
+              multipleEmails: multipleEmails
+                  .map((email) => MultipleEmail(label: email, value: email))
+                  .toList()));
+        }
+        return;
+      }
+
+      if ((responseData['shopifyCustomerId'] != null &&
+              responseData['phone'] != null &&
+              responseData['email'] != null &&
+              responseData['multipassToken'] != null) ||
+          (responseData['shopifyCustomerId'] != null &&
+              responseData['phone'] != null &&
+              responseData['email'] != null &&
+              responseData['multipassToken'] != null &&
+              responseData['password'] != null)) {
+        emit(state.copyWith(isUserLoggedIn: true));
+        return;
+      }
+
+      SnowplowTrackerService.sendCustomEventToSnowPlow({
+        'category': 'login_modal',
+        'label': 'open_login_modal',
+        'action': 'click',
+      });
+    }
+
+    if (state.merchantType == MerchantType.custom) {
+      if (responseData['emailRequired'] == true &&
+          (responseData['email'] == null || responseData['email'].isEmpty)) {
+        emit(state.copyWith(isNewUser: true));
+        return;
+      }
+
+      if (responseData['phone'] != null && responseData['email'] != null) {
+        emit(state.copyWith(isUserLoggedIn: true));
+        return;
+      }
+      SnowplowTrackerService.sendCustomEventToSnowPlow({
+        'category': 'login_modal',
+        'label': 'open_login_modal',
+        'action': 'click',
+      });
+    }
+  }
+
+  @override
+  Future<void> close() {
+    phoneController.dispose();
+    otpController.dispose();
+    shopifyEmailController.dispose();
+    shopifyOtpController.dispose();
+    emailController.dispose();
+    usernameController.dispose();
+    dobController.dispose();
+    return super.close();
   }
 }

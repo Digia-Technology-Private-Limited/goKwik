@@ -1,6 +1,6 @@
 import 'package:gokwik/api/api_service.dart';
-import 'package:gokwik/api/httpClient.dart';
 import 'package:gokwik/config/types.dart';
+import 'package:gokwik/module/logger.dart';
 
 class GoKwikClient {
   static final GoKwikClient _instance = GoKwikClient._();
@@ -14,7 +14,7 @@ class GoKwikClient {
   // Add your methods and properties here
   Future<void> initializeSDK(InitializeSdkProps props) async {
     this.props = props;
-    await DioClient().initialize(props.environment.name);
+    Logger();
     await ApiService.initializeSdk(props);
   }
 }

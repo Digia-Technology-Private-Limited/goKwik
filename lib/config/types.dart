@@ -554,6 +554,49 @@ class MerchantConfig {
     required this.thirdPartyServiceProviders,
     required this.kpRequestId,
   });
+
+  factory MerchantConfig.fromJson(Map<String, dynamic> json) {
+    return MerchantConfig(
+      id: json['id'],
+      merchantId: json['merchantId'],
+      name: json['name'],
+      host: json['host'],
+      platform: json['platform'],
+      kwikpassEnabled: json['kwikpassEnabled'],
+      isWhatsappOtpLessActive: json['isWhatsappOtpLessActive'],
+      isTruecallerActive: json['isTruecallerActive'],
+      integrationType: json['integrationType'],
+      isLogoutBtnDisabled: json['isLogoutBtnDisabled'],
+      popupBreakpoint: json['popupBreakpoint'],
+      apiKey: json['apiKey'],
+      isPublicAppInstalled: json['isPublicAppInstalled'],
+      thirdPartyServiceProviders: (json['thirdPartyServiceProviders'] as List)
+          .map((e) => ThirdPartyServiceProvider.fromJson(e))
+          .toList(),
+      kpRequestId: json['kpRequestId'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'merchantId': merchantId,
+      'name': name,
+      'host': host,
+      'platform': platform,
+      'kwikpassEnabled': kwikpassEnabled,
+      'isWhatsappOtpLessActive': isWhatsappOtpLessActive,
+      'isTruecallerActive': isTruecallerActive,
+      'integrationType': integrationType,
+      'isLogoutBtnDisabled': isLogoutBtnDisabled,
+      'popupBreakpoint': popupBreakpoint,
+      'apiKey': apiKey,
+      'isPublicAppInstalled': isPublicAppInstalled,
+      'thirdPartyServiceProviders':
+          thirdPartyServiceProviders.map((e) => e.toJson()).toList(),
+      'kpRequestId': kpRequestId,
+    };
+  }
 }
 
 class ThirdPartyServiceProvider {
@@ -572,6 +615,28 @@ class ThirdPartyServiceProvider {
     required this.marketingEvents,
     this.rules,
   });
+
+  factory ThirdPartyServiceProvider.fromJson(Map<String, dynamic> json) {
+    return ThirdPartyServiceProvider(
+      name: json['name'],
+      type: json['type'],
+      identifier: json['identifier'],
+      events: json['events'] ?? [],
+      marketingEvents: json['marketingEvents'] ?? [],
+      rules: json['rules'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'type': type,
+      'identifier': identifier,
+      'events': events,
+      'marketingEvents': marketingEvents,
+      'rules': rules,
+    };
+  }
 }
 
 class CheckoutShopifyProps {
