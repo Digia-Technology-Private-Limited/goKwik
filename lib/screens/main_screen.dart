@@ -26,8 +26,8 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
   final TextStyle? footerHyperlinkStyle;
 
   // Callbacks
-  final Function(dynamic)? onSuccess;
-  final Function(dynamic)? onError;
+  final Function(FlowResult)? onSuccess;
+  final Function(FlowResult)? onError;
 
   // For new user
   final CreateUserConfig createUserConfig;

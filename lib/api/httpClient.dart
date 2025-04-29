@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'base_response.dart';
 import 'sdk_config.dart';
 
 class DioClient {
@@ -58,8 +59,22 @@ class DioClient {
     return _gokwikHttpClient!;
   }
 
+  static convertToBaseResponse<T>(
+    Map<String, dynamic> data, {
+    T Function(Map<String, dynamic>)? fromJson,
+  }) {
+    return BaseResponse.fromJson(data, fromJson);
+  }
+
   void dispose() {
     _gokwikHttpClient?.close();
     _gokwikHttpClient = null;
+  }
+}
+
+extension DioResponseExtension on Response {
+  BaseResponse<T> toBaseResponse<T>(
+      {T Function(Map<String, dynamic>)? fromJson}) {
+    return BaseResponse<T>.fromJson(data, fromJson);
   }
 }

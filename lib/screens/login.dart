@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:gokwik/screens/root.dart';
 
 class LoginForm {
   String phone;

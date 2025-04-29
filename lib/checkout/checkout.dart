@@ -304,19 +304,18 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
         try {
           await ApiService.validateUserToken();
           final response = await ApiService.loginKpUser();
-          final responseData = response.data;
+          final responseData = response.getDataOrThrow();
           String? phoneNumber;
 
-          if (responseData.phone != null) {
-            phoneNumber = responseData.phone;
-            await cacheInstance.setValue(
-                KeyConfig.gkUserPhone, responseData.phone);
+          if (responseData?.phone != null) {
+            phoneNumber = responseData!.phone;
+            await cacheInstance.setValue(KeyConfig.gkUserPhone, phoneNumber);
           } else {
             phoneNumber = await cacheInstance.getValue(KeyConfig.gkUserPhone);
           }
 
-          if (responseData.merchantResponse.email != null) {
-            final data = {...responseData.toJson(), 'phone': phoneNumber};
+          if (responseData?.merchantResponse.email != null) {
+            final data = {...responseData!.toJson(), 'phone': phoneNumber};
             await cacheInstance.setValue(
               KeyConfig.gkVerifiedUserKey,
               jsonEncode(data),

@@ -34,4 +34,14 @@ class SecureStorage {
       throw Exception('Failed to clear data: $e');
     }
   }
+
+  /// ✅ Clear all stored keys in SharedPreferences
+  static Future<void> clearAllSecureData() async {
+    try {
+      if (_prefs == null) throw Exception('SharedPreferences not initialized');
+      await _prefs!.clear();
+    } catch (e) {
+      throw Exception('Failed to clear all data: $e');
+    }
+  }
 }

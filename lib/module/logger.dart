@@ -13,7 +13,7 @@ class Logger {
   static const int _maxLogFiles = 7; // Keep last 7 days of logs
   static const int _maxFileSize = 2 * 1024 * 1024; // 2MB per file
 
-  late File _logFile;
+  File? _logFile;
   final _lock = Lock(); // For thread-safe file operations
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss.SSS');
 
@@ -26,11 +26,17 @@ class Logger {
     _logFile = File('${directory.path}/$_logFileName');
 
     // Rotate logs if file is too large
-    if (await _logFile.exists()) {
-      final length = await _logFile.length();
+    if (await _logFile?.exists() ?? false) {
+      final length = await _logFile?.length() ?? 0;
       if (length > _maxFileSize) {
         await _rotateLogs();
       }
+    }
+  }
+
+  Future<void> _ensureInitialized() async {
+    if (!(await _logFile?.exists() ?? false)) {
+      await _init();
     }
   }
 
@@ -44,10 +50,10 @@ class Logger {
 
     // Archive current log
     final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-    await _logFile.copy('${oldLogs.path}/log_$timestamp.txt');
+    await _logFile?.copy('${oldLogs.path}/log_$timestamp.txt');
 
     // Clear current log
-    await _logFile.writeAsString('');
+    await _logFile?.writeAsString('');
 
     // Clean up old logs
     final logFiles = await oldLogs.list().toList();
@@ -67,6 +73,7 @@ class Logger {
     bool saveToFile = true,
   }) async {
     try {
+      await _ensureInitialized();
       final timestamp = _dateFormat.format(DateTime.now());
       final levelStr = level.toString().split('.').last.toUpperCase();
       final dataStr = data != null ? '\nDATA: $data' : '';
@@ -78,7 +85,7 @@ class Logger {
 
       if (saveToFile) {
         await _lock.synchronized(() async {
-          await _logFile.writeAsString(logEntry, mode: FileMode.append);
+          await _logFile?.writeAsString(logEntry, mode: FileMode.append);
         });
       }
     } catch (e) {
@@ -109,19 +116,25 @@ class Logger {
 
   Future<String> getLogs() async {
     try {
-      return await _logFile.readAsString();
+      await _ensureInitialized();
+
+      return await _logFile?.readAsString() ?? '';
     } catch (e) {
       return 'No logs available';
     }
   }
 
   Future<void> clearLogs() async {
+    await _ensureInitialized();
+
     await _lock.synchronized(() async {
-      await _logFile.writeAsString('');
+      await _logFile?.writeAsString('');
     });
   }
 
   Future<String> exportLogs() async {
+    await _ensureInitialized();
+
     final directory =
         await getDownloadsDirectory() ?? await getTemporaryDirectory();
     final exportFile = File(

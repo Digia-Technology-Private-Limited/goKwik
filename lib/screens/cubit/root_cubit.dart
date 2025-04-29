@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:gokwik/api/api_service.dart';
+import 'package:gokwik/api/base_response.dart';
 import 'package:gokwik/api/shopify_service.dart';
 import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/cache_instance.dart';
@@ -14,6 +15,32 @@ import 'package:gokwik/screens/cubit/root_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../root.dart';
+
+enum FlowType {
+  otpSend,
+  otpVerify,
+  resendOtp,
+  emailOtpSend,
+  emailOtpVerify,
+  createUser,
+  shopifyEmailSubmit,
+  resendShopifyEmailOtp,
+  alreadyLoggedIn,
+}
+
+class FlowResult {
+  final FlowType flowType;
+  final dynamic data;
+  final dynamic error;
+  final Map<String, dynamic>? extra;
+
+  FlowResult({
+    required this.flowType,
+    this.data,
+    this.error,
+    this.extra,
+  });
+}
 
 class RootCubit extends Cubit<RootState> {
   final phoneController = TextEditingController();
@@ -27,8 +54,8 @@ class RootCubit extends Cubit<RootState> {
 
   final formKey = GlobalKey<FormState>();
 
-  final Function(dynamic)? onSuccessData;
-  final Function(dynamic)? onErrorData;
+  final Function(FlowResult)? onSuccessData;
+  final Function(FlowResult)? onErrorData;
   final MerchantType merchantType = MerchantType.shopify;
   RootCubit({this.onSuccessData, this.onErrorData})
       : super(const RootState(merchantType: MerchantType.shopify)) {
@@ -39,8 +66,35 @@ class RootCubit extends Cubit<RootState> {
   Future<void> resendPhoneOtp() async {
     emit(state.copyWith(isLoading: true));
     try {
+      final response =
+          await ApiService.sendVerificationCode(phoneController.text, true);
+      await SnowplowTrackerService.sendCustomEventToSnowPlow({
+        'category': 'login_modal',
+        'label': 'resend_otp',
+        'action': 'click',
+        'property': 'phone_number',
+        'value': int.tryParse(phoneController.text),
+      });
+      if (response.isFailure) {
+        onErrorData?.call(FlowResult(
+          flowType: FlowType.resendOtp,
+          error: (response as Failure).message,
+        ));
+        emit(state.copyWith(
+            createAccountError: (response as Failure).message,
+            isLoading: false));
+        return;
+      }
+      onSuccessData?.call(FlowResult(
+        flowType: FlowType.resendOtp,
+        data: (response as Success).data,
+      ));
       emit(state.copyWith(isLoading: false));
     } catch (err) {
+      onErrorData?.call(FlowResult(
+        flowType: FlowType.resendOtp,
+        error: err.toString(),
+      ));
       emit(state.copyWith(isLoading: false));
     }
   }
@@ -49,9 +103,28 @@ class RootCubit extends Cubit<RootState> {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
     try {
-      await ApiService.sendVerificationCode(phoneController.text, true);
+      final response = await ApiService.sendVerificationCode(
+          phoneController.text, state.notifications);
+      if (response.isFailure) {
+        onErrorData?.call(FlowResult(
+          flowType: FlowType.otpSend,
+          error: (response as Failure).message,
+        ));
+        emit(state.copyWith(
+            createAccountError: (response as Failure).message,
+            isLoading: false));
+        return;
+      }
+      onSuccessData?.call(FlowResult(
+        flowType: FlowType.otpSend,
+        data: (response as Success).data,
+      ));
       emit(state.copyWith(otpSent: true, isLoading: false));
     } catch (err) {
+      onErrorData?.call(FlowResult(
+        flowType: FlowType.resendOtp,
+        error: err.toString(),
+      ));
       emit(
           state.copyWith(createAccountError: err.toString(), isLoading: false));
     }
@@ -64,6 +137,7 @@ class RootCubit extends Cubit<RootState> {
     try {
       final response = await ShopifyService.shopifyVerifyEmail(
           emailController.text, otpController.text);
+
       // if(response['phone']!=null) {
       //   emit(state.copyWith(otpSent: true, isNewUser: true, isLoading: false));
       // }
@@ -83,12 +157,18 @@ class RootCubit extends Cubit<RootState> {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
     try {
-      final response = await ApiService.verifyCode(phoneController.text, otp);
+      final response = (await ApiService.verifyCode(phoneController.text, otp))
+          .getDataOrThrow();
       if (state.merchantType.name == 'shopify' && response['email'] != null) {
-        // if(response['phone']!=null) {
-        //   emit(state.copyWith(otpSent: true, isNewUser: true, isLoading: false));
-        // }
-        emit(state.copyWith(isSuccess: true, isLoading: false));
+        if (response['phone'] == null) {
+          response['phone'] = phoneController.text;
+        }
+        onSuccessData
+            ?.call(FlowResult(flowType: FlowType.otpVerify, data: response));
+        emit(state.copyWith(
+            isSuccess: true,
+            isNewUser: response['isNewUser'],
+            isLoading: false));
       }
       if (response['multiple_emails'] != null) {
         emit(state.copyWith(
@@ -102,12 +182,18 @@ class RootCubit extends Cubit<RootState> {
         ));
       }
       if (response['merchantResponse']['email'] != null) {
-        //  if(response['merchantResponse']['phone']!=null) {
-        //     emit(state.copyWith(otpSent: true, isNewUser: true, isLoading: false));
-        //   }
+        if (response['merchantResponse']['phone'] == null) {
+          response['merchantResponse']['phone'] = phoneController.text;
+        }
+        onSuccessData?.call(FlowResult(
+          flowType: FlowType.otpVerify,
+          data: response['merchantResponse'],
+        ));
         emit(state.copyWith(isSuccess: true, isLoading: false));
       }
+      otpController.clear();
     } catch (err) {
+      onErrorData?.call(FlowResult(flowType: FlowType.otpVerify, error: err));
       emit(
           state.copyWith(createAccountError: err.toString(), isLoading: false));
     }
@@ -186,7 +272,6 @@ class RootCubit extends Cubit<RootState> {
 
   //Listeners
   void _listenMerchantType() async {
-    // This mimics DeviceEventEmitter listening
     final merchantType =
         await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
     if (merchantType != null) {
@@ -195,12 +280,9 @@ class RootCubit extends Cubit<RootState> {
               ? MerchantType.shopify
               : MerchantType.custom));
     }
-    // immediately emit event after adding listener
-    onMerchantTypeUpdated();
   }
 
   void _listenUserStateUpdated() {
-    // You can just trigger when merchantType updates or manually call
     onUserStateUpdated();
   }
 
@@ -222,7 +304,8 @@ class RootCubit extends Cubit<RootState> {
     final Map<String, dynamic> responseData = jsonDecode(response);
 
     if (state.merchantType == MerchantType.shopify) {
-      if (responseData['emailRequired'] == true &&
+      if (
+          // responseData['emailRequired'] == true &&
           (responseData['email'] == null || responseData['email'].isEmpty)) {
         emit(state.copyWith(isNewUser: true));
         if (responseData['multipleEmail'] != null) {
@@ -240,13 +323,17 @@ class RootCubit extends Cubit<RootState> {
 
       if ((responseData['shopifyCustomerId'] != null &&
               responseData['phone'] != null &&
-              responseData['email'] != null &&
-              responseData['multipassToken'] != null) ||
+              responseData['email'] != null
+          // &&
+          // responseData['multipassToken'] != null
+          ) ||
           (responseData['shopifyCustomerId'] != null &&
               responseData['phone'] != null &&
               responseData['email'] != null &&
-              responseData['multipassToken'] != null &&
+              // responseData['multipassToken'] != null &&
               responseData['password'] != null)) {
+        onSuccessData?.call(
+            FlowResult(flowType: FlowType.alreadyLoggedIn, data: responseData));
         emit(state.copyWith(isUserLoggedIn: true));
         return;
       }

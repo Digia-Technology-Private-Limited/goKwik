@@ -92,6 +92,24 @@ class OtpSentResponseData {
     this.token,
     required this.userType,
   });
+
+  factory OtpSentResponseData.fromJson(Map<String, dynamic> json) {
+    return OtpSentResponseData(
+      interval: json['interval'],
+      otpRequired: json['otp_required'],
+      token: json['token'],
+      userType: json['user_type'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'interval': interval,
+      'otp_required': otpRequired,
+      'token': token,
+      'user_type': userType,
+    };
+  }
 }
 
 class OtpSentResponse {
@@ -114,14 +132,14 @@ class OtpSentResponse {
   factory OtpSentResponse.fromJson(Map<String, dynamic> json) {
     return OtpSentResponse(
       data: OtpSentResponseData(
-        interval: json['data']['interval'],
-        otpRequired: json['data']['otp_required'],
-        token: json['data']['token'],
-        userType: json['data']['user_type'],
+        interval: json['interval'],
+        otpRequired: json['otp_required'],
+        token: json['token'],
+        userType: json['user_type'],
       ),
       error: json['error'],
       isSuccess: json['isSuccess'],
-      statusCode: json['statusCode'],
+      statusCode: json['status_code'],
       success: json['success'],
       timestamp: json['timestamp'],
     );
@@ -222,6 +240,24 @@ class ValidateUserTokenResponseData {
     required this.phone,
     this.email,
   });
+
+  factory ValidateUserTokenResponseData.fromJson(Map<String, dynamic> json) {
+    return ValidateUserTokenResponseData(
+      coreToken: json['coreToken'],
+      token: Token(isValid: json['token']['isValid']),
+      phone: json['phone'],
+      email: json['email'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'coreToken': coreToken,
+      'token': {'isValid': token.isValid},
+      'phone': phone,
+      'email': email,
+    };
+  }
 }
 
 class ValidateUserTokenResponse {
@@ -536,6 +572,10 @@ class MerchantConfig {
   final bool isPublicAppInstalled;
   final List<ThirdPartyServiceProvider> thirdPartyServiceProviders;
   final String kpRequestId;
+  final bool customerIntelligenceEnabled;
+  final dynamic customerIntelligenceMetrics;
+  final String marketingPopupGlobalLimit;
+  final String customerAccountsVersion;
 
   MerchantConfig({
     required this.id,
@@ -553,6 +593,10 @@ class MerchantConfig {
     required this.isPublicAppInstalled,
     required this.thirdPartyServiceProviders,
     required this.kpRequestId,
+    required this.customerIntelligenceEnabled,
+    required this.customerIntelligenceMetrics,
+    required this.marketingPopupGlobalLimit,
+    required this.customerAccountsVersion,
   });
 
   factory MerchantConfig.fromJson(Map<String, dynamic> json) {
@@ -574,6 +618,10 @@ class MerchantConfig {
           .map((e) => ThirdPartyServiceProvider.fromJson(e))
           .toList(),
       kpRequestId: json['kpRequestId'],
+      customerIntelligenceEnabled: json['customerIntelligenceEnabled'],
+      customerIntelligenceMetrics: json['customerIntelligenceMetrics'],
+      marketingPopupGlobalLimit: json['marketingPopupGlobalLimit'],
+      customerAccountsVersion: json['customerAccountsVersion'],
     );
   }
 
@@ -595,6 +643,10 @@ class MerchantConfig {
       'thirdPartyServiceProviders':
           thirdPartyServiceProviders.map((e) => e.toJson()).toList(),
       'kpRequestId': kpRequestId,
+      'customerIntelligenceEnabled': customerIntelligenceEnabled,
+      'customerIntelligenceMetrics': customerIntelligenceMetrics,
+      'marketingPopupGlobalLimit': marketingPopupGlobalLimit,
+      'customerAccountsVersion': customerAccountsVersion,
     };
   }
 }

@@ -5,11 +5,13 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:gokwik/api/base_response.dart';
 import 'package:gokwik/api/httpClient.dart';
 import 'package:gokwik/api/snowplow_client.dart';
 import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/key_congif.dart';
+import 'package:gokwik/config/storege.dart';
 import 'package:gokwik/module/advertise.dart';
 import 'package:gokwik/module/logger.dart';
 import 'package:intl/intl.dart';
@@ -21,53 +23,28 @@ import '../config/types.dart';
 import 'sdk_config.dart';
 import 'shopify_service.dart';
 
-sealed class Result<T> {
-  const Result();
-}
-
-class Success<T> extends Result<T> {
-  final T data;
-  const Success(this.data);
-}
-
-class Failure<T> extends Result<T> {
-  final String message;
-  const Failure(this.message);
-}
-
 abstract class ApiService {
-  static Future<ApiErrorResponse> handleApiError(dynamic error) {
+  static Future<Failure> handleApiError(dynamic error) {
     String message = 'An unknown error occurred';
 
     if (error is DioException) {
-      final response = error.response;
+      final response = error.response?.toBaseResponse();
       if (response != null) {
-        final data = jsonDecode(response.data);
+        final data = response.error;
         final status = response.statusCode;
-        final requestId = response.headers['request-id']?.first ?? 'N/A';
+        final requestId = response.requestId ?? 'N/A';
 
-        if (data != null && data?['error_msg'] != null) {
-          message = data['error_msg'].toString();
+        if (data != null && (data != null || response.errorMessage != null)) {
+          message = (data ?? response.errorMessage).toString();
         } else {
           message = 'Unexpected error with status: $status';
         }
 
-        return Future.value(ApiErrorResponse(
-          message: message,
-          requestId: requestId,
-          result: false,
-          response: response,
-          errorCode: status,
-        ));
+        return Future.value(Failure(message));
       }
     }
 
-    return Future.value(ApiErrorResponse(
-      message: error.toString(),
-      requestId: 'N/A',
-      result: false,
-      errorCode: error is DioException ? error.response?.statusCode : null,
-    ));
+    return Future.value(Failure(message));
   }
 
   static String getHostName(String url) {
@@ -82,13 +59,13 @@ abstract class ApiService {
       return const Success(null); // No merchant config, not an error.
     }
 
-    final merchant = jsonDecode(merchantJson);
-    if (merchant['customerIntelligenceEnabled'] != true) {
+    final merchant = MerchantConfig.fromJson(jsonDecode(merchantJson));
+    if (merchant.customerIntelligenceEnabled != true) {
       return const Success(null);
     }
 
     final customerIntelligenceMetrics =
-        merchant['customerIntelligenceMetrics'] ?? {};
+        merchant.customerIntelligenceMetrics ?? {};
     final gokwik = DioClient().getClient();
 
     List<String> reduceKeys(Map<String, dynamic> innerObj) {
@@ -105,18 +82,24 @@ abstract class ApiService {
     final trueKeys = reduceKeys(customerIntelligenceMetrics).toSet().toList();
 
     try {
-      final response = await gokwik.get(
+      final response = (await gokwik.get(
         'customer-intelligence',
         queryParameters: {'cstmr-mtrcs': trueKeys.join(',')},
-      );
-      return Success(response.data);
+      ))
+          .toBaseResponse();
+      if (response.isSuccess ?? false) {
+        return Success(response.data);
+      }
+
+      return Failure(
+          response.errorMessage ?? 'Failed to fetch customer intelligence');
     } catch (err) {
       final apiError = await handleApiError(err);
       return Failure(apiError.message);
     }
   }
 
-  static Future<Result<Response>> activateUserAccount(
+  static Future<Result<dynamic>> activateUserAccount(
       String id, String url, String password, String token) async {
     final data = {
       'form_type': 'activate_customer_password',
@@ -153,11 +136,10 @@ abstract class ApiService {
   }
 
   static Future<Result<dynamic>> getBrowserToken() async {
-    final gokwik = DioClient().getClient();
-
     try {
-      final response = await gokwik.get('auth/browser');
-      final data = response.data?['data'] ?? {};
+      final goKwik = DioClient().getClient();
+      final response = (await goKwik.get('auth/browser')).toBaseResponse();
+      final data = response.data ?? {};
       final requestId = data['requestId'];
       final token = data['token'];
 
@@ -167,7 +149,7 @@ abstract class ApiService {
         'Authorization': token,
       };
 
-      gokwik.options.headers.addAll(headers);
+      goKwik.options.headers.addAll(headers);
 
       await Future.wait([
         cacheInstance.setValue(KeyConfig.gkRequestIdKey, requestId),
@@ -182,20 +164,22 @@ abstract class ApiService {
     }
   }
 
-  static Future<MerchantConfig> initializeMerchant(
+  static Future<Result<MerchantConfig?>> initializeMerchant(
       String mid, String environment) async {
     try {
       final gokwik = DioClient().getClient();
 
-      final response = await gokwik.get('configurations/$mid');
+      final response = (await gokwik.get('configurations/$mid')).toBaseResponse(
+        fromJson: (json) => MerchantConfig.fromJson(json),
+      );
 
-      final merchantRes = response.data?['data'];
+      final merchantRes = response.data;
       await cacheInstance.setValue(
         KeyConfig.gkMerchantConfig,
         jsonEncode(merchantRes),
       );
 
-      return MerchantConfig.fromJson(merchantRes);
+      return Success(merchantRes);
     } catch (error) {
       print('Error fetching merchant configuration: $error');
       throw await handleApiError(error);
@@ -258,15 +242,19 @@ abstract class ApiService {
 
       await getBrowserToken();
       final merchantConfig = await initializeMerchant(mid, environment.name);
+      if (merchantConfig.isSuccess) {
+        final merchantConfigData = merchantConfig.getDataOrThrow();
+        if (merchantConfigData?.platform != null) {
+          final platform =
+              merchantConfigData!.platform.toString().toLowerCase();
+          await cacheInstance.setValue(KeyConfig.gkMerchantTypeKey, platform);
+          // Event emission would be handled differently in Flutter
+          //TODO: @Ram
+        }
 
-      if (merchantConfig.platform != null) {
-        final platform = merchantConfig.platform.toString().toLowerCase();
-        await cacheInstance.setValue(KeyConfig.gkMerchantTypeKey, platform);
-        // Event emission would be handled differently in Flutter
+        final hostName = getHostName(merchantConfigData!.host);
+        await cacheInstance.setValue(KeyConfig.gkMerchantUrlKey, hostName);
       }
-
-      final hostName = getHostName(merchantConfig.host ?? '');
-      await cacheInstance.setValue(KeyConfig.gkMerchantUrlKey, hostName);
 
       await SnowplowClient.initializeSnowplowClient(args);
 
@@ -333,7 +321,7 @@ abstract class ApiService {
     }
   }
 
-  static Future<OtpSentResponse> sendVerificationCode(
+  static Future<Result<OtpSentResponseData?>> sendVerificationCode(
     String phoneNumber,
     bool notifications,
   ) async {
@@ -369,10 +357,16 @@ abstract class ApiService {
         }),
       ]);
 
-      final response = await gokwik.post(
+      final response = (await gokwik.post(
         'auth/otp/send',
         data: {'phone': phoneNumber},
+      ))
+          .toBaseResponse(
+        fromJson: (json) => OtpSentResponseData.fromJson(json),
       );
+      if (response.isSuccess == false) {
+        return Failure(response.errorMessage ?? 'Failed to send OTP');
+      }
       await SnowplowTrackerService.sendCustomEventToSnowPlow({
         'category': 'login_modal',
         'label': 'otp_sent_successfully',
@@ -381,23 +375,30 @@ abstract class ApiService {
         'value': int.tryParse(phoneNumber) ?? 0,
       });
 
-      return OtpSentResponse.fromJson(response.data);
+      return Success(response.data);
     } catch (error) {
       throw await handleApiError(error);
     }
   }
 
-  static Future<LoginResponse> loginKpUser() async {
+  static Future<Result<LoginResponseData?>> loginKpUser() async {
     try {
       final gokwik = DioClient().getClient();
-      final response = await gokwik.get('customer/custom/login');
-      return LoginResponse.fromJson(response.data);
+      final response =
+          (await gokwik.get('customer/custom/login')).toBaseResponse(
+        fromJson: (json) => LoginResponseData.fromJson(json),
+      );
+      if (response.isSuccess == false) {
+        return Failure(response.errorMessage ?? 'Failed to login');
+      }
+      return Success(response.data);
     } catch (err) {
       throw await handleApiError(err);
     }
   }
 
-  static Future<Map<String, dynamic>> createUserApi({
+//ToDo: @Ram
+  static Future<Result<Map<String, dynamic>?>> createUserApi({
     required String email,
     required String name,
     String? dob,
@@ -406,7 +407,7 @@ abstract class ApiService {
     try {
       final gokwik = DioClient().getClient();
 
-      final response = await gokwik.post(
+      final response = (await gokwik.post(
         'customer/custom/create-user',
         data: {
           'email': email,
@@ -414,9 +415,15 @@ abstract class ApiService {
           if (dob != null) 'dob': dob,
           if (gender != null) 'gender': gender,
         },
+      ))
+          .toBaseResponse(
+        fromJson: (json) => json,
       );
+      if (response.isSuccess == false) {
+        return Failure(response.errorMessage ?? 'Failed to create user');
+      }
 
-      final data = response.data?['data'];
+      final data = response.data;
       final merchantResponse = data?['merchantResponse']?['accountCreate'];
       final errors = merchantResponse?['accountErrors'];
 
@@ -447,13 +454,13 @@ abstract class ApiService {
         jsonEncode(userRes),
       );
 
-      return userRes;
+      return Success(userRes);
     } catch (err) {
       throw await handleApiError(err);
     }
   }
 
-  static Future<String> validateUserToken() async {
+  static Future<Result<String>> validateUserToken() async {
     try {
       final gokwik = DioClient().getClient();
 
@@ -473,21 +480,27 @@ abstract class ApiService {
             checkoutAccessToken;
       }
 
-      final response = await gokwik.get('auth/validate-token');
-      final responseData = jsonEncode(response.data?['data']);
+      final response = (await gokwik.get('auth/validate-token'))
+          .toBaseResponse<ValidateUserTokenResponseData>(
+        fromJson: (json) => ValidateUserTokenResponseData.fromJson(json),
+      );
+      if (response.isSuccess == false) {
+        return Failure(response.errorMessage ?? 'Failed to validate token');
+      }
+      final responseData = jsonEncode(response.data);
 
       await cacheInstance.setValue(
         KeyConfig.gkVerifiedUserKey,
         responseData,
       );
 
-      return responseData;
+      return Success(responseData);
     } catch (err) {
       throw await handleApiError(err);
     }
   }
 
-  static Future<dynamic> verifyCode(String phoneNumber, String code) async {
+  static Future<Result> verifyCode(String phoneNumber, String code) async {
     try {
       final gokwik = DioClient().getClient();
 
@@ -499,18 +512,22 @@ abstract class ApiService {
         'value': int.tryParse(phoneNumber) ?? 0,
       });
 
-      final response = await gokwik.post(
+      final response = (await gokwik.post(
         'auth/otp/verify',
         data: {
           'phone': phoneNumber,
-          'otp': code,
+          'otp': int.tryParse(code),
         },
-      );
+      ))
+          .toBaseResponse();
+      if (response.isSuccess == false) {
+        return Failure(response.errorMessage ?? 'Failed to verify OTP');
+      }
 
       final data = response.data;
-      final token = data?['data']?['token'];
-      final coreToken = data?['data']?['coreToken'];
-
+      final token = data?['token'];
+      final coreToken = data?['coreToken'];
+      final kpToken = data?['kpToken'];
       final merchantType =
           await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
 
@@ -520,6 +537,7 @@ abstract class ApiService {
           phoneNumber,
           token,
           coreToken,
+          kpToken,
         );
       }
 
@@ -536,15 +554,17 @@ abstract class ApiService {
       await validateUserToken();
       final loginResponse = await loginKpUser();
 
-      final responseData = loginResponse.data;
-      if (responseData.merchantResponse.email != null) {
-        await cacheInstance.setValue(
-          KeyConfig.gkVerifiedUserKey,
-          jsonEncode(responseData),
-        );
+      if (loginResponse.isSuccess) {
+        final responseData = loginResponse.getDataOrThrow();
+        if (responseData?.email != null) {
+          await cacheInstance.setValue(
+            KeyConfig.gkVerifiedUserKey,
+            jsonEncode(responseData),
+          );
+        }
       }
 
-      if (responseForAffluence != null) {
+      if (responseForAffluence.isSuccess) {
         // loginResponse.data?.email; = responseForAffluence;
       }
 
@@ -562,16 +582,22 @@ abstract class ApiService {
     }
   }
 
-  static Future<dynamic> _handleShopifyVerifyResponse(
-    dynamic responseData,
-    String phoneNumber,
-    String? token,
-    String? coreToken,
-  ) async {
+  static Future<Result> _handleShopifyVerifyResponse(
+      dynamic responseData,
+      String phoneNumber,
+      String? token,
+      String? coreToken,
+      String? kpToken) async {
     if (token != null) {
       final gokwik = DioClient().getClient();
       gokwik.options.headers[KeyConfig.gkAccessTokenKey] = token;
       await cacheInstance.setValue(KeyConfig.gkAccessTokenKey, token);
+    }
+
+    if (kpToken != null) {
+      final gokwik = DioClient().getClient();
+      gokwik.options.headers[KeyConfig.gkKpToken] = kpToken;
+      await cacheInstance.setValue(KeyConfig.gkKpToken, kpToken);
     }
 
     if (coreToken != null) {
@@ -582,12 +608,12 @@ abstract class ApiService {
 
     final responseForAffluence = await customerIntelligence();
 
-    if (responseData?['data']?['state'] == 'DISABLED') {
+    if (responseData?['state'] == 'DISABLED') {
       final multipassResponse = await ShopifyService.getShopifyMultipassToken(
         phone: phoneNumber,
-        email: responseData?['data']?['email'],
-        id: responseData?['data']?['shopifyCustomerId'],
-        state: responseData?['data']?['state'],
+        email: responseData?['email'],
+        id: responseData?['shopifyCustomerId'],
+        state: responseData?['state'],
       );
 
       if (multipassResponse?['data']?['accountActivationUrl'] != null &&
@@ -620,14 +646,14 @@ abstract class ApiService {
         'value': int.tryParse(phoneNumber) ?? 0,
       });
 
-      return multipassResponse;
+      return Success(multipassResponse);
     }
 
-    if (responseData?['data']?['email'] != null) {
+    if (responseData?['email'] != null) {
       final multipassResponse = await ShopifyService.getShopifyMultipassToken(
         phone: phoneNumber,
-        email: responseData?['data']?['email'],
-        id: responseData?['data']?['shopifyCustomerId'],
+        email: responseData?['email'],
+        id: responseData?['shopifyCustomerId'],
       );
 
       await SnowplowTrackerService.sendCustomEventToSnowPlow({
@@ -641,7 +667,7 @@ abstract class ApiService {
       if (responseForAffluence != null) {
         multipassResponse['data']['affluence'] = responseForAffluence;
       }
-      return multipassResponse;
+      return Success(multipassResponse['data']);
     }
 
     final userData = {
@@ -698,13 +724,15 @@ abstract class ApiService {
       gokwik.options.headers.remove('Authorization');
 
       cacheInstance.clearCache();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(KeyConfig.gkCoreTokenKey);
-      await prefs.remove(KeyConfig.gkAccessTokenKey);
-      await prefs.remove(KeyConfig.gkVerifiedUserKey);
-      await prefs.remove(KeyConfig.gkRequestIdKey);
-      await prefs.remove(KeyConfig.kpRequestIdKey);
-      await prefs.remove(KeyConfig.gkAuthTokenKey);
+      // final prefs = await SharedPreferences.getInstance();
+      // await prefs.remove(KeyConfig.gkCoreTokenKey);
+      // await prefs.remove(KeyConfig.gkAccessTokenKey);
+      // await prefs.remove(KeyConfig.gkVerifiedUserKey);
+      // await prefs.remove(KeyConfig.gkRequestIdKey);
+      // await prefs.remove(KeyConfig.kpRequestIdKey);
+      // await prefs.remove(KeyConfig.gkAuthTokenKey);
+      KwikPassCache().clearCache();
+      await SecureStorage.clearAllSecureData();
 
       await initializeSdk(InitializeSdkProps(
         mid: mid,
