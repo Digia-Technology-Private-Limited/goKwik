@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gokwik/config/types.dart';
+import 'package:gokwik/flow_result.dart';
 import 'package:gokwik/screens/create_account.dart';
 import 'package:gokwik/screens/cubit/root_cubit.dart';
 import 'package:gokwik/screens/cubit/root_model.dart';
@@ -34,7 +35,7 @@ class RootScreen extends StatefulWidget {
   final Function(FlowResult)? onError;
 
   // For new user
-  final CreateUserConfig createUserConfig;
+  final CreateUserConfig? createUserConfig;
 
   // Guest user
   final bool enableGuestLogin;
@@ -66,7 +67,7 @@ class RootScreen extends StatefulWidget {
     this.footerHyperlinkStyle,
     this.onSuccess,
     this.onError,
-    required this.createUserConfig,
+    this.createUserConfig,
     this.enableGuestLogin = false,
     this.guestLoginButtonLabel = 'Skip',
     this.onGuestLoginPress,
@@ -167,25 +168,35 @@ class _RootScreenState extends State<RootScreen> {
                                           titleStyle:
                                               widget.inputProps?.titleStyle,
                                           isEmailRequired: widget
-                                              .createUserConfig.isEmailRequired,
+                                                  .createUserConfig
+                                                  ?.isEmailRequired ??
+                                              false,
                                           isNameRequired: widget
-                                              .createUserConfig.isNameRequired,
+                                                  .createUserConfig
+                                                  ?.isNameRequired ??
+                                              false,
                                           isGenderRequired: widget
-                                              .createUserConfig
-                                              .isGenderRequired,
-                                          isDobRequired: widget
-                                              .createUserConfig.isDobRequired,
+                                                  .createUserConfig
+                                                  ?.isGenderRequired ??
+                                              false,
+                                          isDobRequired: widget.createUserConfig
+                                                  ?.isDobRequired ??
+                                              false,
                                           createAccountError:
                                               _createAccountError,
                                           inputConfig: widget.inputProps!,
-                                          showEmail:
-                                              widget.createUserConfig.showEmail,
-                                          showUserName: widget
-                                              .createUserConfig.showUserName,
-                                          showDob:
-                                              widget.createUserConfig.showDob,
-                                          showGender: widget
-                                              .createUserConfig.showGender,
+                                          showEmail: widget.createUserConfig
+                                                  ?.showEmail ??
+                                              true,
+                                          showUserName: widget.createUserConfig
+                                                  ?.showUserName ??
+                                              true,
+                                          showDob: widget
+                                                  .createUserConfig?.showDob ??
+                                              true,
+                                          showGender: widget.createUserConfig
+                                                  ?.showGender ??
+                                              true,
                                         )
                                       : ShopifyEmailForm(
                                           initialValue:

@@ -9,38 +9,12 @@ import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/config/types.dart';
-import 'package:gokwik/screens/create_account.dart';
 import 'package:gokwik/screens/cubit/root_model.dart';
 // Removed unused import
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../flow_result.dart';
 import '../root.dart';
-
-enum FlowType {
-  otpSend,
-  otpVerify,
-  resendOtp,
-  emailOtpSend,
-  emailOtpVerify,
-  createUser,
-  shopifyEmailSubmit,
-  resendShopifyEmailOtp,
-  alreadyLoggedIn,
-}
-
-class FlowResult {
-  final FlowType flowType;
-  final dynamic data;
-  final dynamic error;
-  final Map<String, dynamic>? extra;
-
-  FlowResult({
-    required this.flowType,
-    this.data,
-    this.error,
-    this.extra,
-  });
-}
 
 class RootCubit extends Cubit<RootState> {
   final phoneController = TextEditingController();

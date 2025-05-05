@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gokwik/config/types.dart';
+import 'package:gokwik/flow_result.dart';
 import 'package:gokwik/screens/cubit/root_cubit.dart';
 import 'package:gokwik/screens/root.dart';
 
@@ -30,7 +31,7 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
   final Function(FlowResult)? onError;
 
   // For new user
-  final CreateUserConfig createUserConfig;
+  final CreateUserConfig? createUserConfig;
 
   // Guest user
   final bool enableGuestLogin;
@@ -59,7 +60,7 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
     this.footerHyperlinkStyle,
     this.onSuccess,
     this.onError,
-    required this.createUserConfig,
+    this.createUserConfig,
     this.enableGuestLogin = false,
     this.guestLoginButtonLabel = 'Skip',
     this.onGuestLoginPress,
