@@ -34,7 +34,7 @@ class RootScreen extends StatefulWidget {
   final Function(FlowResult)? onError;
 
   // For new user
-  final CreateUserConfig createUserConfig;
+  final CreateUserConfig? createUserConfig;
 
   // Guest user
   final bool enableGuestLogin;
@@ -66,7 +66,7 @@ class RootScreen extends StatefulWidget {
     this.footerHyperlinkStyle,
     this.onSuccess,
     this.onError,
-    required this.createUserConfig,
+    this.createUserConfig,
     this.enableGuestLogin = false,
     this.guestLoginButtonLabel = 'Skip',
     this.onGuestLoginPress,
@@ -167,25 +167,35 @@ class _RootScreenState extends State<RootScreen> {
                                           titleStyle:
                                               widget.inputProps?.titleStyle,
                                           isEmailRequired: widget
-                                              .createUserConfig.isEmailRequired,
+                                                  .createUserConfig
+                                                  ?.isEmailRequired ??
+                                              false,
                                           isNameRequired: widget
-                                              .createUserConfig.isNameRequired,
+                                                  .createUserConfig
+                                                  ?.isNameRequired ??
+                                              false,
                                           isGenderRequired: widget
-                                              .createUserConfig
-                                              .isGenderRequired,
-                                          isDobRequired: widget
-                                              .createUserConfig.isDobRequired,
+                                                  .createUserConfig
+                                                  ?.isGenderRequired ??
+                                              false,
+                                          isDobRequired: widget.createUserConfig
+                                                  ?.isDobRequired ??
+                                              false,
                                           createAccountError:
                                               _createAccountError,
                                           inputConfig: widget.inputProps!,
-                                          showEmail:
-                                              widget.createUserConfig.showEmail,
-                                          showUserName: widget
-                                              .createUserConfig.showUserName,
-                                          showDob:
-                                              widget.createUserConfig.showDob,
-                                          showGender: widget
-                                              .createUserConfig.showGender,
+                                          showEmail: widget.createUserConfig
+                                                  ?.showEmail ??
+                                              false,
+                                          showUserName: widget.createUserConfig
+                                                  ?.showUserName ??
+                                              false,
+                                          showDob: widget
+                                                  .createUserConfig?.showDob ??
+                                              false,
+                                          showGender: widget.createUserConfig
+                                                  ?.showGender ??
+                                              false,
                                         )
                                       : ShopifyEmailForm(
                                           initialValue:
@@ -235,6 +245,7 @@ class _RootScreenState extends State<RootScreen> {
                                                   cubit.resendPhoneOtp(),
                                               initialValue:
                                                   cubit.otpController.text,
+                                              error: state.createAccountError,
                                             )
                                           : Login(
                                               onSubmit: () =>
@@ -245,16 +256,6 @@ class _RootScreenState extends State<RootScreen> {
                                                     cubit.phoneController.text,
                                                 notifications:
                                                     state.notifications,
-                                                // otp: _otpController.text,
-                                                // otpSent: _otpSent,
-                                                // isNewUser: _isNewUser,
-                                                // multipleEmail: _multipleEmails,
-                                                // emailOtpSent: _emailOtpSent,
-                                                // shopifyEmail:
-                                                //     _shopifyEmailController.text,
-                                                // shopifyOTP:
-                                                //     _shopifyOtpController.text,
-                                                // isSuccess: _isSuccess,
                                               ),
                                               onFormChanged: (form) {
                                                 cubit.phoneController.text =
@@ -262,6 +263,30 @@ class _RootScreenState extends State<RootScreen> {
                                                 cubit.updateNotification(
                                                     form.notifications);
                                               },
+                                              error: state.createAccountError,
+                                              title: widget.inputProps
+                                                  ?.phoneAuthScreen?.title,
+                                              subTitle: widget.inputProps
+                                                  ?.phoneAuthScreen?.subTitle,
+                                              placeholderText: widget
+                                                      .inputProps
+                                                      ?.phoneAuthScreen
+                                                      ?.phoneNumberPlaceholder ??
+                                                  '',
+                                              submitButtonText: widget
+                                                      .inputProps
+                                                      ?.phoneAuthScreen
+                                                      ?.submitButtonText ??
+                                                  '',
+                                              updateText: widget
+                                                      .inputProps
+                                                      ?.phoneAuthScreen
+                                                      ?.updatesPlaceholder ??
+                                                  '',
+                                              updatesTextStyle: widget
+                                                  .inputProps
+                                                  ?.phoneAuthScreen
+                                                  ?.updatesTextStyle,
                                             ),
                         ),
                         Container(
@@ -309,23 +334,17 @@ class _RootScreenState extends State<RootScreen> {
                 ),
                 if (widget.enableGuestLogin)
                   Positioned(
-                    top: widget.bannerImage == null && widget.logo == null
-                        ? 8
-                        : 0,
+                    top: 8,
                     right: 20,
                     child: Container(
                       decoration: widget.guestContainerStyle?.copyWith(
                             color: Colors.black,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(12),
                           ) ??
                           BoxDecoration(
                             color: Colors.black,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 15,
-                        vertical: 6,
-                      ),
                       child: TextButton(
                         onPressed: () =>
                             cubit.handleSkip(widget.onGuestLoginPress),

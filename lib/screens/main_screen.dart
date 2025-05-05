@@ -59,7 +59,12 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
     this.footerHyperlinkStyle,
     this.onSuccess,
     this.onError,
-    required this.createUserConfig,
+    this.createUserConfig = const CreateUserConfig(
+      isEmailRequired: true,
+      isNameRequired: true,
+      showEmail: true,
+      showUserName: true,
+    ),
     this.enableGuestLogin = false,
     this.guestLoginButtonLabel = 'Skip',
     this.onGuestLoginPress,

@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class BaseResponse<T> {
   final T? data;
   final String? error;
@@ -23,6 +25,8 @@ class BaseResponse<T> {
     Map<String, dynamic> json,
     T Function(Map<String, dynamic>)? fromJsonT,
   ) {
+    debugPrint("check 4" + fromJsonT.toString());
+    debugPrint("check 5" + json['isSuccess'].toString());
     return BaseResponse(
       data: fromJsonT != null ? fromJsonT(json['data']) : json['data'],
       error: json['error'],

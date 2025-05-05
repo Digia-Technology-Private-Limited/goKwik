@@ -13,13 +13,10 @@ import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/config/storege.dart';
 import 'package:gokwik/module/advertise.dart';
-import 'package:gokwik/module/logger.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/types.dart';
-
 import 'sdk_config.dart';
 import 'shopify_service.dart';
 
@@ -29,6 +26,7 @@ abstract class ApiService {
 
     if (error is DioException) {
       final response = error.response?.toBaseResponse();
+      print('response in handleApiError ${response}');
       if (response != null) {
         final data = response.error;
         final status = response.statusCode;
@@ -198,13 +196,13 @@ abstract class ApiService {
 
       final gokwik = DioClient().getClient();
 
-      await Logger().log(
-        'SDK Initialized',
-        data: jsonEncode({
-          'mid': mid,
-          'environment': environment.name,
-        }),
-      );
+      // await Logger().log(
+      //   'SDK Initialized',
+      //   data: jsonEncode({
+      //     'mid': mid,
+      //     'environment': environment.name,
+      //   }),
+      // );
 
       await Future.wait([
         cacheInstance.setValue(
@@ -298,10 +296,13 @@ abstract class ApiService {
         KeyConfig.gkTimeZone: DateTime.now().timeZoneName,
       };
 
-      final advertisingInfo = await AdvertisingInfo.getAdvertisingInfo();
-      if (advertisingInfo.id != null) {
-        deviceInfoDetails[KeyConfig.gkGoogleAdId] = advertisingInfo.id!;
-      }
+      print('deviceInfoDetails ${deviceInfoDetails}');
+
+      // final advertisingInfo = await AdvertisingInfo.getAdvertisingInfo();
+      // print('advertisingInfo ${advertisingInfo}');
+      // if (advertisingInfo.id != null) {
+      //   deviceInfoDetails[KeyConfig.gkGoogleAdId] = advertisingInfo.id!;
+      // }
 
       await cacheInstance.setValue(
         KeyConfig.gkDeviceInfo,
@@ -356,14 +357,14 @@ abstract class ApiService {
           'value': int.tryParse(phoneNumber) ?? 0,
         }),
       ]);
-
       final response = (await gokwik.post(
         'auth/otp/send',
         data: {'phone': phoneNumber},
-      ))
-          .toBaseResponse(
+      )).toBaseResponse(
         fromJson: (json) => OtpSentResponseData.fromJson(json),
       );
+
+
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to send OTP');
       }
@@ -377,6 +378,8 @@ abstract class ApiService {
 
       return Success(response.data);
     } catch (error) {
+      // var test =  await handleApiError(error);
+      // return test;
       throw await handleApiError(error);
     }
   }
@@ -741,7 +744,7 @@ abstract class ApiService {
         isSnowplowTrackingEnabled: isSnowplowTrackingEnabled,
       ));
 
-      Logger().clearLogs();
+      // Logger().clearLogs();
 
       return true;
     } catch (error) {

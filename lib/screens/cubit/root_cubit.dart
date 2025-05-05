@@ -105,6 +105,7 @@ class RootCubit extends Cubit<RootState> {
     try {
       final response = await ApiService.sendVerificationCode(
           phoneController.text, state.notifications);
+      print('handleOtpSend response ${response}');
       if (response.isFailure) {
         onErrorData?.call(FlowResult(
           flowType: FlowType.otpSend,
@@ -115,12 +116,13 @@ class RootCubit extends Cubit<RootState> {
             isLoading: false));
         return;
       }
-      onSuccessData?.call(FlowResult(
-        flowType: FlowType.otpSend,
-        data: (response as Success).data,
-      ));
+      // onSuccessData?.call(FlowResult(
+      //   flowType: FlowType.otpSend,
+      //   data: (response as Success).data,
+      // ));
       emit(state.copyWith(otpSent: true, isLoading: false));
     } catch (err) {
+      print('handleOtpSend error ${err}');
       onErrorData?.call(FlowResult(
         flowType: FlowType.resendOtp,
         error: err.toString(),
@@ -154,11 +156,14 @@ class RootCubit extends Cubit<RootState> {
   Future<void> handleOtpVerification(
     String otp,
   ) async {
+    print('handleOtpVerification ${otp}');
+    print('phoneController.text ${phoneController.text}');
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
     try {
       final response = (await ApiService.verifyCode(phoneController.text, otp))
           .getDataOrThrow();
+      print('handleOtpVerification response ${response}');
       if (state.merchantType.name == 'shopify' && response['email'] != null) {
         if (response['phone'] == null) {
           response['phone'] = phoneController.text;
@@ -201,7 +206,7 @@ class RootCubit extends Cubit<RootState> {
 
   void handlePhoneChange() {
     emit(state.copyWith(
-        otpSent: false, isNewUser: true, createAccountError: null));
+        otpSent: false, isNewUser: false, createAccountError: null));
   }
 
   void handleEmailChange() {

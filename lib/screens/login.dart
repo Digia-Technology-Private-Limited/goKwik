@@ -24,6 +24,7 @@ class Login extends StatefulWidget {
   final TextStyle? inputStyle;
   final bool isLoading;
   final bool isSuccess;
+  final String? error;
   final String placeholderText;
   final String updateText;
   final TextStyle? updatesTextStyle;
@@ -47,6 +48,7 @@ class Login extends StatefulWidget {
     this.inputStyle,
     this.isLoading = false,
     this.isSuccess = false,
+    this.error,
     this.placeholderText = 'Enter your phone',
     this.updateText = 'Get updates on WhatsApp',
     this.updatesTextStyle,
@@ -63,6 +65,7 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _phoneController;
+  String? _errorText;
 
   @override
   void initState() {
@@ -104,24 +107,23 @@ class _LoginState extends State<Login> {
                   ),
             ),
           if (widget.subTitle != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                widget.subTitle!,
-                style: widget.subTitleStyle ??
-                    const TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
-              ),
+            Text(
+              widget.subTitle!,
+              style: widget.subTitleStyle ??
+                  const TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
             ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           TextFormField(
             controller: _phoneController,
             decoration: InputDecoration(
               labelText: widget.placeholderText,
+              counterText: "",
               border: const OutlineInputBorder(),
               errorStyle: const TextStyle(color: Colors.red),
+              errorText: widget.error,
             ),
             style: widget.inputStyle,
             keyboardType: TextInputType.phone,
@@ -133,9 +135,11 @@ class _LoginState extends State<Login> {
                 phone: value,
                 notifications: widget.formData.notifications,
               ));
+              if (value.length == 10 && _validatePhone(value) == null) {
+                widget.onSubmit();
+              }
             },
           ),
-          const SizedBox(height: 16),
           if (widget.checkboxComponent != null)
             widget.checkboxComponent!(
               widget.formData.notifications,
@@ -147,7 +151,7 @@ class _LoginState extends State<Login> {
               },
             )
           else
-            InkWell(
+            GestureDetector(
               onTap: () {
                 final newValue = !widget.formData.notifications;
                 widget.onFormChanged(LoginForm(
@@ -195,7 +199,6 @@ class _LoginState extends State<Login> {
                 ),
               ),
             ),
-          const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(

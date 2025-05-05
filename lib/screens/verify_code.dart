@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:otp_autofill_plus/otp_autofill_plus.dart';
 
 class VerifyCodeForm extends StatefulWidget {
   final String otpLabel;
@@ -29,6 +31,7 @@ class VerifyCodeForm extends StatefulWidget {
   final TextStyle? resendTextStyle;
   final TextStyle? cellTextStyle;
   final String? loadingText;
+  final String? error;
 
   const VerifyCodeForm({
     super.key,
@@ -59,6 +62,7 @@ class VerifyCodeForm extends StatefulWidget {
     this.resendTextStyle,
     this.cellTextStyle,
     this.loadingText,
+    this.error,
   });
 
   @override
@@ -76,6 +80,12 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   final _formKey = GlobalKey<FormState>();
   String? _errorText;
 
+  final scaffoldKey = GlobalKey();
+  late OTPTextEditController controller;
+  late OTPInteractor _otpInteractor;
+
+  final pinputController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -85,6 +95,52 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     }
     _startTimer();
     // TODO: Implement SMS user consent for Android
+
+    print("INIIIIIIIT");
+
+    _initInteractor();
+    controller = OTPTextEditController(
+      codeLength: 4,
+      //ignore: avoid_print
+      onCodeReceive: (code) => print('Your Application receive code - $code'),
+      otpInteractor: _otpInteractor,
+    )..startListenUserConsent(
+        (code) {
+          final exp = RegExp(r'(\d{4})');
+
+          final otp = exp.stringMatch(code ?? '') ?? '';
+          widget.onVerify(otp);
+
+          print('code ${code}');
+          print('exp ${exp.stringMatch(code ?? '')}');
+
+          pinputController.text = otp;
+          pinputController.selection = TextSelection.fromPosition(
+            TextPosition(offset: pinputController.text.length),
+          );
+
+          return otp;
+        },
+        strategies: [],
+      );
+  }
+
+  @override
+  void didUpdateWidget(VerifyCodeForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.error != oldWidget.error) {
+      setState(() {
+        _errorText = widget.error;
+      });
+    }
+  }
+
+  Future<void> _initInteractor() async {
+    _otpInteractor = OTPInteractor();
+
+    // You can receive your app signature by using this method.
+    final appSignature = await _otpInteractor.getAppSignature();
+    // print('Your app signature: $appSignature');
   }
 
   @override
@@ -95,6 +151,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     for (var controller in _controllers) {
       controller.dispose();
     }
+    controller.stopListen();
     super.dispose();
   }
 
@@ -121,9 +178,13 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     }
   }
 
-  void _onChanged(String value, int index) {
-    if (value.length == 1 && index < _cellCount - 1) {
-      _focusNodes[index + 1].requestFocus();
+  void _onChanged(String value) {
+    print('onChanged value - $value');
+
+    if (value.length == 1 &&
+        _controllers.indexWhere((c) => c.text.isEmpty) < _cellCount - 1) {
+      _focusNodes[_controllers.indexWhere((c) => c.text.isEmpty)]
+          .requestFocus();
     }
     _validateOtp();
   }
@@ -186,7 +247,6 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                     ),
               ),
             ),
-          const SizedBox(height: 12),
           Row(
             children: [
               Text(
@@ -212,67 +272,51 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
             ],
           ),
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(_cellCount, (index) {
-              return SizedBox(
-                width: 60,
-                height: 60,
-                child: TextFormField(
-                  controller: _controllers[index],
-                  focusNode: _focusNodes[index],
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  maxLength: 1,
-                  style: widget.cellTextStyle ??
-                      const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                  decoration: InputDecoration(
-                    counterText: '',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(
-                        color: Colors.black,
-                        width: 2,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(
-                        color: Colors.black,
-                        width: 2,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: _errorText != null ? Colors.red : Colors.black,
-                        width: 2,
-                      ),
-                    ),
-                    hintText: widget.otpPlaceholder,
-                    hintStyle: widget.otpPlaceholderStyle ??
-                        const TextStyle(
-                          color: Colors.black,
-                        ),
-                  ),
-                  onChanged: (value) => _onChanged(value, index),
-                  onEditingComplete: () {
-                    if (index < _cellCount - 1) {
-                      _focusNodes[index + 1].requestFocus();
-                    }
-                  },
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(1),
-                  ],
-                  enabled: !widget.isLoading && !widget.isSuccess,
+          PinCodeTextField(
+            enabled: true,
+            enablePinAutofill: true,
+            appContext: context,
+            validator: widget.validator,
+            onChanged: _onChanged,
+            controller: pinputController,
+            cursorColor: Colors.black,
+            enableActiveFill: true,
+            keyboardType: TextInputType.number,
+            animationType: AnimationType.none,
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly
+            ],
+            length: 4,
+            obscureText: false,
+            autoDisposeControllers: false,
+            animationCurve: Curves.linear,
+            boxShadows: const [
+              BoxShadow(
+                offset: Offset(0, 0),
+                blurRadius: 1,
+              )
+            ],
+            pinTheme: PinTheme(
+              shape: PinCodeFieldShape.box,
+              borderRadius: BorderRadius.circular(8),
+              fieldOuterPadding: const EdgeInsets.only(right: 6),
+              borderWidth: 2,
+              fieldHeight: 60,
+              fieldWidth: 60,
+              activeColor: Colors.black,
+              activeFillColor: Colors.white,
+              inactiveColor: _errorText != null ? Colors.red : Colors.black,
+              inactiveFillColor: Colors.white,
+              selectedColor: Colors.black,
+              selectedFillColor: Colors.white,
+            ),
+            mainAxisAlignment: MainAxisAlignment.start,
+            textStyle: widget.cellTextStyle ??
+                const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
-              );
-            }),
           ),
           if (_errorText != null)
             Padding(

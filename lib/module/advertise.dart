@@ -73,9 +73,9 @@ abstract class AdvertisingInfo {
       //     await AppTrackingTransparency.requestTrackingAuthorization();
       final isLimitAdTrackingEnabled =
           await AdvertisingId.isLimitAdTrackingEnabled;
-      final advertisingId = await AdvertisingId.id(true);
+      final advertisingId = await AdvertisingId.id(false);
       return AdvertisingInfoResponse(
-        id: advertisingId ?? '',
+        id: advertisingId ?? null,
         isAdTrackingLimited: isLimitAdTrackingEnabled ?? false,
       );
     } catch (e, stack) {
