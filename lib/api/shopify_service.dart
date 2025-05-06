@@ -61,7 +61,7 @@ class ShopifyService {
 
       return response.data;
     } catch (error) {
-      throw await ApiService.handleApiError(error);
+      throw ApiService.handleApiError(error);
     }
   }
 

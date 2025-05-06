@@ -93,7 +93,7 @@ class RootCubit extends Cubit<RootState> {
     } catch (err) {
       onErrorData?.call(FlowResult(
         flowType: FlowType.resendOtp,
-        error: err.toString(),
+        error: (err as Failure).message,
       ));
       emit(state.copyWith(isLoading: false));
     }
@@ -124,11 +124,10 @@ class RootCubit extends Cubit<RootState> {
     } catch (err) {
       print('handleOtpSend error ${err}');
       onErrorData?.call(FlowResult(
-        flowType: FlowType.resendOtp,
-        error: err.toString(),
+        flowType: FlowType.otpSend,
+        error: (err as Failure).message,
       ));
-      emit(
-          state.copyWith(createAccountError: err.toString(), isLoading: false));
+      emit(state.copyWith(createAccountError: (err as Failure).message, isLoading: false));
     }
   }
 
@@ -198,9 +197,12 @@ class RootCubit extends Cubit<RootState> {
       }
       otpController.clear();
     } catch (err) {
-      onErrorData?.call(FlowResult(flowType: FlowType.otpVerify, error: err));
+      onErrorData?.call(FlowResult(
+        flowType: FlowType.otpVerify,
+        error: (err as Failure).message,
+      ));
       emit(
-          state.copyWith(createAccountError: err.toString(), isLoading: false));
+          state.copyWith(createAccountError: (err as Failure).message, isLoading: false));
     }
   }
 

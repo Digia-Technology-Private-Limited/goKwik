@@ -73,11 +73,6 @@ class DioClient {
 }
 
 extension DioResponseExtension on Response {BaseResponse<T> toBaseResponse<T>({T Function(Map<String, dynamic>)? fromJson}) {
-    debugPrint("check 1" + data.toString());
-    debugPrint("check 2" + fromJson.toString());
-    debugPrint("check 3" + data['isSuccess'].toString());
-    var temp= BaseResponse<T>.fromJson(data, fromJson);
-    print("check 5"+temp.toString());
     return BaseResponse<T>.fromJson(data, fromJson);
   }
 }

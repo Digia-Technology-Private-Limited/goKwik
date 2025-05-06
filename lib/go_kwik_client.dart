@@ -1,7 +1,9 @@
 import 'package:gokwik/api/api_service.dart';
+import 'package:gokwik/api/base_response.dart';
 import 'package:gokwik/config/storege.dart';
 import 'package:gokwik/config/types.dart';
 import 'package:gokwik/module/logger.dart';
+import 'package:gokwik/screens/cubit/root_cubit.dart';
 
 class GoKwikClient {
   static final GoKwikClient _instance = GoKwikClient._();
@@ -14,10 +16,14 @@ class GoKwikClient {
 
   // Add your methods and properties here
   Future<void> initializeSDK(InitializeSdkProps props) async {
-    this.props = props;
-    Logger();
-    await SecureStorage.init();
-    await ApiService.initializeSdk(props);
+    try {
+      this.props = props;
+      Logger();
+      await SecureStorage.init();
+      await ApiService.initializeSdk(props);
+    } catch (err) {
+      throw ApiService.handleApiError(err);
+    }
   }
 
   Future<bool> logout() async {

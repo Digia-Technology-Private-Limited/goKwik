@@ -197,11 +197,17 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   }
 
   void _validateOtp() {
-    final otp = _controllers.map((c) => c.text).join();
+    final otp = pinputController.text;
+
+    final code = _defaultValidator(otp);
+      print("code::: $code");
+
     if (otp.length == _cellCount) {
       final error = widget.validator?.call(otp) ?? _defaultValidator(otp);
       setState(() => _errorText = error);
+      print("ERROR $error");
       if (error == null) {
+        print("CALLLLLLL");
         widget.onVerify(otp);
       }
     } else {
@@ -373,8 +379,11 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                 ),
               ),
               onPressed: () {
-                final otp = _controllers.map((c) => c.text).join();
-                if (_formKey.currentState!.validate()) {
+                final otp = pinputController.text;
+                final error = widget.validator?.call(otp) ?? _defaultValidator(otp);
+                print("ERROR ON SUBMIT $error");
+                _errorText = error;
+                if(error == null){
                   widget.onVerify(otp);
                 }
               },

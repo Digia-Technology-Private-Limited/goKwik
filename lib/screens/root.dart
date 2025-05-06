@@ -99,7 +99,7 @@ class _RootScreenState extends State<RootScreen> {
           final cubit = context.read<RootCubit>();
           final _isUserLoggedIn = state.isUserLoggedIn;
           final _isNewUser = state.isNewUser;
-          // final _isLoading = state.isLoading;
+          final _isLoading = state.isLoading;
           final _otpSent = state.otpSent;
           final _emailOtpSent = state.emailOtpSent;
           // final _isSuccess = state.isSuccess;
@@ -204,7 +204,7 @@ class _RootScreenState extends State<RootScreen> {
                                               cubit.handleShopifySubmit(
                                             cubit.shopifyEmailController.text,
                                           ),
-                                          isLoading: state.isLoading,
+                                          isLoading: _isLoading,
                                           inputConfig: widget.inputProps,
                                           multipleEmail: state.multipleEmails,
                                         )
@@ -215,10 +215,10 @@ class _RootScreenState extends State<RootScreen> {
                                                   ?.otpVerificationScreen
                                                   ?.title ??
                                               '',
-                                          // onEdit: () => cubit.handleShopifySubmit(
-                                          //     _emailController.text, _formKey),
-                                          onEdit: () {},
-                                          isLoading: state.isLoading,
+                                          onEdit: () {
+                                            cubit.handleEmailChange();
+                                          },
+                                          isLoading: _isLoading,
                                           isSuccess: state.isSuccess,
                                           onVerify: (value) =>
                                               cubit.handleEmailOtpVerification(
@@ -227,6 +227,27 @@ class _RootScreenState extends State<RootScreen> {
                                               cubit.resendShopifyEmailOtp(),
                                           initialValue:
                                               cubit.shopifyOtpController.text,
+                                          title: widget
+                                              .inputProps
+                                              ?.emailOtpVerificationScreen
+                                              ?.title,
+                                          subTitle: widget
+                                              .inputProps
+                                              ?.emailOtpVerificationScreen
+                                              ?.subTitle,
+                                          submitButtonText: widget
+                                                  .inputProps
+                                                  ?.emailOtpVerificationScreen
+                                                  ?.submitButtonText ??
+                                              'Verify',
+                                          editStyle: widget
+                                              .inputProps
+                                              ?.emailOtpVerificationScreen
+                                              ?.editStyle,
+                                          editLabelStyle: widget
+                                              .inputProps
+                                              ?.emailOtpVerificationScreen
+                                              ?.editStyle,
                                         )
                                       : _otpSent
                                           ? VerifyCodeForm(
@@ -234,8 +255,28 @@ class _RootScreenState extends State<RootScreen> {
                                                   '+91 ${cubit.phoneController.text}',
                                               onEdit: () =>
                                                   cubit.handlePhoneChange(),
-                                              // inputConfig: widget.inputProps,
-                                              isLoading: state.isLoading,
+                                              title: widget
+                                                  .inputProps
+                                                  ?.otpVerificationScreen
+                                                  ?.title,
+                                              subTitle: widget
+                                                  .inputProps
+                                                  ?.otpVerificationScreen
+                                                  ?.subTitle,
+                                              submitButtonText: widget
+                                                      .inputProps
+                                                      ?.otpVerificationScreen
+                                                      ?.submitButtonText ??
+                                                  'Verify',
+                                              editStyle: widget
+                                                  .inputProps
+                                                  ?.otpVerificationScreen
+                                                  ?.editStyle,
+                                              editLabelStyle: widget
+                                                  .inputProps
+                                                  ?.otpVerificationScreen
+                                                  ?.editLabelStyle,
+                                              isLoading: _isLoading,
                                               isSuccess: state.isSuccess,
                                               onVerify: (value) =>
                                                   cubit.handleOtpVerification(
@@ -250,7 +291,7 @@ class _RootScreenState extends State<RootScreen> {
                                           : Login(
                                               onSubmit: () =>
                                                   cubit.handleOtpSend(),
-                                              isLoading: state.isLoading,
+                                              isLoading: _isLoading,
                                               formData: LoginForm(
                                                 phone:
                                                     cubit.phoneController.text,
@@ -478,14 +519,14 @@ class OtpVerificationScreenConfig {
   final String? subTitle;
   final String? submitButtonText;
   final TextStyle? editStyle;
-  final TextStyle? phoneTextStyle;
+  final TextStyle? editLabelStyle;
 
   const OtpVerificationScreenConfig({
     this.title,
     this.subTitle,
     this.submitButtonText,
     this.editStyle,
-    this.phoneTextStyle,
+    this.editLabelStyle,
   });
 }
 

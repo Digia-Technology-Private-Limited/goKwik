@@ -21,7 +21,7 @@ import 'sdk_config.dart';
 import 'shopify_service.dart';
 
 abstract class ApiService {
-  static Future<Failure> handleApiError(dynamic error) {
+  static Failure handleApiError(dynamic error) {
     String message = 'An unknown error occurred';
 
     if (error is DioException) {
@@ -38,11 +38,11 @@ abstract class ApiService {
           message = 'Unexpected error with status: $status';
         }
 
-        return Future.value(Failure(message));
+        return Failure(message);
       }
     }
 
-    return Future.value(Failure(message));
+    return Failure(message);
   }
 
   static String getHostName(String url) {
@@ -92,7 +92,7 @@ abstract class ApiService {
       return Failure(
           response.errorMessage ?? 'Failed to fetch customer intelligence');
     } catch (err) {
-      final apiError = await handleApiError(err);
+      final apiError = handleApiError(err);
       return Failure(apiError.message);
     }
   }
@@ -128,7 +128,7 @@ abstract class ApiService {
       );
       return Success(response);
     } catch (err) {
-      final apiError = await handleApiError(err);
+      final apiError = handleApiError(err);
       return Failure(apiError.message);
     }
   }
@@ -157,7 +157,7 @@ abstract class ApiService {
 
       return Success(response.data);
     } catch (err) {
-      final apiError = await handleApiError(err);
+      final apiError = handleApiError(err);
       return Failure(apiError.message);
     }
   }
@@ -180,7 +180,7 @@ abstract class ApiService {
       return Success(merchantRes);
     } catch (error) {
       print('Error fetching merchant configuration: $error');
-      throw await handleApiError(error);
+      throw handleApiError(error);
     }
   }
 
@@ -318,7 +318,7 @@ abstract class ApiService {
       return {'message': 'Initialization Successful'};
     } catch (error) {
       print('error in initialize sdk: $error');
-      throw await handleApiError(error);
+      throw handleApiError(error);
     }
   }
 
@@ -360,10 +360,17 @@ abstract class ApiService {
       final response = (await gokwik.post(
         'auth/otp/send',
         data: {'phone': phoneNumber},
-      )).toBaseResponse(
+      ))
+          .toBaseResponse(
         fromJson: (json) => OtpSentResponseData.fromJson(json),
       );
 
+      // if(response.statusCode == 200){
+      //   var res = OtpSentResponseData.fromJson(response.data);
+      //   print("RESPONSE :::::::: ${res}");
+      // }else{
+      //   //manage error
+      // }
 
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to send OTP');
@@ -378,9 +385,9 @@ abstract class ApiService {
 
       return Success(response.data);
     } catch (error) {
-      // var test =  await handleApiError(error);
+      // var test =   handleApiError(error);
       // return test;
-      throw await handleApiError(error);
+      throw handleApiError(error);
     }
   }
 
@@ -396,7 +403,7 @@ abstract class ApiService {
       }
       return Success(response.data);
     } catch (err) {
-      throw await handleApiError(err);
+      throw handleApiError(err);
     }
   }
 
@@ -459,7 +466,7 @@ abstract class ApiService {
 
       return Success(userRes);
     } catch (err) {
-      throw await handleApiError(err);
+      throw handleApiError(err);
     }
   }
 
@@ -499,7 +506,7 @@ abstract class ApiService {
 
       return Success(responseData);
     } catch (err) {
-      throw await handleApiError(err);
+      throw handleApiError(err);
     }
   }
 
@@ -581,7 +588,7 @@ abstract class ApiService {
 
       return loginResponse;
     } catch (error) {
-      throw await handleApiError(error);
+      throw handleApiError(error);
     }
   }
 
@@ -748,7 +755,7 @@ abstract class ApiService {
 
       return true;
     } catch (error) {
-      throw await handleApiError(error);
+      throw handleApiError(error);
     }
   }
 }
