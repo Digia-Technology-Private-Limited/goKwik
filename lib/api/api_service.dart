@@ -24,7 +24,7 @@ import 'sdk_config.dart';
 import 'shopify_service.dart';
 
 abstract class ApiService {
-  static Future<Failure> handleApiError(dynamic error) {
+  static Failure handleApiError(dynamic error) {
     String message = 'An unknown error occurred';
 
     if (error is DioException) {
@@ -40,11 +40,11 @@ abstract class ApiService {
           message = 'Unexpected error with status: $status';
         }
 
-        return Future.value(Failure(message));
+        return (Failure(message));
       }
     }
 
-    return Future.value(Failure(message));
+    return (Failure(message));
   }
 
   static String getHostName(String url) {
@@ -94,8 +94,8 @@ abstract class ApiService {
       return Failure(
           response.errorMessage ?? 'Failed to fetch customer intelligence');
     } catch (err) {
-      final apiError = await handleApiError(err);
-      return Failure(apiError.message);
+      final apiError = handleApiError(err);
+      return apiError;
     }
   }
 
@@ -130,7 +130,7 @@ abstract class ApiService {
       );
       return Success(response);
     } catch (err) {
-      final apiError = await handleApiError(err);
+      final apiError = handleApiError(err);
       return Failure(apiError.message);
     }
   }
