@@ -67,7 +67,7 @@ class RootCubit extends Cubit<RootState> {
     } catch (err) {
       onErrorData?.call(FlowResult(
         flowType: FlowType.resendOtp,
-        error: err.toString(),
+        error: (err as Failure).message,
       ));
       emit(state.copyWith(isLoading: false));
     }
@@ -97,10 +97,10 @@ class RootCubit extends Cubit<RootState> {
     } catch (err) {
       onErrorData?.call(FlowResult(
         flowType: FlowType.resendOtp,
-        error: err.toString(),
+        error: (err as Failure).message,
       ));
-      emit(
-          state.copyWith(createAccountError: err.toString(), isLoading: false));
+      emit(state.copyWith(
+          createAccountError: (err as Failure).message, isLoading: false));
     }
   }
 
@@ -117,7 +117,8 @@ class RootCubit extends Cubit<RootState> {
       // }
       state.copyWith(isSuccess: true, isLoading: false);
     } catch (err) {
-      state.copyWith(createAccountError: err.toString(), isLoading: false);
+      state.copyWith(
+          createAccountError: (err as Failure).message, isLoading: false);
     }
   }
 
@@ -168,8 +169,8 @@ class RootCubit extends Cubit<RootState> {
       otpController.clear();
     } catch (err) {
       onErrorData?.call(FlowResult(flowType: FlowType.otpVerify, error: err));
-      emit(
-          state.copyWith(createAccountError: err.toString(), isLoading: false));
+      emit(state.copyWith(
+          createAccountError: (err as Failure).message, isLoading: false));
     }
   }
 
@@ -204,8 +205,8 @@ class RootCubit extends Cubit<RootState> {
       emit(state.copyWith(
           isSuccess: true, isUserLoggedIn: true, isLoading: false));
     } catch (err) {
-      emit(
-          state.copyWith(createAccountError: err.toString(), isLoading: false));
+      emit(state.copyWith(
+          createAccountError: (err as Failure).message, isLoading: false));
     }
   }
 
@@ -220,8 +221,8 @@ class RootCubit extends Cubit<RootState> {
       emit(state.copyWith(
           emailOtpSent: true, isNewUser: true, isLoading: false));
     } catch (err) {
-      emit(
-          state.copyWith(createAccountError: err.toString(), isLoading: false));
+      emit(state.copyWith(
+          createAccountError: (err as Failure).message, isLoading: false));
     }
   }
 
@@ -233,8 +234,8 @@ class RootCubit extends Cubit<RootState> {
       emit(state.copyWith(
           emailOtpSent: true, isNewUser: true, isLoading: false));
     } catch (err) {
-      emit(
-          state.copyWith(createAccountError: err.toString(), isLoading: false));
+      emit(state.copyWith(
+          createAccountError: (err as Failure).message, isLoading: false));
     }
   }
 
