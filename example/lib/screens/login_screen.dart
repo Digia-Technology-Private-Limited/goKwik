@@ -58,6 +58,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 fontSize: 16,
               ),
             ),
+            otpVerificationScreen: OtpVerificationScreenConfig(
+              title: "Enter the code sent to your phone",
+            )
           ),
           footerText: 'By continuing, you agree to our',
           // footerHyperlinkStyle: const TextStyle(

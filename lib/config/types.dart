@@ -315,20 +315,20 @@ class TrackCollectionEventContext {
 }
 
 class TrackProductEventArgs {
-  final String cartId;
-  final String productId;
-  final String pageUrl;
-  final String variantId;
+  final String? cartId;
+  final String? productId;
+  final String? pageUrl;
+  final String? variantId;
   final String? imgUrl;
   final String? name;
-  final double? price;
+  final String? price;
   final String? handle;
 
   TrackProductEventArgs({
-    required this.cartId,
-    required this.productId,
-    required this.pageUrl,
-    required this.variantId,
+    this.cartId,
+    this.productId,
+    this.pageUrl,
+    this.variantId,
     this.imgUrl,
     this.name,
     this.price,
@@ -337,35 +337,38 @@ class TrackProductEventArgs {
 
   factory TrackProductEventArgs.fromJson(Map<String, dynamic> json) {
     return TrackProductEventArgs(
-      cartId: json['cartId'],
-      productId: json['productId'],
-      pageUrl: json['pageUrl'],
-      variantId: json['variantId'],
-      imgUrl: json['imgUrl'],
-      name: json['name'],
-      price: json['price'],
-      handle: json['handle'],
+      cartId: json['cart_id'],
+      productId: json['product_id'],
+      pageUrl: json['page_url'],
+      variantId: json['variant_id'],
+      imgUrl: json['img_url'],
+      name: json['product_name'],
+      price: json['product_price'],
+      handle: json['product_handle'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'cartId': cartId,
-      'productId': productId,
-      'pageUrl': pageUrl,
-      'variantId': variantId,
-      'imgUrl': imgUrl,
-      'name': name,
-      'price': price,
-      'handle': handle,
+      'product_id': productId,
+      'page_url': pageUrl,
+      'variant_id': variantId,
+      'img_url': imgUrl,
+      'product_name': name,
+      'product_price': price,
+      'product_handle': handle,
     };
   }
 }
 
 class TrackCartEventArgs {
   final String cartId;
+  final String pageUrl;
 
-  TrackCartEventArgs({required this.cartId});
+  TrackCartEventArgs({
+    required this.cartId,
+    required this.pageUrl,
+  });
 }
 
 class TrackCollectionsEventArgs {
@@ -374,6 +377,7 @@ class TrackCollectionsEventArgs {
   final String name;
   final String? imageUrl;
   final String? handle;
+  final String pageUrl;
 
   TrackCollectionsEventArgs({
     required this.cartId,
@@ -381,6 +385,7 @@ class TrackCollectionsEventArgs {
     required this.name,
     this.imageUrl,
     this.handle,
+    required this.pageUrl,
   });
 }
 
