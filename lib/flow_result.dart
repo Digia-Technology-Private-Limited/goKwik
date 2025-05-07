@@ -8,6 +8,7 @@ enum FlowType {
   shopifyEmailSubmit,
   resendShopifyEmailOtp,
   alreadyLoggedIn,
+  notLoggedIn,
   checkoutSuccess,
   checkoutFailed,
   modalClosed,

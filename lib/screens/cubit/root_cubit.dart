@@ -132,9 +132,13 @@ class RootCubit extends Cubit<RootState> {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
     try {
-      final response = (await ApiService.verifyCode(phoneController.text, otp))
-          .getDataOrThrow();
-      if (state.merchantType.name == 'shopify' && response['email'] != null) {
+      final response = ((await ApiService.verifyCode(phoneController.text, otp))
+          .getDataOrThrow()) as Map<String, dynamic>;
+      if (state.merchantType == MerchantType.shopify &&
+          response['email'] != null) {
+        response.remove('state');
+        response.remove('accountActivationUrl');
+
         if (response['phone'] == null) {
           response['phone'] = phoneController.text;
         }
@@ -147,8 +151,10 @@ class RootCubit extends Cubit<RootState> {
       }
       if (response['multiple_emails'] != null) {
         emit(state.copyWith(
-          multipleEmails: response['multiple_emails'],
-          isSuccess: true,
+          multipleEmails:
+              (response['multiple_emails'] as String?)?.split(',').map((item) {
+            return MultipleEmail(label: item.trim(), value: item.trim());
+          }).toList(),
         ));
       }
       if (response['emailRequired'] != null && response['email']) {
@@ -156,17 +162,18 @@ class RootCubit extends Cubit<RootState> {
           isNewUser: true,
         ));
       }
-      if (response['merchantResponse']['email'] != null) {
-        if (response['merchantResponse']['phone'] == null) {
+      if (response?['merchantResponse']?['email'] != null) {
+        if (response?['merchantResponse']?['phone'] == null) {
           response['merchantResponse']['phone'] = phoneController.text;
         }
         onSuccessData?.call(FlowResult(
           flowType: FlowType.otpVerify,
-          data: response['merchantResponse'],
+          data: response?['merchantResponse'],
         ));
         emit(state.copyWith(isSuccess: true, isLoading: false));
       }
       otpController.clear();
+      _listenUserStateUpdated();
     } catch (err) {
       onErrorData?.call(FlowResult(flowType: FlowType.otpVerify, error: err));
       emit(state.copyWith(
@@ -274,7 +281,11 @@ class RootCubit extends Cubit<RootState> {
 
   Future<void> onUserStateUpdated() async {
     final response = await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
-    if (response == null) return;
+    if (response == null) {
+      onErrorData?.call(FlowResult(
+          flowType: FlowType.notLoggedIn, error: 'User Not Logged In'));
+      return;
+    }
 
     final Map<String, dynamic> responseData = jsonDecode(response);
 

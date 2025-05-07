@@ -606,7 +606,7 @@ abstract class ApiService {
       await cacheInstance.setValue(KeyConfig.checkoutAccessTokenKey, coreToken);
     }
 
-    final responseForAffluence = await customerIntelligence();
+    final responseForAffluence = (await customerIntelligence());
 
     if (responseData?['state'] == 'DISABLED') {
       final multipassResponse = await ShopifyService.getShopifyMultipassToken(
@@ -616,8 +616,8 @@ abstract class ApiService {
         state: responseData?['state'],
       );
 
-      if (multipassResponse?['data']?['accountActivationUrl'] != null &&
-          multipassResponse?['data']?['shopifyCustomerId'] != null) {
+      if (multipassResponse['data']?['accountActivationUrl'] != null &&
+          multipassResponse['data']?['shopifyCustomerId'] != null) {
         final activationUrlParts =
             multipassResponse['data']['accountActivationUrl'].split('/');
         final token = activationUrlParts.last;
@@ -635,8 +635,9 @@ abstract class ApiService {
         );
       }
 
-      if (responseForAffluence != null) {
-        multipassResponse['data']['affluence'] = responseForAffluence;
+      if (responseForAffluence is Success &&
+          responseForAffluence.data != null) {
+        multipassResponse['data']['affluence'] = responseForAffluence.data;
       }
       await SnowplowTrackerService.sendCustomEventToSnowPlow({
         'category': 'login_modal',
@@ -651,10 +652,10 @@ abstract class ApiService {
 
     if (responseData?['email'] != null) {
       final multipassResponse = await ShopifyService.getShopifyMultipassToken(
-        phone: phoneNumber,
-        email: responseData?['email'],
-        id: responseData?['shopifyCustomerId'],
-      );
+          phone: phoneNumber,
+          email: responseData?['email'],
+          id: responseData?['shopifyCustomerId'],
+          state: responseData?['state']);
 
       await SnowplowTrackerService.sendCustomEventToSnowPlow({
         'category': 'login_modal',
@@ -664,8 +665,9 @@ abstract class ApiService {
         'value': int.tryParse(phoneNumber) ?? 0,
       });
 
-      if (responseForAffluence != null) {
-        multipassResponse['data']['affluence'] = responseForAffluence;
+      if (responseForAffluence is Success &&
+          responseForAffluence.data != null) {
+        multipassResponse['data']['affluence'] = responseForAffluence.data;
       }
       return Success(multipassResponse['data']);
     }
@@ -680,7 +682,7 @@ abstract class ApiService {
       jsonEncode(userData),
     );
 
-    if (responseForAffluence != null) {
+    if (responseForAffluence is Success && responseForAffluence.data != null) {
       responseData['data']['affluence'] = responseForAffluence;
     }
     await SnowplowTrackerService.sendCustomEventToSnowPlow({

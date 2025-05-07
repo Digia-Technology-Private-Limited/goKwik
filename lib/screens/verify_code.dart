@@ -1,65 +1,33 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gokwik/screens/root.dart';
 
 class VerifyCodeForm extends StatefulWidget {
-  final String otpLabel;
   final VoidCallback onResend;
   final VoidCallback onEdit;
   final ValueChanged<String> onVerify;
   final String? Function(String?)? validator;
-  final String? initialValue;
-  final BoxDecoration? submitButtonStyle;
-  final TextStyle? submitButtonTextStyle;
-  final TextStyle? titleStyle;
-  final TextStyle? subTitleStyle;
-  final String submitButtonText;
-  final BoxDecoration? pincodeCellStyle;
-  final BoxDecoration? pincodeCellContainerStyle;
-  final InputDecoration? inputStyle;
   final bool isLoading;
   final bool isSuccess;
-  final TextStyle? loadingTextStyle;
-  final String? title;
-  final String? subTitle;
-  final String? otpPlaceholder;
-  final TextStyle? otpPlaceholderStyle;
-  final TextStyle? editStyle;
-  final TextStyle? editLabelStyle;
-  final TextStyle? resendButtonTextStyle;
-  final TextStyle? resendTextStyle;
-  final TextStyle? cellTextStyle;
-  final String? loadingText;
+  final String otpLabel;
+  final String? initialValue;
+  final LoadingConfig? loaderConfig;
+  final OtpVerificationScreenConfig? config;
 
-  const VerifyCodeForm({
-    super.key,
-    required this.otpLabel,
-    required this.onResend,
-    required this.onEdit,
-    required this.onVerify,
-    this.validator,
-    this.initialValue,
-    this.submitButtonStyle,
-    this.submitButtonTextStyle,
-    this.titleStyle,
-    this.subTitleStyle,
-    this.submitButtonText = 'Verify',
-    this.pincodeCellStyle,
-    this.pincodeCellContainerStyle,
-    this.inputStyle,
-    this.isLoading = false,
-    this.isSuccess = false,
-    this.loadingTextStyle,
-    this.title = 'OTP Verification',
-    this.subTitle,
-    this.otpPlaceholder,
-    this.otpPlaceholderStyle,
-    this.editStyle,
-    this.editLabelStyle,
-    this.resendButtonTextStyle,
-    this.resendTextStyle,
-    this.cellTextStyle,
-    this.loadingText,
-  });
+  const VerifyCodeForm(
+      {super.key,
+      required this.onResend,
+      required this.onEdit,
+      required this.onVerify,
+      this.validator,
+      this.isLoading = false,
+      this.isSuccess = false,
+      required this.otpLabel,
+      required this.initialValue,
+      this.loaderConfig,
+      this.config});
 
   @override
   State<VerifyCodeForm> createState() => _VerifyCodeFormState();
@@ -75,6 +43,9 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   final List<TextEditingController> _controllers = [];
   final _formKey = GlobalKey<FormState>();
   String? _errorText;
+  Timer? _timer;
+  String? _appSignature; // For Android SMS consent
+  bool _autoReading = false;
 
   @override
   void initState() {
@@ -84,11 +55,11 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
       _controllers.add(TextEditingController());
     }
     _startTimer();
-    // TODO: Implement SMS user consent for Android
   }
 
   @override
   void dispose() {
+    _timer?.cancel();
     for (var node in _focusNodes) {
       node.dispose();
     }
@@ -99,7 +70,8 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   }
 
   void _startTimer() {
-    Future.delayed(const Duration(seconds: 1), () {
+    _timer = Timer(const Duration(seconds: 1), () {
+      if (!mounted) return;
       if (_seconds > 0 && _isResendDisabled) {
         setState(() => _seconds--);
         _startTimer();
@@ -110,7 +82,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   }
 
   void _handleResendOtp() {
-    if (_attempts < _maxAttempts) {
+    if (_attempts < _maxAttempts && mounted) {
       setState(() {
         _attempts++;
         _seconds = 30;
@@ -165,21 +137,21 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (widget.title != null)
+          if (widget.config?.title != null)
             Text(
-              widget.title!,
-              style: widget.titleStyle ??
+              widget.config!.title,
+              style: widget.config?.titleStyle ??
                   const TextStyle(
                     fontSize: 20,
                     color: Colors.black,
                   ),
             ),
-          if (widget.subTitle != null)
+          if (widget.config?.subTitle != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                widget.subTitle!,
-                style: widget.subTitleStyle ??
+                widget.config!.subTitle!,
+                style: widget.config?.subTitleStyle ??
                     const TextStyle(
                       fontSize: 16,
                       color: Color(0xFF999999),
@@ -191,7 +163,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
             children: [
               Text(
                 widget.otpLabel,
-                style: widget.editLabelStyle ??
+                style: widget.config?.editLabelStyle ??
                     const TextStyle(
                       fontSize: 20,
                       color: Color(0x9E000000),
@@ -202,7 +174,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                 onTap: widget.onEdit,
                 child: Text(
                   'Edit',
-                  style: widget.editStyle ??
+                  style: widget.config?.editStyle ??
                       const TextStyle(
                         fontSize: 16,
                         color: Colors.black,
@@ -224,7 +196,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
                   maxLength: 1,
-                  style: widget.cellTextStyle ??
+                  style: widget.config?.cellTextStyle ??
                       const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -253,8 +225,8 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                         width: 2,
                       ),
                     ),
-                    hintText: widget.otpPlaceholder,
-                    hintStyle: widget.otpPlaceholderStyle ??
+                    hintText: widget.config?.otpPlaceholder,
+                    hintStyle: widget.config?.otpPlaceholderStyle ??
                         const TextStyle(
                           color: Colors.black,
                         ),
@@ -291,7 +263,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
               child: Text.rich(
                 TextSpan(
                   text: 'OTP not received? ',
-                  style: widget.resendTextStyle ??
+                  style: widget.config?.resendTextStyle ??
                       const TextStyle(
                         fontSize: 14,
                         color: Colors.black,
@@ -304,7 +276,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                           _isResendDisabled
                               ? 'Resend in ${_seconds}s'
                               : 'Resend OTP',
-                          style: widget.resendButtonTextStyle ??
+                          style: widget.config?.resendButtonTextStyle ??
                               const TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF0964C5),
@@ -321,13 +293,13 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    widget.submitButtonStyle?.color ?? const Color(0xFF007AFF),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+              style: widget.config?.submitButtonStyleBox ??
+                  ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF007AFF),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
               onPressed: () {
                 final otp = _controllers.map((c) => c.text).join();
                 if (_formKey.currentState!.validate()) {
@@ -335,17 +307,17 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                 }
               },
               child: widget.isLoading
-                  ? widget.loadingText != null
+                  ? widget.loaderConfig != null
                       ? Text(
-                          widget.loadingText!,
-                          style: widget.loadingTextStyle,
+                          widget.loaderConfig?.loadingText ?? 'Loading...',
+                          style: widget.loaderConfig?.loadingTextStyle,
                         )
                       : const CircularProgressIndicator(
                           color: Colors.white,
                         )
                   : Text(
-                      widget.submitButtonText,
-                      style: widget.submitButtonTextStyle ??
+                      widget.config?.submitButtonText ?? 'Submit',
+                      style: widget.config?.submitButtonTextStyle ??
                           const TextStyle(
                             fontSize: 16,
                             color: Colors.white,

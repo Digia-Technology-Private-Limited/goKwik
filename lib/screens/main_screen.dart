@@ -38,6 +38,7 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
   final String guestLoginButtonLabel;
   final VoidCallback? onGuestLoginPress;
   final BoxDecoration? guestContainerStyle;
+  final TextStyle? guesLoginTextStyle;
 
   // Input config
   final TextInputConfig? inputProps;
@@ -67,6 +68,7 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
     this.guestContainerStyle,
     this.inputProps,
     this.merchantType,
+    this.guesLoginTextStyle,
   });
 
   @override
@@ -89,8 +91,7 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
         footerUrls: footerUrls,
         footerTextStyle: footerTextStyle,
         footerHyperlinkStyle: footerHyperlinkStyle,
-        // onSuccess: onSuccess,
-        // onError: onError,
+        guesLoginTextStyle: guesLoginTextStyle,
         createUserConfig: createUserConfig,
         enableGuestLogin: enableGuestLogin,
         guestLoginButtonLabel: guestLoginButtonLabel,
