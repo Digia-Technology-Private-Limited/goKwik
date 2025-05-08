@@ -211,14 +211,14 @@ class _RootScreenState extends State<RootScreen> {
                                                   initialValue: cubit
                                                       .shopifyEmailController
                                                       .text,
-                                                  onSubmit: () =>
+                                                  onSubmitEmail: (value) =>
                                                       cubit.handleShopifySubmit(
-                                                    cubit.shopifyEmailController
-                                                        .text,
-                                                  ),
+                                                          value),
                                                   isLoading: state.isLoading,
-                                                  inputConfig:
-                                                      widget.inputProps,
+                                                  config: widget.inputProps
+                                                      ?.shopifyEmailScreen,
+                                                  loaderConfig:
+                                                      widget.loaderConfig,
                                                   multipleEmail:
                                                       state.multipleEmails,
                                                 )
@@ -568,18 +568,31 @@ class ShopifyEmailScreenConfig {
   final TextStyle? dropdownPlaceholderStyle;
   final TextStyle? dropdownSelectedTextStyle;
   final String? dropdownPlaceholder;
+  final BoxDecoration? inputContainerStyle;
+  final InputDecoration? inputStyle;
+  final ButtonStyle? submitButtonStyle;
+  final TextStyle? submitButtonTextStyle;
+  final TextStyle? titleStyle;
+  final TextStyle? subTitleStyle;
+  final FormFieldValidator<String>? validator;
 
-  const ShopifyEmailScreenConfig({
-    this.title,
-    this.subTitle,
-    this.emailPlaceholder,
-    this.submitButtonText,
-    this.dropdownContainerStyle,
-    this.dropdownStyle,
-    this.dropdownPlaceholderStyle,
-    this.dropdownSelectedTextStyle,
-    this.dropdownPlaceholder,
-  });
+  const ShopifyEmailScreenConfig(
+      {this.title,
+      this.subTitle,
+      this.emailPlaceholder,
+      this.submitButtonText,
+      this.dropdownContainerStyle,
+      this.dropdownStyle,
+      this.dropdownPlaceholderStyle,
+      this.dropdownSelectedTextStyle,
+      this.dropdownPlaceholder = 'Select your email',
+      this.inputContainerStyle,
+      this.inputStyle,
+      this.submitButtonStyle,
+      this.submitButtonTextStyle,
+      this.titleStyle,
+      this.subTitleStyle,
+      this.validator});
 }
 
 class CreateUserScreenConfig {

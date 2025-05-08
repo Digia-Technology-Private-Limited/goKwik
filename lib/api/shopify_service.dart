@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:gokwik/api/api_service.dart';
+import 'package:gokwik/api/base_response.dart';
 import 'package:gokwik/api/httpClient.dart';
 import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/key_congif.dart';
@@ -65,7 +66,7 @@ class ShopifyService {
     }
   }
 
-  static Future<Map<String, dynamic>> shopifySendEmailVerificationCode(
+  static Future<Result> shopifySendEmailVerificationCode(
     String email,
   ) async {
     try {
@@ -81,14 +82,18 @@ class ShopifyService {
         'value': int.tryParse(phoneNumber ?? '0') ?? 0,
       });
 
-      final response = await gokwik.post(
+      final response = (await gokwik.post(
         'auth/email-otp/send',
         data: {'email': email},
-      );
+      ))
+          .toBaseResponse();
+      if (response.isSuccess == false) {
+        return Failure(response.errorMessage ?? '');
+      }
 
       return response.data;
     } catch (error) {
-      throw await ApiService.handleApiError(error);
+      throw ApiService.handleApiError(error);
     }
   }
 

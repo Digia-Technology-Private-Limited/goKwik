@@ -93,7 +93,10 @@ class RootCubit extends Cubit<RootState> {
         flowType: FlowType.otpSend,
         data: (response as Success).data,
       ));
-      emit(state.copyWith(otpSent: true, isLoading: false));
+      emit(state.copyWith(
+          otpSent: true,
+          isLoading: false,
+          isNewUser: response.getDataOrThrow()?.userType == 'new'));
     } catch (err) {
       onErrorData?.call(FlowResult(
         flowType: FlowType.resendOtp,
@@ -222,14 +225,20 @@ class RootCubit extends Cubit<RootState> {
   ) async {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
-
+    shopifyEmailController.text = email;
     try {
-      await ShopifyService.shopifySendEmailVerificationCode(email);
+      final response =
+          await ShopifyService.shopifySendEmailVerificationCode(email);
+
       emit(state.copyWith(
-          emailOtpSent: true, isNewUser: true, isLoading: false));
+          emailOtpSent: true, isNewUser: false, isLoading: false));
     } catch (err) {
       emit(state.copyWith(
-          createAccountError: (err as Failure).message, isLoading: false));
+          createAccountError: (err is Failure) ? err.message : err.toString(),
+          isLoading: false,
+          emailOtpSent: false));
+      onErrorData
+          ?.call(FlowResult(flowType: FlowType.emailOtpSend, error: err));
     }
   }
 
