@@ -733,7 +733,6 @@ abstract class ApiService {
       // await prefs.remove(KeyConfig.gkRequestIdKey);
       // await prefs.remove(KeyConfig.kpRequestIdKey);
       // await prefs.remove(KeyConfig.gkAuthTokenKey);
-      KwikPassCache().clearCache();
       await SecureStorage.clearAllSecureData();
 
       await initializeSdk(InitializeSdkProps(
@@ -747,7 +746,7 @@ abstract class ApiService {
 
       return true;
     } catch (error) {
-      throw await handleApiError(error);
+      throw handleApiError(error);
     }
   }
 }

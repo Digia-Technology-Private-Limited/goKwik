@@ -25,6 +25,7 @@ class CheckoutShopify extends StatefulWidget {
 class _CheckoutShopifyState extends State<CheckoutShopify> {
   String webUrl = '';
   late final WebViewController _webViewController;
+  late final WebViewCookieManager _cookieManager;
 
   final String injectedJavaScript = '''
   (function checkGoKwikSdk() {
@@ -60,6 +61,7 @@ window.addEventListener('load', function() {
   @override
   void initState() {
     super.initState();
+    _cookieManager = WebViewCookieManager();
     _initWebViewController();
     initiateCheckout();
   }
@@ -195,6 +197,19 @@ window.addEventListener('load', function() {
         ),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _resetWebView();
+    super.dispose();
+  }
+
+  // Clear cache and cookies first
+  void _resetWebView() async {
+    await _webViewController.clearCache();
+    await _webViewController.clearLocalStorage();
+    await _cookieManager.clearCookies();
   }
 
   @override
