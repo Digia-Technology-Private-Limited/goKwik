@@ -91,7 +91,16 @@ class _RootScreenState extends State<RootScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: BlocBuilder<RootCubit, RootState>(
+      body: BlocConsumer<RootCubit, RootState>(
+        listener: (context, state) {
+          if (state.error != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.error?.consume())),
+              );
+            });
+          }
+        },
         builder: (context, state) {
           final cubit = context.read<RootCubit>();
           final _isUserLoggedIn = state.isUserLoggedIn;
@@ -100,10 +109,11 @@ class _RootScreenState extends State<RootScreen> {
           final _otpSent = state.otpSent;
           final _emailOtpSent = state.emailOtpSent;
           // final _isSuccess = state.isSuccess;
-          final _createAccountError = state.createAccountError;
+          final _error = state.error;
           // final _multipleEmails = state.multipleEmails;
           final _merchantType = state.merchantType;
           // final _notifications = state.notifications;
+
           return SafeArea(
             child: Stack(
               children: [
@@ -186,8 +196,7 @@ class _RootScreenState extends State<RootScreen> {
                                                           .createUserConfig
                                                           ?.isDobRequired ??
                                                       false,
-                                                  createAccountError:
-                                                      _createAccountError,
+                                                  createAccountError: _error,
                                                   inputConfig:
                                                       widget.inputProps!,
                                                   showEmail: widget
@@ -241,9 +250,8 @@ class _RootScreenState extends State<RootScreen> {
                                                           value),
                                                   onResend: () => cubit
                                                       .resendShopifyEmailOtp(),
-                                                  initialValue: cubit
-                                                      .shopifyOtpController
-                                                      .text,
+                                                  controller: cubit
+                                                      .shopifyOtpController,
                                                 )
                                               : _otpSent
                                                   ? VerifyCodeForm(
@@ -265,8 +273,8 @@ class _RootScreenState extends State<RootScreen> {
                                                       ),
                                                       onResend: () => cubit
                                                           .resendPhoneOtp(),
-                                                      initialValue: cubit
-                                                          .otpController.text,
+                                                      controller:
+                                                          cubit.otpController,
                                                     )
                                                   : Login(
                                                       onSubmit: () =>

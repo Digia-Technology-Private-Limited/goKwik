@@ -9,6 +9,7 @@ import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/config/types.dart';
+import 'package:gokwik/module/single_use_data.dart';
 import 'package:gokwik/screens/cubit/root_model.dart';
 // Removed unused import
 import 'package:url_launcher/url_launcher.dart';
@@ -55,7 +56,7 @@ class RootCubit extends Cubit<RootState> {
           error: (response as Failure).message,
         ));
         emit(state.copyWith(
-            createAccountError: (response as Failure).message,
+            error: SingleUseData((response as Failure).message),
             isLoading: false));
         return;
       }
@@ -85,7 +86,7 @@ class RootCubit extends Cubit<RootState> {
           error: (response as Failure).message,
         ));
         emit(state.copyWith(
-            createAccountError: (response as Failure).message,
+            error: SingleUseData((response as Failure).message),
             isLoading: false));
         return;
       }
@@ -103,7 +104,7 @@ class RootCubit extends Cubit<RootState> {
         error: (err as Failure).message,
       ));
       emit(state.copyWith(
-          createAccountError: (err as Failure).message, isLoading: false));
+          error: SingleUseData((err as Failure).message), isLoading: false));
     }
   }
 
@@ -121,7 +122,7 @@ class RootCubit extends Cubit<RootState> {
       state.copyWith(isSuccess: true, isLoading: false);
     } catch (err) {
       state.copyWith(
-          createAccountError: (err as Failure).message, isLoading: false);
+          error: SingleUseData((err as Failure).message), isLoading: false);
     }
   }
 
@@ -178,20 +179,19 @@ class RootCubit extends Cubit<RootState> {
       otpController.clear();
       _listenUserStateUpdated();
     } catch (err) {
+      otpController.clear();
       onErrorData?.call(FlowResult(flowType: FlowType.otpVerify, error: err));
       emit(state.copyWith(
-          createAccountError: (err as Failure).message, isLoading: false));
+          error: SingleUseData((err as Failure).message), isLoading: false));
     }
   }
 
   void handlePhoneChange() {
-    emit(state.copyWith(
-        otpSent: false, isNewUser: true, createAccountError: null));
+    emit(state.copyWith(otpSent: false, isNewUser: true, error: null));
   }
 
   void handleEmailChange() {
-    emit(state.copyWith(
-        emailOtpSent: false, isNewUser: true, createAccountError: null));
+    emit(state.copyWith(emailOtpSent: false, isNewUser: true, error: null));
   }
 
   Future<void> linkOpenHandler(String url) async {
@@ -216,7 +216,7 @@ class RootCubit extends Cubit<RootState> {
           isSuccess: true, isUserLoggedIn: true, isLoading: false));
     } catch (err) {
       emit(state.copyWith(
-          createAccountError: (err as Failure).message, isLoading: false));
+          error: SingleUseData((err as Failure).message), isLoading: false));
     }
   }
 
@@ -234,7 +234,7 @@ class RootCubit extends Cubit<RootState> {
           emailOtpSent: true, isNewUser: false, isLoading: false));
     } catch (err) {
       emit(state.copyWith(
-          createAccountError: (err is Failure) ? err.message : err.toString(),
+          error: SingleUseData((err is Failure) ? err.message : err.toString()),
           isLoading: false,
           emailOtpSent: false));
       onErrorData
@@ -251,7 +251,7 @@ class RootCubit extends Cubit<RootState> {
           emailOtpSent: true, isNewUser: true, isLoading: false));
     } catch (err) {
       emit(state.copyWith(
-          createAccountError: (err as Failure).message, isLoading: false));
+          error: SingleUseData((err as Failure).message), isLoading: false));
     }
   }
 

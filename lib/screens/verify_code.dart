@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gokwik/screens/root.dart';
+import 'package:pinput/pinput.dart';
+
+import 'comp/pin.dart';
 
 class VerifyCodeForm extends StatefulWidget {
   final VoidCallback onResend;
@@ -12,7 +15,7 @@ class VerifyCodeForm extends StatefulWidget {
   final bool isLoading;
   final bool isSuccess;
   final String otpLabel;
-  final String? initialValue;
+  final TextEditingController controller;
   final LoadingConfig? loaderConfig;
   final OtpVerificationScreenConfig? config;
 
@@ -25,7 +28,7 @@ class VerifyCodeForm extends StatefulWidget {
       this.isLoading = false,
       this.isSuccess = false,
       required this.otpLabel,
-      required this.initialValue,
+      required this.controller,
       this.loaderConfig,
       this.config});
 
@@ -39,7 +42,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   int _seconds = 30;
   bool _isResendDisabled = true;
   int _attempts = 0;
-  final List<FocusNode> _focusNodes = [];
+  // final List<FocusNode> _focusNodes = [];
   final List<TextEditingController> _controllers = [];
   final _formKey = GlobalKey<FormState>();
   String? _errorText;
@@ -51,7 +54,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   void initState() {
     super.initState();
     for (int i = 0; i < _cellCount; i++) {
-      _focusNodes.add(FocusNode());
+      // _focusNodes.add(FocusNode());
       _controllers.add(TextEditingController());
     }
     _startTimer();
@@ -60,9 +63,9 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   @override
   void dispose() {
     _timer?.cancel();
-    for (var node in _focusNodes) {
-      node.dispose();
-    }
+    // for (var node in _focusNodes) {
+    //   node.dispose();
+    // }
     for (var controller in _controllers) {
       controller.dispose();
     }
@@ -93,32 +96,32 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     }
   }
 
-  void _onChanged(String value, int index) {
-    if (value.length == 1 && index < _cellCount - 1) {
-      _focusNodes[index + 1].requestFocus();
-    }
-    _validateOtp();
-  }
+  // void _onChanged(String value, int index) {
+  //   // if (value.length == 1 && index < _cellCount - 1) {
+  //   //   _focusNodes[index + 1].requestFocus();
+  //   // }
+  //   _validateOtp();
+  // }
 
-  void _onBackspace(int index) {
-    if (index > 0 && _controllers[index].text.isEmpty) {
-      _focusNodes[index - 1].requestFocus();
-    }
-    _validateOtp();
-  }
+  // void _onBackspace(int index) {
+  //   // if (index > 0 && _controllers[index].text.isEmpty) {
+  //   //   _focusNodes[index - 1].requestFocus();
+  //   // }
+  //   _validateOtp();
+  // }
 
-  void _validateOtp() {
-    final otp = _controllers.map((c) => c.text).join();
-    if (otp.length == _cellCount) {
-      final error = widget.validator?.call(otp) ?? _defaultValidator(otp);
-      setState(() => _errorText = error);
-      if (error == null) {
-        widget.onVerify(otp);
-      }
-    } else {
-      setState(() => _errorText = null);
-    }
-  }
+  // void _validateOtp() {
+  //   final otp = _controllers.map((c) => c.text).join();
+  //   if (otp.length == _cellCount) {
+  //     final error = widget.validator?.call(otp) ?? _defaultValidator(otp);
+  //     setState(() => _errorText = error);
+  //     if (error == null) {
+  //       widget.onVerify(otp);
+  //     }
+  //   } else {
+  //     setState(() => _errorText = null);
+  //   }
+  // }
 
   String? _defaultValidator(String? value) {
     if (value == null || value.isEmpty) {
@@ -184,68 +187,108 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
             ],
           ),
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(_cellCount, (index) {
-              return SizedBox(
-                width: 60,
-                height: 60,
-                child: TextFormField(
-                  controller: _controllers[index],
-                  focusNode: _focusNodes[index],
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  maxLength: 1,
-                  style: widget.config?.cellTextStyle ??
-                      const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                  decoration: InputDecoration(
-                    counterText: '',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(
-                        color: Colors.black,
-                        width: 2,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(
-                        color: Colors.black,
-                        width: 2,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: _errorText != null ? Colors.red : Colors.black,
-                        width: 2,
-                      ),
-                    ),
-                    hintText: widget.config?.otpPlaceholder,
-                    hintStyle: widget.config?.otpPlaceholderStyle ??
-                        const TextStyle(
-                          color: Colors.black,
-                        ),
+          PinField(
+            length: _cellCount,
+            controller: widget.controller,
+            onChanged: (value) {
+              setState(() {
+                _errorText = value.length == _cellCount
+                    ? widget.validator?.call(value) ?? _defaultValidator(value)
+                    : null;
+              });
+            },
+            onCompleted: (value) {
+              final error =
+                  widget.validator?.call(value) ?? _defaultValidator(value);
+              if (error == null) {
+                widget.onVerify(value);
+              } else {
+                setState(() => _errorText = error);
+              }
+            },
+            pinTheme: PinTheme(
+              width: 60,
+              height: 60,
+              textStyle: widget.config?.cellTextStyle ??
+                  const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
                   ),
-                  onChanged: (value) => _onChanged(value, index),
-                  onEditingComplete: () {
-                    if (index < _cellCount - 1) {
-                      _focusNodes[index + 1].requestFocus();
-                    }
-                  },
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(1),
-                  ],
-                  enabled: !widget.isLoading && !widget.isSuccess,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: _errorText != null ? Colors.red : Colors.black,
+                  width: 2,
                 ),
-              );
-            }),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+            ],
           ),
+          // Row(
+          //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          //   children: List.generate(_cellCount, (index) {
+          //     return SizedBox(
+          //       width: 60,
+          //       height: 60,
+          //       child: TextFormField(
+          //         controller: _controllers[index],
+          //         focusNode: _focusNodes[index],
+          //         keyboardType: TextInputType.number,
+          //         textAlign: TextAlign.center,
+          //         maxLength: 1,
+          //         style: widget.config?.cellTextStyle ??
+          //             const TextStyle(
+          //               fontSize: 24,
+          //               fontWeight: FontWeight.bold,
+          //               color: Colors.black,
+          //             ),
+          //         decoration: InputDecoration(
+          //           counterText: '',
+          //           border: OutlineInputBorder(
+          //             borderRadius: BorderRadius.circular(8),
+          //             borderSide: const BorderSide(
+          //               color: Colors.black,
+          //               width: 2,
+          //             ),
+          //           ),
+          //           focusedBorder: OutlineInputBorder(
+          //             borderRadius: BorderRadius.circular(8),
+          //             borderSide: const BorderSide(
+          //               color: Colors.black,
+          //               width: 2,
+          //             ),
+          //           ),
+          //           enabledBorder: OutlineInputBorder(
+          //             borderRadius: BorderRadius.circular(8),
+          //             borderSide: BorderSide(
+          //               color: _errorText != null ? Colors.red : Colors.black,
+          //               width: 2,
+          //             ),
+          //           ),
+          //           hintText: widget.config?.otpPlaceholder,
+          //           hintStyle: widget.config?.otpPlaceholderStyle ??
+          //               const TextStyle(
+          //                 color: Colors.black,
+          //               ),
+          //         ),
+          //         onChanged: (value) => _onChanged(value, index),
+          //         onEditingComplete: () {
+          //           if (index < _cellCount - 1) {
+          //             _focusNodes[index + 1].requestFocus();
+          //           }
+          //         },
+          //         inputFormatters: [
+          //           FilteringTextInputFormatter.digitsOnly,
+          //           LengthLimitingTextInputFormatter(1),
+          //         ],
+          //         enabled: !widget.isLoading && !widget.isSuccess,
+          //       ),
+          //     );
+          //   }),
+          // ),
           if (_errorText != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),

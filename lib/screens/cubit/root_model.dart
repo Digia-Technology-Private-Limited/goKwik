@@ -1,4 +1,5 @@
 import 'package:gokwik/config/types.dart';
+import 'package:gokwik/module/single_use_data.dart';
 import 'package:gokwik/screens/root.dart';
 
 enum RootScreenStep {
@@ -14,7 +15,7 @@ enum RootScreenStep {
 class RootState {
   final bool isUserLoggedIn;
   final MerchantType merchantType;
-  final String? createAccountError;
+  final SingleUseData? error;
   final bool isLoading;
 
   final bool notifications;
@@ -29,7 +30,7 @@ class RootState {
   const RootState({
     this.isUserLoggedIn = false,
     this.merchantType = MerchantType.shopify,
-    this.createAccountError,
+    this.error,
     this.isLoading = false,
     this.notifications = true,
     this.otpSent = false,
@@ -44,7 +45,7 @@ class RootState {
   RootState copyWith({
     bool? isUserLoggedIn,
     MerchantType? merchantType,
-    String? createAccountError,
+    SingleUseData? error,
     bool? isLoading,
     bool? notifications,
     bool? otpSent,
@@ -58,7 +59,7 @@ class RootState {
     return RootState(
       isUserLoggedIn: isUserLoggedIn ?? this.isUserLoggedIn,
       merchantType: merchantType ?? this.merchantType,
-      createAccountError: createAccountError ?? this.createAccountError,
+      error: error ?? this.error,
       isLoading: isLoading ?? this.isLoading,
       notifications: notifications ?? this.notifications,
       otpSent: otpSent ?? this.otpSent,
