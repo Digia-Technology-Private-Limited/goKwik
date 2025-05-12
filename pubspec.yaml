@@ -49,7 +49,6 @@ dependencies:
   # flutter_datetime_picker: ^1.5.1
   snowplow_tracker: ^0.7.0
   uuid: ^4.0.0
-  sms_autofill: ^2.3.0
   flutter_otp_text_field: ^1.1.1
   bloc: ^8.1.0
   flutter_bloc: ^8.1.0
@@ -58,6 +57,8 @@ dependencies:
   synchronized: ^3.0.0 
   advertising_id: ^2.2.0
   app_tracking_transparency: ^2.0.6+1
+  pinput: ^5.0.0
+  smart_auth: ^2.0.0
   # flutter_local_notifications: ^13.0.0
 
 
