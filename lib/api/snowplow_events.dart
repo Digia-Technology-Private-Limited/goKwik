@@ -52,20 +52,30 @@ class SnowplowTrackerService {
 
   // Context Generators
   static Future<SelfDescribing?> getCartContext(String cartId) async {
-    if (cartId.isEmpty) return null;
-    return _createContext(
-        'com.shopify/cart/jsonschema/1-0-0', {'id': cartId, 'token': cartId});
+    if (cartId.isEmpty) {
+      return null;
+    }
+
+    return SelfDescribing(
+      schema: 'iglu:com.shopify/cart/jsonschema/1-0-0',
+      data: {
+        'id': cartId,
+        'token': cartId,
+      },
+    );
   }
 
   static Future<SelfDescribing?> getUserContext() async {
     final userJson =
         (await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey)) ?? '{}';
-    var user = userJson != "{}" ? VerifiedUser.fromJson(jsonDecode(userJson)) : null;
+    var user =
+        userJson != "{}" ? VerifiedUser.fromJson(jsonDecode(userJson)) : null;
 
-    var phone = user != null ? user!.phone.replaceAll(RegExp(r'^\+91'), '') : null;
+    var phone =
+        user != null ? user!.phone.replaceAll(RegExp(r'^\+91'), '') : null;
     final numericPhoneNumber = int.tryParse(phone ?? '');
 
-    if (numericPhoneNumber != null || (user != null &&  user.email != null)) {
+    if (numericPhoneNumber != null || (user != null && user.email != null)) {
       return _createContext(
         'user/jsonschema/1-0-0',
         {
@@ -78,7 +88,7 @@ class SnowplowTrackerService {
   }
 
   static Future<SelfDescribing> getProductContext(
-      TrackProductEventArgs contextData) async {
+      TrackProductEventContext contextData) async {
     return _createContext('product/jsonschema/1-1-0', contextData.toJson());
   }
 
@@ -97,20 +107,20 @@ class SnowplowTrackerService {
         'ios_ad_id': Platform.isIOS ? deviceInfo[KeyConfig.gkGoogleAdId] : '',
         'fcm_token': deviceFCM ?? '',
         'app_domain': deviceInfo[KeyConfig.gkAppDomain],
-        'device_type': Platform.operatingSystem,
+        'device_type': Platform.operatingSystem.toLowerCase(),
         'app_version': deviceInfo[KeyConfig.gkAppVersion],
       },
     );
   }
 
   static Future<SelfDescribing> getCollectionsContext(
-      TrackCollectionsEventArgs args) async {
+      TrackCollectionEventContext params) async {
     return _createContext('product/jsonschema/1-1-0', {
-      'collection_id': args.collectionId,
-      'img_url': args.imageUrl ?? '',
-      'collection_name': args.name,
-      'collection_handle': args.handle,
-      'type': 'collection',
+      'collection_id': params.collection_id,
+      'img_url': params.img_url ?? '',
+      'collection_name': params.collection_name,
+      'collection_handle': params.collection_handle,
+      'type': params.type,
     });
   }
 
@@ -131,9 +141,9 @@ class SnowplowTrackerService {
       // Log event parameters and context
       print('EVENT PARAMS: ${jsonEncode(params)}');
       print('EVENT CONTEXT: ${jsonEncode(eventContext.map((e) => {
-        'schema': e.schema,
-        'data': e.data,
-      }).toList())}');
+            'schema': e.schema,
+            'data': e.data,
+          }).toList())}');
 
       final snowplow = await _initializeSnowplowClient();
       if (snowplow == null) return;
@@ -160,41 +170,38 @@ class SnowplowTrackerService {
 
   // Specific Event Trackers
   static Future<void> trackProductEvent(TrackProductEventArgs args) async {
-
-
     final isTrackingEnabled =
         await cacheInstance.getValue(KeyConfig.isSnowplowTrackingEnabled);
     if (isTrackingEnabled == 'false') return;
 
-    String cartId = args.cartId.toString() ?? '';
-    debugPrint("cartId" + cartId.toString());
+    String cartId = args.cartId;
     if (cartId.contains('gid://shopify/Cart/')) {
       cartId = _trimCartId(cartId);
     }
 
     final params = {
-      'page_url': args.pageUrl ?? '',
-      'page_title': args.name,
+      'page_url': args.pageUrl,
+      'page_title': args.name ?? '',
       'product_id': args.productId.toString(),
-      'variant_id': args.variantId.toString() ?? '',
-       if (cartId.isNotEmpty) 'cartId': cartId ?? '',
+      'variant_id': args.variantId.toString(),
     };
 
+    if (cartId.isNotEmpty) {
+      params['cart_id'] = cartId;
+    }
 
-    final contextDetails = {
-      'product_id': args.productId.toString() ?? '',
-      'img_url': args.imgUrl.toString() ?? '',
-      'variant_id': args.variantId.toString() ?? '',
-      'product_name': args.name.toString() ?? '',
-      'product_price': args.price.toString() ?? '',
-      'product_handle': args.handle.toString() ?? '',
-      'type': 'product',
-    };
-
-    debugPrint("Args " +  contextDetails.values.toString());
+    final contextDetails = TrackProductEventContext(
+      productId: args.productId.toString(),
+      imgUrl: args.imgUrl ?? '',
+      variantId: args.variantId.toString(),
+      productName: args.name ?? '',
+      productPrice: args.price?.toString() ?? '',
+      productHandle: args.handle?.toString() ?? '',
+      type: 'product',
+    );
 
     final contexts = await Future.wait([
-      getProductContext(TrackProductEventArgs.fromJson(contextDetails)),
+      getProductContext(contextDetails),
       getCartContext(cartId),
       getUserContext(),
       getDeviceInfoContext(),
@@ -204,7 +211,8 @@ class SnowplowTrackerService {
   }
 
   static String _trimCartId(String cartId) {
-    final cartIdMatch = RegExp(r'gid://shopify/Cart/([^?]+)').firstMatch(cartId);
+    final cartIdMatch =
+        RegExp(r'gid://shopify/Cart/([^?]+)').firstMatch(cartId);
     return cartIdMatch?.group(1) ?? '';
   }
 
@@ -244,7 +252,7 @@ class SnowplowTrackerService {
       pageUrl = 'https://$merchantUrl/collections/${args.handle}';
     }
 
-    String cartId = args.cartId ?? '';
+    String cartId = args.cartId;
     if (cartId.contains('gid://shopify/Cart/')) {
       cartId = _trimCartId(cartId);
     }
@@ -252,22 +260,22 @@ class SnowplowTrackerService {
     final params = {
       'pageUrl': pageUrl,
       'cart_id': cartId,
-      'collection_id': args.collectionId?.toString(),
+      'collection_id': args.collectionId.toString(),
       'name': args.name,
       'image_url': args.imageUrl ?? '',
       'handle': args.handle?.toString() ?? '',
     };
 
     final contextDetails = TrackCollectionEventContext(
-      collectionId: args?.collectionId?.toString() ?? '',
-      imgUrl: args.imageUrl,
-      collectionName: args.name,
-      collectionHandle: args.handle ?? '',
+      collection_id: args.collectionId.toString(),
+      img_url: args.imageUrl,
+      collection_name: args.name,
+      collection_handle: args.handle ?? '',
       type: 'collection',
     );
 
     final contexts = await Future.wait([
-      getCollectionsContext(args),
+      getCollectionsContext(contextDetails),
       getUserContext(),
       getCartContext(cartId),
       getDeviceInfoContext(),
@@ -373,7 +381,8 @@ class SnowplowTrackerService {
 
       await snowplow?.track(
         SelfDescribing(
-          schema: 'iglu:com.snowplowanalytics.snowplow/structured_event/jsonschema/1-0-0',
+          schema:
+              'iglu:com.snowplowanalytics.snowplow/structured_event/jsonschema/1-0-0',
           data: {
             'category': args['category'],
             'action': args['action'],
@@ -389,7 +398,7 @@ class SnowplowTrackerService {
     }
   }
 
-  static Future<void> trackOtherEvent([TrackOtherEventArgs? args]) async {
+  static Future<void> trackOtherEvent(TrackOtherEventArgs? args) async {
     String url = args?.pageUrl ?? '';
 
     String cartId = args?.cartId ?? '';
@@ -397,7 +406,9 @@ class SnowplowTrackerService {
       cartId = _trimCartId(cartId);
     }
 
-    final params = {'pageUrl': url};
+    final params = {
+      'pageUrl': url,
+    };
 
     final contexts = await Future.wait([
       getOtherEventsContext(),

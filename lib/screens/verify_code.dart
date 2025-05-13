@@ -109,7 +109,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
           final exp = RegExp(r'(\d{4})');
 
           final otp = exp.stringMatch(code ?? '') ?? '';
-          widget.onVerify(otp);
+          // widget.onVerify(otp);
 
           print('code ${code}');
           print('exp ${exp.stringMatch(code ?? '')}');
@@ -200,7 +200,6 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     final otp = pinputController.text;
 
     final code = _defaultValidator(otp);
-      print("code::: $code");
 
     if (otp.length == _cellCount) {
       final error = widget.validator?.call(otp) ?? _defaultValidator(otp);
@@ -288,7 +287,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
             cursorColor: Colors.black,
             enableActiveFill: true,
             keyboardType: TextInputType.number,
-            animationType: AnimationType.none,
+            animationType: AnimationType.fade,
             inputFormatters: <TextInputFormatter>[
               FilteringTextInputFormatter.digitsOnly
             ],
@@ -380,10 +379,11 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
               ),
               onPressed: () {
                 final otp = pinputController.text;
-                final error = widget.validator?.call(otp) ?? _defaultValidator(otp);
+                final error =
+                    widget.validator?.call(otp) ?? _defaultValidator(otp);
                 print("ERROR ON SUBMIT $error");
                 _errorText = error;
-                if(error == null){
+                if (error == null) {
                   widget.onVerify(otp);
                 }
               },

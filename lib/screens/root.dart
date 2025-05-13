@@ -375,18 +375,24 @@ class _RootScreenState extends State<RootScreen> {
                 ),
                 if (widget.enableGuestLogin)
                   Positioned(
-                    top: 8,
-                    right: 20,
+                    top: 12,
+                    right: 12,
                     child: Container(
                       decoration: widget.guestContainerStyle?.copyWith(
                             color: Colors.black,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(6),
                           ) ??
                           BoxDecoration(
                             color: Colors.black,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                       child: TextButton(
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 6),
+                          minimumSize: Size(0, 0),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
                         onPressed: () =>
                             cubit.handleSkip(widget.onGuestLoginPress),
                         child: Text(

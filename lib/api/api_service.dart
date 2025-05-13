@@ -514,13 +514,13 @@ abstract class ApiService {
     try {
       final gokwik = DioClient().getClient();
 
-      await SnowplowTrackerService.sendCustomEventToSnowPlow({
-        'category': 'login_modal',
-        'label': 'submit_otp',
-        'action': 'automated',
-        'property': 'phone_number',
-        'value': int.tryParse(phoneNumber) ?? 0,
-      });
+      // await SnowplowTrackerService.sendCustomEventToSnowPlow({
+      //   'category': 'login_modal',
+      //   'label': 'submit_otp',
+      //   'action': 'automated',
+      //   'property': 'phone_number',
+      //   'value': int.tryParse(phoneNumber) ?? 0,
+      // });
 
       final response = (await gokwik.post(
         'auth/otp/verify',
@@ -530,6 +530,8 @@ abstract class ApiService {
         },
       ))
           .toBaseResponse();
+
+      print("RESPONSE FOR VERIFY CODE ::::: ${response.data}");
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to verify OTP');
       }
@@ -542,13 +544,15 @@ abstract class ApiService {
           await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
 
       if (merchantType == 'shopify') {
-        return _handleShopifyVerifyResponse(
+        final res = await _handleShopifyVerifyResponse(
           response.data,
           phoneNumber,
           token,
           coreToken,
           kpToken,
         );
+
+        return Success(res);
       }
 
       if (token != null) {
@@ -616,15 +620,19 @@ abstract class ApiService {
       await cacheInstance.setValue(KeyConfig.checkoutAccessTokenKey, coreToken);
     }
 
-    final responseForAffluence = await customerIntelligence();
+    final responseForAffluence = null;
+    //  await customerIntelligence();
 
-    if (responseData?['state'] == 'DISABLED') {
+    if (responseData?['state'] == 'DISABLED' ||
+        responseData?['state'] == 'ENABLED') {
       final multipassResponse = await ShopifyService.getShopifyMultipassToken(
         phone: phoneNumber,
         email: responseData?['email'],
         id: responseData?['shopifyCustomerId'],
         state: responseData?['state'],
       );
+
+      print("MULTIPASS RESPONSE ::::: ${multipassResponse}");
 
       if (multipassResponse?['data']?['accountActivationUrl'] != null &&
           multipassResponse?['data']?['shopifyCustomerId'] != null) {
@@ -648,13 +656,13 @@ abstract class ApiService {
       if (responseForAffluence != null) {
         multipassResponse['data']['affluence'] = responseForAffluence;
       }
-      await SnowplowTrackerService.sendCustomEventToSnowPlow({
-        'category': 'login_modal',
-        'label': 'phone_Number_logged_in',
-        'action': 'logged_in',
-        'property': 'phone_number',
-        'value': int.tryParse(phoneNumber) ?? 0,
-      });
+      // await SnowplowTrackerService.sendCustomEventToSnowPlow({
+      //   'category': 'login_modal',
+      //   'label': 'phone_Number_logged_in',
+      //   'action': 'logged_in',
+      //   'property': 'phone_number',
+      //   'value': int.tryParse(phoneNumber) ?? 0,
+      // });
 
       return Success(multipassResponse);
     }
@@ -693,13 +701,13 @@ abstract class ApiService {
     if (responseForAffluence != null) {
       responseData['data']['affluence'] = responseForAffluence;
     }
-    await SnowplowTrackerService.sendCustomEventToSnowPlow({
-      'category': 'login_modal',
-      'label': 'phone_Number_logged_in',
-      'action': 'logged_in',
-      'property': 'phone_number',
-      'value': int.tryParse(phoneNumber) ?? 0,
-    });
+    // await SnowplowTrackerService.sendCustomEventToSnowPlow({
+    //   'category': 'login_modal',
+    //   'label': 'phone_Number_logged_in',
+    //   'action': 'logged_in',
+    //   'property': 'phone_number',
+    //   'value': int.tryParse(phoneNumber) ?? 0,
+    // });
 
     return responseData;
   }

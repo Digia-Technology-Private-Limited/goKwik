@@ -10,12 +10,14 @@ class ProfileScreen extends StatelessWidget {
   Future<void> handleProductEvents() async {
     // TODO: Implement product event tracking
     final productEvent = TrackProductEventArgs(
+      pageUrl: 'https://gokwikproduction.myshopify.com/',
       cartId:
-        'gid://shopify/Cart/Z2NwLWFzaWEtc291dGhlYXN0MTowMUpSQU1RNEhCN1I4S0tNOTJRR0tDRDRYRg?key=d9e7d5fb318b9c9d3fa45ca704a19d6e',
+          'gid://shopify/Cart/Z2NwLWFzaWEtc291dGhlYXN0MTowMUpSQU1RNEhCN1I4S0tNOTJRR0tDRDRYRg?key=d9e7d5fb318b9c9d3fa45ca704a19d6e',
       productId: "123",
       variantId: "456",
       handle: "all-products",
-      imgUrl: "https://cdn.shopify.com/s/files/1/0727/0216/5282/products/2015-03-20_Ashley_Look_20_23515_15565.jpg?v=1677584331",
+      imgUrl:
+          "https://cdn.shopify.com/s/files/1/0727/0216/5282/products/2015-03-20_Ashley_Look_20_23515_15565.jpg?v=1677584331",
       name: "All Products",
       price: "100.0",
     );

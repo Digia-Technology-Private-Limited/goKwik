@@ -47,21 +47,21 @@ class _LoginScreenState extends State<LoginScreen> {
             Navigator.pop(context);
           },
           inputProps: const TextInputConfig(
-            phoneAuthScreen: PhoneAuthScreenConfig(
-              title: "HELLLO",
-              subTitle: "SUBTITLE",
-              phoneNumberPlaceholder: "Enter your phone",
-              submitButtonText: "Submit",
-              updatesPlaceholder: "Receive updates on WhatsApp",
-              updatesTextStyle: const TextStyle(
-                color: Colors.black,
-                fontSize: 16,
+              phoneAuthScreen: PhoneAuthScreenConfig(
+                title: "HELLLO",
+                subTitle: "SUBTITLE",
+                phoneNumberPlaceholder: "Enter your phone",
+                submitButtonText: "Submit",
+                updatesPlaceholder: "Receive updates on WhatsApp",
+                updatesTextStyle: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                ),
               ),
-            ),
-            otpVerificationScreen: OtpVerificationScreenConfig(
-              title: "Enter the code sent to your phone",
-            )
-          ),
+              otpVerificationScreen: OtpVerificationScreenConfig(
+                title: "Enter the code sent to your phone",
+                subTitle: "Submit",
+              )),
           footerText: 'By continuing, you agree to our',
           // footerHyperlinkStyle: const TextStyle(
           //   color: Colors.black,

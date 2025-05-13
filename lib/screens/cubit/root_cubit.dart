@@ -9,7 +9,6 @@ import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/config/types.dart';
-import 'package:gokwik/screens/create_account.dart';
 import 'package:gokwik/screens/cubit/root_model.dart';
 // Removed unused import
 import 'package:url_launcher/url_launcher.dart';
@@ -127,7 +126,8 @@ class RootCubit extends Cubit<RootState> {
         flowType: FlowType.otpSend,
         error: (err as Failure).message,
       ));
-      emit(state.copyWith(createAccountError: (err as Failure).message, isLoading: false));
+      emit(state.copyWith(
+          createAccountError: (err as Failure).message, isLoading: false));
     }
   }
 
@@ -162,36 +162,43 @@ class RootCubit extends Cubit<RootState> {
     try {
       final response = (await ApiService.verifyCode(phoneController.text, otp))
           .getDataOrThrow();
-      print('handleOtpVerification response ${response}');
-      if (state.merchantType.name == 'shopify' && response['email'] != null) {
-        if (response['phone'] == null) {
-          response['phone'] = phoneController.text;
+      final responseData = response.getDataOrThrow();
+      print('handleOtpVerification response ${responseData}');
+      print('state.merchantType.name ${state.merchantType.name}');
+
+      if (state.merchantType.name == 'shopify' &&
+          responseData.data['email'] != null) {
+        if (responseData.data['phone'] == null) {
+          responseData.data['phone'] = phoneController.text;
         }
-        onSuccessData
-            ?.call(FlowResult(flowType: FlowType.otpVerify, data: response));
+
         emit(state.copyWith(
             isSuccess: true,
-            isNewUser: response['isNewUser'],
+            isNewUser: responseData.data['isNewUser'],
             isLoading: false));
+
+        onSuccessData?.call(
+            FlowResult(flowType: FlowType.otpVerify, data: responseData));
       }
-      if (response['multiple_emails'] != null) {
+      if (responseData.data['multiple_emails'] != null) {
         emit(state.copyWith(
-          multipleEmails: response['multiple_emails'],
+          multipleEmails: responseData.data['multiple_emails'],
           isSuccess: true,
         ));
       }
-      if (response['emailRequired'] != null && response['email']) {
+      if (responseData.data['emailRequired'] != null &&
+          responseData.data['email'] == null) {
         emit(state.copyWith(
           isNewUser: true,
         ));
       }
-      if (response['merchantResponse']['email'] != null) {
-        if (response['merchantResponse']['phone'] == null) {
-          response['merchantResponse']['phone'] = phoneController.text;
+      if (responseData.data['merchantResponse']['email'] != null) {
+        if (responseData.data['merchantResponse']['phone'] == null) {
+          responseData.data['merchantResponse']['phone'] = phoneController.text;
         }
         onSuccessData?.call(FlowResult(
           flowType: FlowType.otpVerify,
-          data: response['merchantResponse'],
+          data: responseData.data['merchantResponse'],
         ));
         emit(state.copyWith(isSuccess: true, isLoading: false));
       }
@@ -201,8 +208,8 @@ class RootCubit extends Cubit<RootState> {
         flowType: FlowType.otpVerify,
         error: (err as Failure).message,
       ));
-      emit(
-          state.copyWith(createAccountError: (err as Failure).message, isLoading: false));
+      emit(state.copyWith(
+          createAccountError: (err as Failure).message, isLoading: false));
     }
   }
 

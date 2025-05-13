@@ -1,9 +1,7 @@
 import 'package:gokwik/api/api_service.dart';
-import 'package:gokwik/api/base_response.dart';
 import 'package:gokwik/config/storege.dart';
 import 'package:gokwik/config/types.dart';
 import 'package:gokwik/module/logger.dart';
-import 'package:gokwik/screens/cubit/root_cubit.dart';
 
 class GoKwikClient {
   static final GoKwikClient _instance = GoKwikClient._();
