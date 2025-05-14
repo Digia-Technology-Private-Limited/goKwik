@@ -12,14 +12,10 @@ import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/config/storege.dart';
-import 'package:gokwik/module/advertise.dart';
-import 'package:gokwik/module/logger.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/types.dart';
-
 import 'sdk_config.dart';
 import 'shopify_service.dart';
 
@@ -29,22 +25,22 @@ abstract class ApiService {
 
     if (error is DioException) {
       final response = error.response?.toBaseResponse();
+      print('response in handleApiError ${response}');
       if (response != null) {
         final data = response.error;
         final status = response.statusCode;
         final requestId = response.requestId ?? 'N/A';
 
-        if (data != null && (data != null || response.errorMessage != null)) {
-          message = (data ?? response.errorMessage).toString();
-        } else {
-          message = 'Unexpected error with status: $status';
-        }
+        message = response.errorMessage?.toString() ??
+            response.error_msg?.toString() ??
+            'Unexpected error with status: $status';
 
-        return (Failure(message));
+        return Failure(message);
       }
     }
 
-    return (Failure(message));
+    return Failure(message);
+
   }
 
   static String getHostName(String url) {
@@ -95,7 +91,9 @@ abstract class ApiService {
           response.errorMessage ?? 'Failed to fetch customer intelligence');
     } catch (err) {
       final apiError = handleApiError(err);
+
       return apiError;
+
     }
   }
 
@@ -111,14 +109,14 @@ abstract class ApiService {
     };
 
     try {
-      final phone = await cacheInstance.getValue(KeyConfig.gkUserPhone);
-      await SnowplowTrackerService.sendCustomEventToSnowPlow({
-        'category': 'login_modal',
-        'label': 'account_activated',
-        'action': 'automated',
-        'property': 'phone_number',
-        'value': int.tryParse(phone ?? '0') ?? 0,
-      });
+      // final phone = await cacheInstance.getValue(KeyConfig.gkUserPhone);
+      // await SnowplowTrackerService.sendCustomEventToSnowPlow({
+      //   'category': 'login_modal',
+      //   'label': 'account_activated',
+      //   'action': 'automated',
+      //   'property': 'phone_number',
+      //   'value': int.tryParse(phone ?? '0') ?? 0,
+      // });
 
       final response = await Dio().post(
         'https://$url/account/activate',
@@ -130,8 +128,9 @@ abstract class ApiService {
       );
       return Success(response);
     } catch (err) {
+
       final apiError = handleApiError(err);
-      return Failure(apiError.message);
+      return apiError;
     }
   }
 
@@ -159,8 +158,7 @@ abstract class ApiService {
 
       return Success(response.data);
     } catch (err) {
-      final apiError = await handleApiError(err);
-      return Failure(apiError.message);
+      throw handleApiError(err);
     }
   }
 
@@ -182,7 +180,7 @@ abstract class ApiService {
       return Success(merchantRes);
     } catch (error) {
       print('Error fetching merchant configuration: $error');
-      throw await handleApiError(error);
+      throw handleApiError(error);
     }
   }
 
@@ -198,13 +196,13 @@ abstract class ApiService {
 
       final gokwik = DioClient().getClient();
 
-      await Logger().log(
-        'SDK Initialized',
-        data: jsonEncode({
-          'mid': mid,
-          'environment': environment.name,
-        }),
-      );
+      // await Logger().log(
+      //   'SDK Initialized',
+      //   data: jsonEncode({
+      //     'mid': mid,
+      //     'environment': environment.name,
+      //   }),
+      // );
 
       await Future.wait([
         cacheInstance.setValue(
@@ -248,8 +246,6 @@ abstract class ApiService {
           final platform =
               merchantConfigData!.platform.toString().toLowerCase();
           await cacheInstance.setValue(KeyConfig.gkMerchantTypeKey, platform);
-          // Event emission would be handled differently in Flutter
-          //TODO: @Ram
         }
 
         final hostName = getHostName(merchantConfigData!.host);
@@ -298,10 +294,13 @@ abstract class ApiService {
         KeyConfig.gkTimeZone: DateTime.now().timeZoneName,
       };
 
-      final advertisingInfo = await AdvertisingInfo.getAdvertisingInfo();
-      if (advertisingInfo.id != null) {
-        deviceInfoDetails[KeyConfig.gkGoogleAdId] = advertisingInfo.id!;
-      }
+      print('deviceInfoDetails ${deviceInfoDetails}');
+
+      // final advertisingInfo = await AdvertisingInfo.getAdvertisingInfo();
+      // print('advertisingInfo ${advertisingInfo}');
+      // if (advertisingInfo.id != null) {
+      //   deviceInfoDetails[KeyConfig.gkGoogleAdId] = advertisingInfo.id!;
+      // }
 
       await cacheInstance.setValue(
         KeyConfig.gkDeviceInfo,
@@ -317,7 +316,10 @@ abstract class ApiService {
       return {'message': 'Initialization Successful'};
     } catch (error) {
       print('error in initialize sdk: $error');
-      throw await handleApiError(error);
+      if (error is Failure) {
+        throw handleApiError(error);
+      }
+      throw error;
     }
   }
 
@@ -356,7 +358,6 @@ abstract class ApiService {
           'value': int.tryParse(phoneNumber) ?? 0,
         }),
       ]);
-
       final response = (await gokwik.post(
         'auth/otp/send',
         data: {'phone': phoneNumber},
@@ -364,6 +365,14 @@ abstract class ApiService {
           .toBaseResponse(
         fromJson: (json) => OtpSentResponseData.fromJson(json),
       );
+
+      // if(response.statusCode == 200){
+      //   var res = OtpSentResponseData.fromJson(response.data);
+      //   print("RESPONSE :::::::: ${res}");
+      // }else{
+      //   //manage error
+      // }
+
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to send OTP');
       }
@@ -377,7 +386,9 @@ abstract class ApiService {
 
       return Success(response.data);
     } catch (error) {
-      throw await handleApiError(error);
+      // var test =   handleApiError(error);
+      // return test;
+      throw handleApiError(error);
     }
   }
 
@@ -393,7 +404,7 @@ abstract class ApiService {
       }
       return Success(response.data);
     } catch (err) {
-      throw await handleApiError(err);
+      throw handleApiError(err);
     }
   }
 
@@ -456,7 +467,7 @@ abstract class ApiService {
 
       return Success(userRes);
     } catch (err) {
-      throw await handleApiError(err);
+      throw handleApiError(err);
     }
   }
 
@@ -496,7 +507,7 @@ abstract class ApiService {
 
       return Success(responseData);
     } catch (err) {
-      throw await handleApiError(err);
+      throw handleApiError(err);
     }
   }
 
@@ -504,13 +515,13 @@ abstract class ApiService {
     try {
       final gokwik = DioClient().getClient();
 
-      await SnowplowTrackerService.sendCustomEventToSnowPlow({
-        'category': 'login_modal',
-        'label': 'submit_otp',
-        'action': 'automated',
-        'property': 'phone_number',
-        'value': int.tryParse(phoneNumber) ?? 0,
-      });
+      // await SnowplowTrackerService.sendCustomEventToSnowPlow({
+      //   'category': 'login_modal',
+      //   'label': 'submit_otp',
+      //   'action': 'automated',
+      //   'property': 'phone_number',
+      //   'value': int.tryParse(phoneNumber) ?? 0,
+      // });
 
       final response = (await gokwik.post(
         'auth/otp/verify',
@@ -520,6 +531,8 @@ abstract class ApiService {
         },
       ))
           .toBaseResponse();
+
+      print("RESPONSE FOR VERIFY CODE ::::: ${response.data}");
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to verify OTP');
       }
@@ -532,13 +545,15 @@ abstract class ApiService {
           await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
 
       if (merchantType == 'shopify') {
-        return _handleShopifyVerifyResponse(
+        final res = await _handleShopifyVerifyResponse(
           response.data,
           phoneNumber,
           token,
           coreToken,
           kpToken,
         );
+
+        return res;
       }
 
       if (token != null) {
@@ -578,7 +593,7 @@ abstract class ApiService {
 
       return loginResponse;
     } catch (error) {
-      throw await handleApiError(error);
+      throw handleApiError(error);
     }
   }
 
@@ -606,9 +621,12 @@ abstract class ApiService {
       await cacheInstance.setValue(KeyConfig.checkoutAccessTokenKey, coreToken);
     }
 
-    final responseForAffluence = (await customerIntelligence());
+    final responseForAffluence = null;
+    //  await customerIntelligence();
 
-    if (responseData?['state'] == 'DISABLED') {
+
+    if (responseData?['state'] == 'DISABLED' ||
+        responseData?['state'] == 'ENABLED') {
       final multipassResponse = await ShopifyService.getShopifyMultipassToken(
         phone: phoneNumber,
         email: responseData?['email'],
@@ -616,8 +634,11 @@ abstract class ApiService {
         state: responseData?['state'],
       );
 
-      if (multipassResponse['data']?['accountActivationUrl'] != null &&
-          multipassResponse['data']?['shopifyCustomerId'] != null) {
+      print("MULTIPASS RESPONSE ::::: ${multipassResponse}");
+
+      if (multipassResponse?['data']?['accountActivationUrl'] != null &&
+          multipassResponse?['data']?['shopifyCustomerId'] != null) {
+
         final activationUrlParts =
             multipassResponse['data']['accountActivationUrl'].split('/');
         final token = activationUrlParts.last;
@@ -639,14 +660,13 @@ abstract class ApiService {
           responseForAffluence.data != null) {
         multipassResponse['data']['affluence'] = responseForAffluence.data;
       }
-      await SnowplowTrackerService.sendCustomEventToSnowPlow({
-        'category': 'login_modal',
-        'label': 'phone_Number_logged_in',
-        'action': 'logged_in',
-        'property': 'phone_number',
-        'value': int.tryParse(phoneNumber) ?? 0,
-      });
-
+      // await SnowplowTrackerService.sendCustomEventToSnowPlow({
+      //   'category': 'login_modal',
+      //   'label': 'phone_Number_logged_in',
+      //   'action': 'logged_in',
+      //   'property': 'phone_number',
+      //   'value': int.tryParse(phoneNumber) ?? 0,
+      // });
       return Success(multipassResponse);
     }
 
@@ -672,28 +692,29 @@ abstract class ApiService {
       return Success(multipassResponse['data']);
     }
 
-    final userData = {
-      ...responseData?['data'],
-      'phone': phoneNumber,
-    };
+    // final userData = {
+    //   ...responseData,
+    //   'phone': phoneNumber,
+    // };
 
-    await cacheInstance.setValue(
-      KeyConfig.gkVerifiedUserKey,
-      jsonEncode(userData),
-    );
+    // await cacheInstance.setValue(
+    //   KeyConfig.gkVerifiedUserKey,
+    //   jsonEncode(userData),
+    // );
 
-    if (responseForAffluence is Success && responseForAffluence.data != null) {
-      responseData['data']['affluence'] = responseForAffluence;
-    }
-    await SnowplowTrackerService.sendCustomEventToSnowPlow({
-      'category': 'login_modal',
-      'label': 'phone_Number_logged_in',
-      'action': 'logged_in',
-      'property': 'phone_number',
-      'value': int.tryParse(phoneNumber) ?? 0,
-    });
+    // if (responseForAffluence is Success && responseForAffluence.data != null) {
+    //   responseData['data']['affluence'] = responseForAffluence;
+    // }
+    // await SnowplowTrackerService.sendCustomEventToSnowPlow({
+    //   'category': 'login_modal',
+    //   'label': 'phone_Number_logged_in',
+    //   'action': 'logged_in',
+    //   'property': 'phone_number',
+    //   'value': int.tryParse(phoneNumber) ?? 0,
+    // });
 
-    return responseData;
+    return Success(responseData);
+
   }
 
   static Future<bool> checkout() async {
@@ -742,7 +763,7 @@ abstract class ApiService {
         isSnowplowTrackingEnabled: isSnowplowTrackingEnabled,
       ));
 
-      Logger().clearLogs();
+      // Logger().clearLogs();
 
       return true;
     } catch (error) {

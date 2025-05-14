@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gokwik/config/types.dart';
-import 'package:gokwik/flow_result.dart';
 import 'package:gokwik/screens/create_account.dart';
 import 'package:gokwik/screens/cubit/root_cubit.dart';
 import 'package:gokwik/screens/cubit/root_model.dart';
@@ -105,7 +104,7 @@ class _RootScreenState extends State<RootScreen> {
           final cubit = context.read<RootCubit>();
           final _isUserLoggedIn = state.isUserLoggedIn;
           final _isNewUser = state.isNewUser;
-          // final _isLoading = state.isLoading;
+          final _isLoading = state.isLoading;
           final _otpSent = state.otpSent;
           final _emailOtpSent = state.emailOtpSent;
           // final _isSuccess = state.isSuccess;
@@ -124,233 +123,260 @@ class _RootScreenState extends State<RootScreen> {
                         child: Form(
                           key: cubit.formKey,
                           autovalidateMode: AutovalidateMode.onUserInteraction,
-                          child: SingleChildScrollView(
-                            physics: const ClampingScrollPhysics(),
-                            child: Column(
-                              children: [
-                                if (widget.bannerImage != null ||
-                                    widget.logo != null)
-                                  Container(
-                                    width: double.infinity,
-                                    height:
-                                        widget.bannerImage != null ? 300 : 200,
-                                    // margin: const EdgeInsets.only(bottom: 12),
-                                    decoration: widget.imageContainerStyle
-                                            ?.copyWith(
-                                          image: widget.bannerImage != null
-                                              ? DecorationImage(
-                                                  image: widget.bannerImage!,
-                                                  fit: BoxFit.cover,
-                                                )
-                                              : null,
-                                        ) ??
-                                        (widget.bannerImage != null
-                                            ? BoxDecoration(
-                                                image: DecorationImage(
-                                                  image: widget.bannerImage!,
-                                                  fit: BoxFit.cover,
-                                                ),
-                                              )
-                                            : null),
-                                    child: widget.logo != null
-                                        ? Center(
-                                            child: Image(
-                                              image: widget.logo!,
-                                              height: 80,
-                                              fit: BoxFit.contain,
-                                            ),
-                                          )
-                                        : null,
-                                  ),
+                          child: Column(
+                            children: [
+                              if (widget.bannerImage != null ||
+                                  widget.logo != null)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 22),
-                                  decoration: widget.formContainerStyle,
-                                  child: _isUserLoggedIn
-                                      ? const Text(
-                                          'You are already logged in',
-                                          style: TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 16,
+                                  width: double.infinity,
+                                  height:
+                                      widget.bannerImage != null ? 300 : 200,
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  decoration:
+                                      widget.imageContainerStyle?.copyWith(
+                                            image: widget.bannerImage != null
+                                                ? DecorationImage(
+                                                    image: widget.bannerImage!,
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                : null,
+                                          ) ??
+                                          (widget.bannerImage != null
+                                              ? BoxDecoration(
+                                                  image: DecorationImage(
+                                                    image: widget.bannerImage!,
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                )
+                                              : null),
+                                  child: widget.bannerImage == null &&
+                                          widget.logo != null
+                                      ? Center(
+                                          child: Image(
+                                            image: widget.logo!,
+                                            height: 80,
+                                            fit: BoxFit.contain,
                                           ),
-                                          textAlign: TextAlign.center,
                                         )
-                                      : _isNewUser
-                                          ? _merchantType == MerchantType.custom
-                                              ? CreateAccount(
-                                                  titleStyle: widget
-                                                      .inputProps?.titleStyle,
-                                                  isEmailRequired: widget
-                                                          .createUserConfig
-                                                          ?.isEmailRequired ??
-                                                      false,
-                                                  isNameRequired: widget
-                                                          .createUserConfig
-                                                          ?.isNameRequired ??
-                                                      false,
-                                                  isGenderRequired: widget
-                                                          .createUserConfig
-                                                          ?.isGenderRequired ??
-                                                      false,
-                                                  isDobRequired: widget
-                                                          .createUserConfig
-                                                          ?.isDobRequired ??
-                                                      false,
-                                                  createAccountError: _error,
-                                                  inputConfig:
-                                                      widget.inputProps!,
-                                                  showEmail: widget
-                                                          .createUserConfig
-                                                          ?.showEmail ??
-                                                      true,
-                                                  showUserName: widget
-                                                          .createUserConfig
-                                                          ?.showUserName ??
-                                                      true,
-                                                  showDob: widget
-                                                          .createUserConfig
-                                                          ?.showDob ??
-                                                      true,
-                                                  showGender: widget
-                                                          .createUserConfig
-                                                          ?.showGender ??
-                                                      true,
-                                                )
-                                              : ShopifyEmailForm(
-                                                  initialValue: cubit
-                                                      .shopifyEmailController
-                                                      .text,
-                                                  onSubmitEmail: (value) =>
-                                                      cubit.handleShopifySubmit(
-                                                          value),
-                                                  isLoading: state.isLoading,
-                                                  config: widget.inputProps
-                                                      ?.shopifyEmailScreen,
-                                                  loaderConfig:
-                                                      widget.loaderConfig,
-                                                  multipleEmail:
-                                                      state.multipleEmails,
-                                                )
-                                          : _emailOtpSent
-                                              ? VerifyCodeForm(
-                                                  otpLabel: widget
-                                                          .inputProps
-                                                          ?.otpVerificationScreen
-                                                          ?.title ??
-                                                      '',
-                                                  loaderConfig:
-                                                      widget.loaderConfig,
-                                                  config: widget.inputProps
-                                                      ?.otpVerificationScreen,
-                                                  onEdit: () {},
-                                                  isLoading: state.isLoading,
-                                                  isSuccess: state.isSuccess,
-                                                  onVerify: (value) => cubit
-                                                      .handleEmailOtpVerification(
-                                                          value),
-                                                  onResend: () => cubit
-                                                      .resendShopifyEmailOtp(),
-                                                  controller: cubit
-                                                      .shopifyOtpController,
-                                                )
-                                              : _otpSent
-                                                  ? VerifyCodeForm(
-                                                      otpLabel:
-                                                          '+91 ${cubit.phoneController.text}',
-                                                      onEdit: () => cubit
-                                                          .handlePhoneChange(),
-                                                      loaderConfig:
-                                                          widget.loaderConfig,
-                                                      config: widget.inputProps
-                                                          ?.otpVerificationScreen,
-                                                      isLoading:
-                                                          state.isLoading,
-                                                      isSuccess:
-                                                          state.isSuccess,
-                                                      onVerify: (value) => cubit
-                                                          .handleOtpVerification(
-                                                        value,
-                                                      ),
-                                                      onResend: () => cubit
-                                                          .resendPhoneOtp(),
-                                                      controller:
-                                                          cubit.otpController,
-                                                    )
-                                                  : Login(
-                                                      onSubmit: () =>
-                                                          cubit.handleOtpSend(),
-                                                      isLoading:
-                                                          state.isLoading,
-                                                      formData: LoginForm(
-                                                        phone: cubit
-                                                            .phoneController
-                                                            .text,
-                                                        notifications:
-                                                            state.notifications,
-                                                      ),
-                                                      loaderConfig:
-                                                          widget.loaderConfig,
-                                                      onFormChanged: (form) {
-                                                        cubit.phoneController
-                                                            .text = form.phone;
-                                                        cubit.updateNotification(
-                                                            form.notifications);
-                                                      },
-                                                      config: widget.inputProps
-                                                          ?.phoneAuthScreen,
-                                                    ),
+                                      : null,
                                 ),
-                              ],
-                            ),
+                              Container(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 22),
+                                decoration: widget.formContainerStyle,
+                                child: _isUserLoggedIn
+                                    ? const Text(
+                                        'You are already logged in',
+                                        style: TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 16,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      )
+                                    : _isNewUser
+                                        ? _merchantType == MerchantType.custom
+                                            ? CreateAccount(
+                                                titleStyle: widget
+                                                    .inputProps?.titleStyle,
+                                                isEmailRequired: widget
+                                                        .createUserConfig
+                                                        ?.isEmailRequired ??
+                                                    false,
+                                                isNameRequired: widget
+                                                        .createUserConfig
+                                                        ?.isNameRequired ??
+                                                    false,
+                                                isGenderRequired: widget
+                                                        .createUserConfig
+                                                        ?.isGenderRequired ??
+                                                    false,
+                                                isDobRequired: widget
+                                                        .createUserConfig
+                                                        ?.isDobRequired ??
+                                                    false,
+                                                createAccountError: _error,
+                                                inputConfig: widget.inputProps!,
+                                                showEmail: widget
+                                                        .createUserConfig
+                                                        ?.showEmail ??
+                                                    true,
+                                                showUserName: widget
+                                                        .createUserConfig
+                                                        ?.showUserName ??
+                                                    true,
+                                                showDob: widget.createUserConfig
+                                                        ?.showDob ??
+                                                    true,
+                                                showGender: widget
+                                                        .createUserConfig
+                                                        ?.showGender ??
+                                                    true,
+                                              )
+                                            : ShopifyEmailForm(
+                                                initialValue: cubit
+                                                    .shopifyEmailController
+                                                    .text,
+                                                onSubmitEmail: (value) => cubit
+                                                    .handleShopifySubmit(value),
+                                                isLoading: state.isLoading,
+                                                config: widget.inputProps
+                                                    ?.shopifyEmailScreen,
+                                                loaderConfig:
+                                                    widget.loaderConfig,
+                                                multipleEmail:
+                                                    state.multipleEmails,
+                                              )
+                                        : _emailOtpSent
+                                            ? VerifyCodeForm(
+                                                otpLabel: cubit
+                                                    .shopifyEmailController.text,
+                                                onEdit: () {
+                                                  cubit.handleEmailChange();
+                                                },
+                                                isLoading: _isLoading,
+                                                isSuccess: state.isSuccess,
+                                                onVerify: (value) => cubit
+                                                    .handleEmailOtpVerification(
+                                                        value),
+                                                onResend: () => cubit
+                                                    .resendShopifyEmailOtp(),
+                                                initialValue: cubit
+                                                    .shopifyOtpController.text,
+                                                title: widget
+                                                    .inputProps
+                                                    ?.emailOtpVerificationScreen
+                                                    ?.title,
+                                                subTitle: widget
+                                                    .inputProps
+                                                    ?.emailOtpVerificationScreen
+                                                    ?.subTitle,
+                                                submitButtonText: widget
+                                                        .inputProps
+                                                        ?.emailOtpVerificationScreen
+                                                        ?.submitButtonText ??
+                                                    'Verify',
+                                                editStyle: widget
+                                                    .inputProps
+                                                    ?.emailOtpVerificationScreen
+                                                    ?.editStyle,
+                                                editLabelStyle: widget
+                                                    .inputProps
+                                                    ?.emailOtpVerificationScreen
+                                                    ?.editStyle,
+                                              )
+                                            : _otpSent
+                                                ? VerifyCodeForm(
+                                                    otpLabel:
+                                                        '+91 ${cubit.phoneController.text}',
+                                                    onEdit: () => cubit
+                                                        .handlePhoneChange(),
+                                                    title: widget
+                                                        .inputProps
+                                                        ?.otpVerificationScreen
+                                                        ?.title,
+                                                    subTitle: widget
+                                                        .inputProps
+                                                        ?.otpVerificationScreen
+                                                        ?.subTitle,
+                                                    submitButtonText: widget
+                                                            .inputProps
+                                                            ?.otpVerificationScreen
+                                                            ?.submitButtonText ??
+                                                        'Verify',
+                                                    editStyle: widget
+                                                        .inputProps
+                                                        ?.otpVerificationScreen
+                                                        ?.editStyle,
+                                                    editLabelStyle: widget
+                                                        .inputProps
+                                                        ?.otpVerificationScreen
+                                                        ?.editLabelStyle,
+                                                    isLoading: _isLoading,
+                                                    isSuccess: state.isSuccess,
+                                                    onVerify: (value) => cubit
+                                                        .handleOtpVerification(
+                                                      value,
+                                                    ),
+                                                    onResend: () =>
+                                                        cubit.resendPhoneOtp(),
+                                                    initialValue: cubit
+                                                        .otpController.text,
+                                                  )
+                                                : Login(
+                                                    onSubmit: () =>
+                                                        cubit.handleOtpSend(),
+                                                    isLoading: state.isLoading,
+                                                    formData: LoginForm(
+                                                      phone: cubit
+                                                          .phoneController.text,
+                                                      notifications:
+                                                          state.notifications,
+                                                    ),
+                                                    loaderConfig:
+                                                        widget.loaderConfig,
+                                                    onFormChanged: (form) {
+                                                      cubit.phoneController
+                                                          .text = form.phone;
+                                                      cubit.updateNotification(
+                                                          form.notifications);
+                                                    },
+                                                    config: widget.inputProps
+                                                        ?.phoneAuthScreen,
+                                                  ),
+                              ),
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 22,
+                                  vertical: 6,
+                                ),
+                                child: Column(
+                                  children: [
+                                    if (widget.footerText != null)
+                                      Text(
+                                        widget.footerText!,
+                                        style: widget.footerTextStyle ??
+                                            const TextStyle(
+                                              fontSize: 14,
+                                              color: Color(0xFF999999),
+                                            ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    Wrap(
+                                      alignment: WrapAlignment.center,
+                                      spacing: 8,
+                                      children:
+                                          (widget.footerUrls ?? []).map((url) {
+                                        return GestureDetector(
+                                          onTap: () =>
+                                              cubit.linkOpenHandler(url.url),
+                                          child: Text(
+                                            url.label,
+                                            style:
+                                                widget.footerHyperlinkStyle ??
+                                                    const TextStyle(
+                                                      color: Color(0x66000000),
+                                                      fontSize: 14,
+                                                      decoration: TextDecoration
+                                                          .underline,
+                                                    ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 22,
-                        vertical: 6,
-                      ),
-                      child: Column(
-                        children: [
-                          if (widget.footerText != null)
-                            Text(
-                              widget.footerText!,
-                              style: widget.footerTextStyle ??
-                                  const TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF999999),
-                                  ),
-                              textAlign: TextAlign.center,
-                            ),
-                          Wrap(
-                            alignment: WrapAlignment.center,
-                            spacing: 8,
-                            children: (widget.footerUrls ?? []).map((url) {
-                              return GestureDetector(
-                                onTap: () => cubit.linkOpenHandler(url.url),
-                                child: Text(
-                                  url.label,
-                                  style: widget.footerHyperlinkStyle ??
-                                      const TextStyle(
-                                        color: Color(0x66000000),
-                                        fontSize: 14,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ],
                       ),
                     ),
                   ],
                 ),
                 if (widget.enableGuestLogin)
                   Positioned(
-                    top: widget.bannerImage == null && widget.logo == null
-                        ? 8
-                        : 0,
+                    top: 8,
                     right: 20,
                     child: GestureDetector(
                       onTap: () => cubit.handleSkip(widget.onGuestLoginPress),
@@ -358,7 +384,7 @@ class _RootScreenState extends State<RootScreen> {
                         decoration: widget.guestContainerStyle ??
                             BoxDecoration(
                               color: Colors.black,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 15,
@@ -507,7 +533,7 @@ class OtpVerificationScreenConfig {
   final String? subTitle;
   final String submitButtonText;
   final TextStyle? editStyle;
-  final TextStyle? phoneTextStyle;
+  final TextStyle? editLabelStyle;
 
   final ButtonStyle? submitButtonStyleBox;
   final TextStyle? submitButtonTextStyle;
@@ -520,7 +546,6 @@ class OtpVerificationScreenConfig {
   final TextStyle? loadingTextStyle;
   final String? otpPlaceholder;
   final TextStyle? otpPlaceholderStyle;
-  final TextStyle? editLabelStyle;
   final TextStyle? resendButtonTextStyle;
   final TextStyle? resendTextStyle;
   final TextStyle? cellTextStyle;
@@ -531,7 +556,7 @@ class OtpVerificationScreenConfig {
     this.subTitle,
     this.submitButtonText = 'Verify',
     this.editStyle,
-    this.phoneTextStyle,
+    // this.phoneTextStyle,
     this.submitButtonStyleBox,
     this.submitButtonTextStyle,
     this.titleStyle,

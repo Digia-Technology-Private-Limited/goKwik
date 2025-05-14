@@ -62,7 +62,7 @@ class ShopifyService {
 
       return response.data;
     } catch (error) {
-      throw await ApiService.handleApiError(error);
+      throw ApiService.handleApiError(error);
     }
   }
 
@@ -91,7 +91,7 @@ class ShopifyService {
         return Failure(response.errorMessage ?? '');
       }
 
-      return response.data;
+      return Success(response.data);
     } catch (error) {
       throw ApiService.handleApiError(error);
     }
@@ -137,7 +137,7 @@ class ShopifyService {
         'label': 'otp_verified',
         'action': 'logged_in',
         'property': 'phone_number',
-        'value': int.tryParse(user['phone']) ?? 0,
+        'value': int.tryParse(user['phone'] ?? '0') ?? 0,
       });
 
       return response.data;

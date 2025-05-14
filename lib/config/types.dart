@@ -312,22 +312,66 @@ class TrackProductEventContext {
     required this.productHandle,
     required this.type,
   });
+
+  factory TrackProductEventContext.fromJson(Map<String, dynamic> json) {
+    return TrackProductEventContext(
+      productId: json['product_id'] ?? '',
+      imgUrl: json['img_url'] ?? '',
+      variantId: json['variant_id'] ?? '',
+      productName: json['product_name'] ?? '',
+      productPrice: json['product_price'] ?? '',
+      productHandle: json['product_handle'] ?? '',
+      type: json['type'] ?? 'product',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'product_id': productId,
+      'img_url': imgUrl,
+      'variant_id': variantId,
+      'product_name': productName,
+      'product_price': productPrice,
+      'product_handle': productHandle,
+      'type': type,
+    };
+  }
 }
 
 class TrackCollectionEventContext {
-  final String collectionId;
-  final String? imgUrl;
-  final String collectionName;
-  final String collectionHandle;
+  final String collection_id;
+  final String? img_url;
+  final String collection_name;
+  final String collection_handle;
   final String type;
 
   TrackCollectionEventContext({
-    required this.collectionId,
-    this.imgUrl,
-    required this.collectionName,
-    required this.collectionHandle,
+    required this.collection_id,
+    this.img_url,
+    required this.collection_name,
+    required this.collection_handle,
     required this.type,
   });
+
+  factory TrackCollectionEventContext.fromJson(Map<String, dynamic> json) {
+    return TrackCollectionEventContext(
+      collection_id: json['collection_id'] ?? '',
+      img_url: json['img_url'],
+      collection_name: json['collection_name'] ?? '',
+      collection_handle: json['collection_handle'] ?? '',
+      type: json['type'] ?? 'collection',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'collection_id': collection_id,
+      'img_url': img_url ?? '',
+      'collection_name': collection_name,
+      'collection_handle': collection_handle,
+      'type': type,
+    };
+  }
 }
 
 class TrackProductEventArgs {
@@ -337,7 +381,7 @@ class TrackProductEventArgs {
   final String variantId;
   final String? imgUrl;
   final String? name;
-  final double? price;
+  final String? price;
   final String? handle;
 
   TrackProductEventArgs({
@@ -353,35 +397,39 @@ class TrackProductEventArgs {
 
   factory TrackProductEventArgs.fromJson(Map<String, dynamic> json) {
     return TrackProductEventArgs(
-      cartId: json['cartId'],
-      productId: json['productId'],
-      pageUrl: json['pageUrl'],
-      variantId: json['variantId'],
-      imgUrl: json['imgUrl'],
-      name: json['name'],
-      price: json['price'],
-      handle: json['handle'],
+      cartId: json['cart_id'] ?? '',
+      productId: json['product_id'] ?? '',
+      pageUrl: json['page_url'] ?? '',
+      variantId: json['variant_id'] ?? '',
+      imgUrl: json['img_url'],
+      name: json['product_name'],
+      price: json['product_price'],
+      handle: json['product_handle'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'cartId': cartId,
-      'productId': productId,
-      'pageUrl': pageUrl,
-      'variantId': variantId,
-      'imgUrl': imgUrl,
-      'name': name,
-      'price': price,
-      'handle': handle,
+      'cart_id': cartId,
+      'product_id': productId,
+      'page_url': pageUrl,
+      'variant_id': variantId,
+      'img_url': imgUrl,
+      'product_name': name,
+      'product_price': price,
+      'product_handle': handle,
     };
   }
 }
 
 class TrackCartEventArgs {
   final String cartId;
+  final String pageUrl;
 
-  TrackCartEventArgs({required this.cartId});
+  TrackCartEventArgs({
+    required this.cartId,
+    required this.pageUrl,
+  });
 }
 
 class TrackCollectionsEventArgs {
@@ -390,6 +438,7 @@ class TrackCollectionsEventArgs {
   final String name;
   final String? imageUrl;
   final String? handle;
+  final String? pageUrl;
 
   TrackCollectionsEventArgs({
     required this.cartId,
@@ -397,7 +446,30 @@ class TrackCollectionsEventArgs {
     required this.name,
     this.imageUrl,
     this.handle,
+    this.pageUrl,
   });
+
+  factory TrackCollectionsEventArgs.fromJson(Map<String, dynamic> json) {
+    return TrackCollectionsEventArgs(
+      cartId: json['cart_id'] ?? '',
+      collectionId: json['collection_id'] ?? '',
+      name: json['name'] ?? '',
+      imageUrl: json['image_url'],
+      handle: json['handle'],
+      pageUrl: json['page_url'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'cart_id': cartId,
+      'collection_id': collectionId,
+      'name': name,
+      'image_url': imageUrl,
+      'handle': handle,
+      'page_url': pageUrl,
+    };
+  }
 }
 
 class TrackOtherEventArgs {
@@ -516,13 +588,13 @@ class ShopifyVerifyCodeResponse {
 
 class VerifiedUser {
   final String? coreToken;
-  final Token token;
+  // final Token? token;
   final String phone;
   final String? email;
 
   VerifiedUser({
     this.coreToken,
-    required this.token,
+    // required this.token,
     required this.phone,
     this.email,
   });
@@ -530,7 +602,7 @@ class VerifiedUser {
   factory VerifiedUser.fromJson(Map<String, dynamic> json) {
     return VerifiedUser(
       coreToken: json['coreToken'],
-      token: Token(isValid: json['token']['isValid']),
+      // token: Token(isValid: json['token']?['isValid']),
       phone: json['phone'],
       email: json['email'],
     );
@@ -539,7 +611,7 @@ class VerifiedUser {
   Map<String, dynamic> toJson() {
     return {
       'coreToken': coreToken,
-      'token': {'isValid': token.isValid},
+      // 'token': {'isValid': token.isValid},
       'phone': phone,
       'email': email,
     };

@@ -20,6 +20,14 @@ class Login extends StatefulWidget {
   final LoadingConfig? loaderConfig;
   final bool isLoading;
   final bool isSuccess;
+  final String? error;
+  final String placeholderText;
+  final String updateText;
+  final TextStyle? updatesTextStyle;
+  final Widget Function(bool, Function(bool))? checkboxComponent;
+  final EdgeInsetsGeometry? checkboxContainerPadding;
+  final BoxDecoration? checkboxDecoration;
+  final BoxDecoration? checkedDecoration;
 
   const Login({
     Key? key,
@@ -28,6 +36,14 @@ class Login extends StatefulWidget {
     required this.onFormChanged,
     this.isLoading = false,
     this.isSuccess = false,
+    this.error,
+    this.placeholderText = 'Enter your phone',
+    this.updateText = 'Get updates on WhatsApp',
+    this.updatesTextStyle,
+    this.checkboxComponent,
+    this.checkboxContainerPadding,
+    this.checkboxDecoration,
+    this.checkedDecoration,
     this.config,
     this.loaderConfig,
   }) : super(key: key);
@@ -39,6 +55,7 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _phoneController;
+  String? _errorText;
 
   @override
   void initState() {
@@ -69,6 +86,7 @@ class _LoginState extends State<Login> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 10),
           if (widget.config?.title != null)
             Text(
               widget.config!.title!,
@@ -80,18 +98,15 @@ class _LoginState extends State<Login> {
                   ),
             ),
           if (widget.config?.subTitle != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                widget.config!.subTitle!,
-                style: widget.config?.subtitleTextStyle ??
-                    const TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
-              ),
+            Text(
+              widget.config!.subTitle!,
+              style: widget.config?.subtitleTextStyle ??
+                  const TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
             ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           TextFormField(
             controller: _phoneController,
             decoration: widget.config?.textFieldInputStyle ??
@@ -99,6 +114,7 @@ class _LoginState extends State<Login> {
                   labelText: widget.config?.phoneNumberPlaceholder,
                   border: const OutlineInputBorder(),
                   errorStyle: const TextStyle(color: Colors.red),
+                  counterText: "",
                 ),
             style: widget.config?.inputTextStyle,
             keyboardType: TextInputType.phone,
@@ -110,9 +126,12 @@ class _LoginState extends State<Login> {
                 phone: value,
                 notifications: widget.formData.notifications,
               ));
+              if (value.length == 10 && _validatePhone(value) == null) {
+                widget.onSubmit();
+              }
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           if (widget.config?.checkboxComponent != null)
             widget.config!.checkboxComponent!(
               widget.formData.notifications,
@@ -124,7 +143,7 @@ class _LoginState extends State<Login> {
               },
             )
           else
-            InkWell(
+            GestureDetector(
               onTap: () {
                 final newValue = !widget.formData.notifications;
                 widget.onFormChanged(LoginForm(
@@ -173,7 +192,7 @@ class _LoginState extends State<Login> {
                 ),
               ),
             ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(

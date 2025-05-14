@@ -1,36 +1,69 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gokwik/screens/root.dart';
-import 'package:pinput/pinput.dart';
-
-import 'comp/pin.dart';
+import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:otp_autofill_plus/otp_autofill_plus.dart';
 
 class VerifyCodeForm extends StatefulWidget {
+  final String otpLabel;
   final VoidCallback onResend;
   final VoidCallback onEdit;
   final ValueChanged<String> onVerify;
   final String? Function(String?)? validator;
+  final String? initialValue;
+  final BoxDecoration? submitButtonStyle;
+  final TextStyle? submitButtonTextStyle;
+  final TextStyle? titleStyle;
+  final TextStyle? subTitleStyle;
+  final String submitButtonText;
+  final BoxDecoration? pincodeCellStyle;
+  final BoxDecoration? pincodeCellContainerStyle;
+  final InputDecoration? inputStyle;
   final bool isLoading;
   final bool isSuccess;
-  final String otpLabel;
-  final TextEditingController controller;
-  final LoadingConfig? loaderConfig;
-  final OtpVerificationScreenConfig? config;
+  final TextStyle? loadingTextStyle;
+  final String? title;
+  final String? subTitle;
+  final String? otpPlaceholder;
+  final TextStyle? otpPlaceholderStyle;
+  final TextStyle? editStyle;
+  final TextStyle? editLabelStyle;
+  final TextStyle? resendButtonTextStyle;
+  final TextStyle? resendTextStyle;
+  final TextStyle? cellTextStyle;
+  final String? loadingText;
+  final String? error;
 
-  const VerifyCodeForm(
-      {super.key,
-      required this.onResend,
-      required this.onEdit,
-      required this.onVerify,
-      this.validator,
-      this.isLoading = false,
-      this.isSuccess = false,
-      required this.otpLabel,
-      required this.controller,
-      this.loaderConfig,
-      this.config});
+  const VerifyCodeForm({
+    super.key,
+    required this.otpLabel,
+    required this.onResend,
+    required this.onEdit,
+    required this.onVerify,
+    this.validator,
+    this.initialValue,
+    this.submitButtonStyle,
+    this.submitButtonTextStyle,
+    this.titleStyle,
+    this.subTitleStyle,
+    this.submitButtonText = 'Verify',
+    this.pincodeCellStyle,
+    this.pincodeCellContainerStyle,
+    this.inputStyle,
+    this.isLoading = false,
+    this.isSuccess = false,
+    this.loadingTextStyle,
+    this.title = 'OTP Verification',
+    this.subTitle,
+    this.otpPlaceholder,
+    this.otpPlaceholderStyle,
+    this.editStyle,
+    this.editLabelStyle,
+    this.resendButtonTextStyle,
+    this.resendTextStyle,
+    this.cellTextStyle,
+    this.loadingText,
+    this.error,
+  });
 
   @override
   State<VerifyCodeForm> createState() => _VerifyCodeFormState();
@@ -42,39 +75,88 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   int _seconds = 30;
   bool _isResendDisabled = true;
   int _attempts = 0;
-  // final List<FocusNode> _focusNodes = [];
+  final List<FocusNode> _focusNodes = [];
   final List<TextEditingController> _controllers = [];
   final _formKey = GlobalKey<FormState>();
   String? _errorText;
-  Timer? _timer;
-  String? _appSignature; // For Android SMS consent
-  bool _autoReading = false;
+
+  final scaffoldKey = GlobalKey();
+  late OTPTextEditController controller;
+  late OTPInteractor _otpInteractor;
+
+  final pinputController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     for (int i = 0; i < _cellCount; i++) {
-      // _focusNodes.add(FocusNode());
+      _focusNodes.add(FocusNode());
       _controllers.add(TextEditingController());
     }
     _startTimer();
+    // TODO: Implement SMS user consent for Android
+
+    print("INIIIIIIIT");
+
+    _initInteractor();
+    controller = OTPTextEditController(
+      codeLength: 4,
+      //ignore: avoid_print
+      onCodeReceive: (code) => print('Your Application receive code - $code'),
+      otpInteractor: _otpInteractor,
+    )..startListenUserConsent(
+        (code) {
+          final exp = RegExp(r'(\d{4})');
+
+          final otp = exp.stringMatch(code ?? '') ?? '';
+          // widget.onVerify(otp);
+
+          print('code ${code}');
+          print('exp ${exp.stringMatch(code ?? '')}');
+
+          pinputController.text = otp;
+          pinputController.selection = TextSelection.fromPosition(
+            TextPosition(offset: pinputController.text.length),
+          );
+
+          return otp;
+        },
+        strategies: [],
+      );
+  }
+
+  @override
+  void didUpdateWidget(VerifyCodeForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.error != oldWidget.error) {
+      setState(() {
+        _errorText = widget.error;
+      });
+    }
+  }
+
+  Future<void> _initInteractor() async {
+    _otpInteractor = OTPInteractor();
+
+    // You can receive your app signature by using this method.
+    final appSignature = await _otpInteractor.getAppSignature();
+    // print('Your app signature: $appSignature');
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    // for (var node in _focusNodes) {
-    //   node.dispose();
-    // }
+    for (var node in _focusNodes) {
+      node.dispose();
+    }
     for (var controller in _controllers) {
       controller.dispose();
     }
+    controller.stopListen();
     super.dispose();
   }
 
   void _startTimer() {
-    _timer = Timer(const Duration(seconds: 1), () {
-      if (!mounted) return;
+    Future.delayed(const Duration(seconds: 1), () {
       if (_seconds > 0 && _isResendDisabled) {
         setState(() => _seconds--);
         _startTimer();
@@ -85,7 +167,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   }
 
   void _handleResendOtp() {
-    if (_attempts < _maxAttempts && mounted) {
+    if (_attempts < _maxAttempts) {
       setState(() {
         _attempts++;
         _seconds = 30;
@@ -96,32 +178,41 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     }
   }
 
-  // void _onChanged(String value, int index) {
-  //   // if (value.length == 1 && index < _cellCount - 1) {
-  //   //   _focusNodes[index + 1].requestFocus();
-  //   // }
-  //   _validateOtp();
-  // }
+  void _onChanged(String value) {
+    print('onChanged value - $value');
 
-  // void _onBackspace(int index) {
-  //   // if (index > 0 && _controllers[index].text.isEmpty) {
-  //   //   _focusNodes[index - 1].requestFocus();
-  //   // }
-  //   _validateOtp();
-  // }
+    if (value.length == 1 &&
+        _controllers.indexWhere((c) => c.text.isEmpty) < _cellCount - 1) {
+      _focusNodes[_controllers.indexWhere((c) => c.text.isEmpty)]
+          .requestFocus();
+    }
+    _validateOtp();
+  }
 
-  // void _validateOtp() {
-  //   final otp = _controllers.map((c) => c.text).join();
-  //   if (otp.length == _cellCount) {
-  //     final error = widget.validator?.call(otp) ?? _defaultValidator(otp);
-  //     setState(() => _errorText = error);
-  //     if (error == null) {
-  //       widget.onVerify(otp);
-  //     }
-  //   } else {
-  //     setState(() => _errorText = null);
-  //   }
-  // }
+  void _onBackspace(int index) {
+    if (index > 0 && _controllers[index].text.isEmpty) {
+      _focusNodes[index - 1].requestFocus();
+    }
+    _validateOtp();
+  }
+
+  void _validateOtp() {
+    final otp = pinputController.text;
+
+    final code = _defaultValidator(otp);
+
+    if (otp.length == _cellCount) {
+      final error = widget.validator?.call(otp) ?? _defaultValidator(otp);
+      setState(() => _errorText = error);
+      print("ERROR $error");
+      if (error == null) {
+        print("CALLLLLLL");
+        widget.onVerify(otp);
+      }
+    } else {
+      setState(() => _errorText = null);
+    }
+  }
 
   String? _defaultValidator(String? value) {
     if (value == null || value.isEmpty) {
@@ -140,33 +231,32 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (widget.config?.title != null)
+          if (widget.title != null)
             Text(
-              widget.config!.title,
-              style: widget.config?.titleStyle ??
+              widget.title!,
+              style: widget.titleStyle ??
                   const TextStyle(
                     fontSize: 20,
                     color: Colors.black,
                   ),
             ),
-          if (widget.config?.subTitle != null)
+          if (widget.subTitle != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                widget.config!.subTitle!,
-                style: widget.config?.subTitleStyle ??
+                widget.subTitle!,
+                style: widget.subTitleStyle ??
                     const TextStyle(
                       fontSize: 16,
                       color: Color(0xFF999999),
                     ),
               ),
             ),
-          const SizedBox(height: 12),
           Row(
             children: [
               Text(
                 widget.otpLabel,
-                style: widget.config?.editLabelStyle ??
+                style: widget.editLabelStyle ??
                     const TextStyle(
                       fontSize: 20,
                       color: Color(0x9E000000),
@@ -177,7 +267,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                 onTap: widget.onEdit,
                 child: Text(
                   'Edit',
-                  style: widget.config?.editStyle ??
+                  style: widget.editStyle ??
                       const TextStyle(
                         fontSize: 16,
                         color: Colors.black,
@@ -187,108 +277,52 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
             ],
           ),
           const SizedBox(height: 8),
-          PinField(
-            length: _cellCount,
-            controller: widget.controller,
-            onChanged: (value) {
-              setState(() {
-                _errorText = value.length == _cellCount
-                    ? widget.validator?.call(value) ?? _defaultValidator(value)
-                    : null;
-              });
-            },
-            onCompleted: (value) {
-              final error =
-                  widget.validator?.call(value) ?? _defaultValidator(value);
-              if (error == null) {
-                widget.onVerify(value);
-              } else {
-                setState(() => _errorText = error);
-              }
-            },
-            pinTheme: PinTheme(
-              width: 60,
-              height: 60,
-              textStyle: widget.config?.cellTextStyle ??
-                  const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: _errorText != null ? Colors.red : Colors.black,
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
+          PinCodeTextField(
+            enabled: true,
+            enablePinAutofill: true,
+            appContext: context,
+            validator: widget.validator,
+            onChanged: _onChanged,
+            controller: pinputController,
+            cursorColor: Colors.black,
+            enableActiveFill: true,
+            keyboardType: TextInputType.number,
+            animationType: AnimationType.fade,
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly
             ],
+            length: 4,
+            obscureText: false,
+            autoDisposeControllers: false,
+            animationCurve: Curves.linear,
+            boxShadows: const [
+              BoxShadow(
+                offset: Offset(0, 0),
+                blurRadius: 1,
+              )
+            ],
+            pinTheme: PinTheme(
+              shape: PinCodeFieldShape.box,
+              borderRadius: BorderRadius.circular(8),
+              fieldOuterPadding: const EdgeInsets.only(right: 6),
+              borderWidth: 2,
+              fieldHeight: 60,
+              fieldWidth: 60,
+              activeColor: Colors.black,
+              activeFillColor: Colors.white,
+              inactiveColor: _errorText != null ? Colors.red : Colors.black,
+              inactiveFillColor: Colors.white,
+              selectedColor: Colors.black,
+              selectedFillColor: Colors.white,
+            ),
+            mainAxisAlignment: MainAxisAlignment.start,
+            textStyle: widget.cellTextStyle ??
+                const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
           ),
-          // Row(
-          //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //   children: List.generate(_cellCount, (index) {
-          //     return SizedBox(
-          //       width: 60,
-          //       height: 60,
-          //       child: TextFormField(
-          //         controller: _controllers[index],
-          //         focusNode: _focusNodes[index],
-          //         keyboardType: TextInputType.number,
-          //         textAlign: TextAlign.center,
-          //         maxLength: 1,
-          //         style: widget.config?.cellTextStyle ??
-          //             const TextStyle(
-          //               fontSize: 24,
-          //               fontWeight: FontWeight.bold,
-          //               color: Colors.black,
-          //             ),
-          //         decoration: InputDecoration(
-          //           counterText: '',
-          //           border: OutlineInputBorder(
-          //             borderRadius: BorderRadius.circular(8),
-          //             borderSide: const BorderSide(
-          //               color: Colors.black,
-          //               width: 2,
-          //             ),
-          //           ),
-          //           focusedBorder: OutlineInputBorder(
-          //             borderRadius: BorderRadius.circular(8),
-          //             borderSide: const BorderSide(
-          //               color: Colors.black,
-          //               width: 2,
-          //             ),
-          //           ),
-          //           enabledBorder: OutlineInputBorder(
-          //             borderRadius: BorderRadius.circular(8),
-          //             borderSide: BorderSide(
-          //               color: _errorText != null ? Colors.red : Colors.black,
-          //               width: 2,
-          //             ),
-          //           ),
-          //           hintText: widget.config?.otpPlaceholder,
-          //           hintStyle: widget.config?.otpPlaceholderStyle ??
-          //               const TextStyle(
-          //                 color: Colors.black,
-          //               ),
-          //         ),
-          //         onChanged: (value) => _onChanged(value, index),
-          //         onEditingComplete: () {
-          //           if (index < _cellCount - 1) {
-          //             _focusNodes[index + 1].requestFocus();
-          //           }
-          //         },
-          //         inputFormatters: [
-          //           FilteringTextInputFormatter.digitsOnly,
-          //           LengthLimitingTextInputFormatter(1),
-          //         ],
-          //         enabled: !widget.isLoading && !widget.isSuccess,
-          //       ),
-          //     );
-          //   }),
-          // ),
           if (_errorText != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -306,7 +340,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
               child: Text.rich(
                 TextSpan(
                   text: 'OTP not received? ',
-                  style: widget.config?.resendTextStyle ??
+                  style: widget.resendTextStyle ??
                       const TextStyle(
                         fontSize: 14,
                         color: Colors.black,
@@ -319,7 +353,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                           _isResendDisabled
                               ? 'Resend in ${_seconds}s'
                               : 'Resend OTP',
-                          style: widget.config?.resendButtonTextStyle ??
+                          style: widget.resendButtonTextStyle ??
                               const TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF0964C5),
@@ -336,38 +370,56 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              style: widget.config?.submitButtonStyleBox ??
-                  ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF007AFF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    widget.submitButtonStyle?.color ?? const Color(0xFF007AFF),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               onPressed: () {
-                final otp = _controllers.map((c) => c.text).join();
-                if (_formKey.currentState!.validate()) {
+                final otp = pinputController.text;
+                final error =
+                    widget.validator?.call(otp) ?? _defaultValidator(otp);
+                print("ERROR ON SUBMIT $error");
+                _errorText = error;
+                if (error == null) {
                   widget.onVerify(otp);
                 }
               },
-              child: widget.isLoading
-                  ? widget.loaderConfig != null
-                      ? Text(
-                          widget.loaderConfig?.loadingText ?? 'Loading...',
-                          style: widget.loaderConfig?.loadingTextStyle,
-                        )
-                      : const CircularProgressIndicator(
+              child: widget.isSuccess
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const CircularProgressIndicator(
                           color: Colors.white,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          widget.loadingText ?? 'Signing you in...',
+                          style: widget.loadingTextStyle,
                         )
-                  : Text(
-                      widget.config?.submitButtonText ?? 'Submit',
-                      style: widget.config?.submitButtonTextStyle ??
-                          const TextStyle(
-                            fontSize: 16,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                    ),
+                      ],
+                    )
+                  : widget.isLoading
+                      ? widget.loadingText != null
+                          ? Text(
+                              widget.loadingText!,
+                              style: widget.loadingTextStyle,
+                            )
+                          : const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                      : Text(
+                          widget.submitButtonText,
+                          style: widget.submitButtonTextStyle ??
+                              const TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                        ),
             ),
           ),
         ],

@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class BaseResponse<T> {
   final T? data;
   final String? error;
@@ -6,6 +8,7 @@ class BaseResponse<T> {
   final bool? success;
   final DateTime? timestamp;
   final String? errorMessage;
+  final String? error_msg;
   final String? requestId;
 
   BaseResponse({
@@ -16,6 +19,7 @@ class BaseResponse<T> {
     this.success,
     this.timestamp,
     this.errorMessage,
+    this.error_msg,
     this.requestId,
   });
 
@@ -23,6 +27,8 @@ class BaseResponse<T> {
     Map<String, dynamic> json,
     T Function(Map<String, dynamic>)? fromJsonT,
   ) {
+    debugPrint("check 4" + fromJsonT.toString());
+    debugPrint("check 5" + json['isSuccess'].toString());
     return BaseResponse(
       data: fromJsonT != null ? fromJsonT(json['data']) : json['data'],
       error: json['error'],

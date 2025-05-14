@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:bloc/bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gokwik/api/api_service.dart';
 import 'package:gokwik/api/base_response.dart';
@@ -80,6 +81,7 @@ class RootCubit extends Cubit<RootState> {
     try {
       final response = await ApiService.sendVerificationCode(
           phoneController.text, state.notifications);
+      print('handleOtpSend response ${response}');
       if (response.isFailure) {
         onErrorData?.call(FlowResult(
           flowType: FlowType.otpSend,
@@ -90,15 +92,18 @@ class RootCubit extends Cubit<RootState> {
             isLoading: false));
         return;
       }
+      // onSuccessData?.call(FlowResult(
+      //   flowType: FlowType.otpSend,
+      //   data: (response as Success).data,
+      // ));
+      emit(state.copyWith(otpSent: true, isLoading: false));
       onSuccessData?.call(FlowResult(
         flowType: FlowType.otpSend,
         data: (response as Success).data,
       ));
-      emit(state.copyWith(
-          otpSent: true,
-          isLoading: false,
-          isNewUser: response.getDataOrThrow()?.userType == 'new'));
+
     } catch (err) {
+      print('handleOtpSend error ${err}');
       onErrorData?.call(FlowResult(
         flowType: FlowType.resendOtp,
         error: (err as Failure).message,
@@ -112,13 +117,26 @@ class RootCubit extends Cubit<RootState> {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
     otpController.text = value;
+    print('handleEmailOtpVerification ${otpController.text}');
+    print('shopifyEmailController.text ${shopifyEmailController.text}');
     try {
       final response = await ShopifyService.shopifyVerifyEmail(
-          emailController.text, otpController.text);
+          shopifyEmailController.text, otpController.text);
 
-      // if(response['phone']!=null) {
-      //   emit(state.copyWith(otpSent: true, isNewUser: true, isLoading: false));
-      // }
+      print('response ${response['data']}');
+
+      if (response['data']['phone'] == null) {
+        response['data']['phone'] = phoneController.text;
+      }
+
+      onSuccessData?.call(FlowResult(
+        flowType: FlowType.emailOtpVerify,
+        data: response['data'],
+      ));
+
+      if (response['phone'] != null) {
+        emit(state.copyWith(otpSent: true, isNewUser: true, isLoading: false));
+      }
       state.copyWith(isSuccess: true, isLoading: false);
     } catch (err) {
       state.copyWith(
@@ -133,6 +151,8 @@ class RootCubit extends Cubit<RootState> {
   Future<void> handleOtpVerification(
     String otp,
   ) async {
+    print('handleOtpVerification ${otp}');
+    print('phoneController.text ${phoneController.text}');
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
     try {
@@ -146,12 +166,14 @@ class RootCubit extends Cubit<RootState> {
         if (response['phone'] == null) {
           response['phone'] = phoneController.text;
         }
-        onSuccessData
-            ?.call(FlowResult(flowType: FlowType.otpVerify, data: response));
+
         emit(state.copyWith(
             isSuccess: true,
             isNewUser: response['isNewUser'],
             isLoading: false));
+
+        onSuccessData
+            ?.call(FlowResult(flowType: FlowType.otpVerify, data: response));
       }
       if (response['multiple_emails'] != null) {
         emit(state.copyWith(
@@ -161,9 +183,10 @@ class RootCubit extends Cubit<RootState> {
           }).toList(),
         ));
       }
-      if (response['emailRequired'] != null && response['email']) {
+      if (response['emailRequired'] == true && response['email'] == null) {
         emit(state.copyWith(
           isNewUser: true,
+          isLoading: false,
         ));
       }
       if (response?['merchantResponse']?['email'] != null) {
@@ -180,14 +203,16 @@ class RootCubit extends Cubit<RootState> {
       _listenUserStateUpdated();
     } catch (err) {
       otpController.clear();
-      onErrorData?.call(FlowResult(flowType: FlowType.otpVerify, error: err));
+      onErrorData?.call(FlowResult(
+          flowType: FlowType.otpVerify, error: (err as Failure).message));
       emit(state.copyWith(
           error: SingleUseData((err as Failure).message), isLoading: false));
     }
   }
 
   void handlePhoneChange() {
-    emit(state.copyWith(otpSent: false, isNewUser: true, error: null));
+    emit(state.copyWith(otpSent: false, isNewUser: false, error: null));
+
   }
 
   void handleEmailChange() {
@@ -291,8 +316,8 @@ class RootCubit extends Cubit<RootState> {
   Future<void> onUserStateUpdated() async {
     final response = await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
     if (response == null) {
-      onErrorData?.call(FlowResult(
-          flowType: FlowType.notLoggedIn, error: 'User Not Logged In'));
+      // onErrorData?.call(FlowResult(
+      //     flowType: FlowType.notLoggedIn, error: 'User Not Logged In'));
       return;
     }
 

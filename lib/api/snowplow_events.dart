@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import 'package:gokwik/api/snowplow_client.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:snowplow_tracker/snowplow_tracker.dart';
@@ -10,6 +11,7 @@ import 'sdk_config.dart';
 
 class SnowplowTrackerService {
   static SnowplowTracker? _snowplowClient;
+  String? eventId = Uuid().v4();
 
   // Helper to fetch environment
   static Future<String> _getEnvironment() async {
@@ -49,31 +51,45 @@ class SnowplowTrackerService {
   }
 
   // Context Generators
-  static Future<SelfDescribing> getCartContext(String cartId) async {
-    return _createContext(
-        'cart/jsonschema/1-0-0', {'id': cartId, 'token': cartId});
-  }
+  static Future<SelfDescribing?> getCartContext(String cartId) async {
+    if (cartId.isEmpty) {
+      return null;
+    }
 
-  static Future<SelfDescribing> getUserContext() async {
-    final userJson =
-        (await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey)) ?? '{}';
-    final user = VerifiedUser.fromJson(jsonDecode(userJson));
-
-    final phone = user.phone.replaceAll(RegExp(r'^\+91'), '');
-    final numericPhoneNumber = int.tryParse(phone ?? '');
-
-    return _createContext(
-      'user/jsonschema/1-0-0',
-      {
-        'phone': numericPhoneNumber ?? '',
-        'email': user.email ?? '',
+    return SelfDescribing(
+      schema: 'iglu:com.shopify/cart/jsonschema/1-0-0',
+      data: {
+        'id': cartId,
+        'token': cartId,
       },
     );
   }
 
+  static Future<SelfDescribing?> getUserContext() async {
+    final userJson =
+        (await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey)) ?? '{}';
+    var user = userJson != "{}" ? jsonDecode(userJson) : null;
+
+    var phone =
+        user != null ? user!['phone']?.replaceAll(RegExp(r'^\+91'), '') : null;
+    final numericPhoneNumber = int.tryParse(phone ?? '');
+
+    if (numericPhoneNumber != null ||
+        (user != null && user?['email'] != null)) {
+      return _createContext(
+        'user/jsonschema/1-0-0',
+        {
+          'phone': numericPhoneNumber?.toString() ?? '',
+          'email': user?['email'] ?? '',
+        },
+      );
+    }
+    return null;
+  }
+
   static Future<SelfDescribing> getProductContext(
-      TrackProductEventArgs contextData) async {
-    return _createContext('product/jsonschema/1-0-0', contextData.toJson());
+      TrackProductEventContext contextData) async {
+    return _createContext('product/jsonschema/1-1-0', contextData.toJson());
   }
 
   static Future<SelfDescribing> getDeviceInfoContext() async {
@@ -90,43 +106,61 @@ class SnowplowTrackerService {
             Platform.isAndroid ? deviceInfo[KeyConfig.gkGoogleAdId] : '',
         'ios_ad_id': Platform.isIOS ? deviceInfo[KeyConfig.gkGoogleAdId] : '',
         'fcm_token': deviceFCM ?? '',
+        'app_domain': deviceInfo[KeyConfig.gkAppDomain],
+        'device_type': Platform.operatingSystem.toLowerCase(),
+        'app_version': deviceInfo[KeyConfig.gkAppVersion],
       },
     );
   }
 
   static Future<SelfDescribing> getCollectionsContext(
-      String collectionId) async {
-    return _createContext(
-        'product/jsonschema/1-0-0', {'product_id': collectionId});
+      TrackCollectionEventContext params) async {
+    return _createContext('product/jsonschema/1-1-0', {
+      'collection_id': params.collection_id,
+      'img_url': params.img_url ?? '',
+      'collection_name': params.collection_name,
+      'collection_handle': params.collection_handle,
+      'type': params.type,
+    });
+  }
+
+  static Future<SelfDescribing> getOtherEventsContext() async {
+    return _createContext('product/jsonschema/1-1-0', {'type': 'other'});
   }
 
   // Generic event tracker
-  static Future<void> _trackEvent({
-    required String pageUrl,
-    required String pageTitle,
-    required List<SelfDescribing> contexts,
-    String? productId,
-    String? cartId,
-  }) async {
+  static Future<void> _trackEvent(
+    Map<String, dynamic> params,
+    List<SelfDescribing> eventContext,
+  ) async {
     final isTrackingEnabled =
         await cacheInstance.getValue(KeyConfig.isSnowplowTrackingEnabled);
     if (isTrackingEnabled == 'false') return;
 
     try {
+      // Log event parameters and context
+      print('EVENT PARAMS: ${jsonEncode(params)}');
+      print('EVENT CONTEXT: ${jsonEncode(eventContext.map((e) => {
+            'schema': e.schema,
+            'data': e.data,
+          }).toList())}');
+
       final snowplow = await _initializeSnowplowClient();
       if (snowplow == null) return;
+
+      final data = {
+        'page_url': params['pageUrl']?.toString() ?? '',
+        'page_title': params['pageTitle']?.toString() ?? '',
+        'product_id': params['productId']?.toString() ?? '',
+        'cart_id': params['cartId']?.toString() ?? '',
+      };
 
       await snowplow.track(
         SelfDescribing(
           schema: 'iglu:com.snowplowanalytics.mobile/web_page/jsonschema/1-0-0',
-          data: {
-            'page_url': pageUrl,
-            'page_title': pageTitle,
-            'product_id': productId,
-            'cart_id': cartId,
-          },
+          data: data,
         ),
-        contexts: contexts,
+        contexts: eventContext,
       );
     } catch (error) {
       print('Error tracking event: $error');
@@ -140,60 +174,114 @@ class SnowplowTrackerService {
         await cacheInstance.getValue(KeyConfig.isSnowplowTrackingEnabled);
     if (isTrackingEnabled == 'false') return;
 
-    final merchantUrl =
-        (await cacheInstance.getValue(KeyConfig.gkMerchantUrlKey)) ?? '';
-    final pageUrl = '$merchantUrl/product/${args.productId}';
+    String cartId = args.cartId;
+    if (cartId.contains('gid://shopify/Cart/')) {
+      cartId = _trimCartId(cartId);
+    }
+
+    final params = {
+      'page_url': args.pageUrl,
+      'page_title': args.name ?? '',
+      'product_id': args.productId.toString(),
+      'variant_id': args.variantId.toString(),
+    };
+
+    if (cartId.isNotEmpty) {
+      params['cart_id'] = cartId;
+    }
+
+    final contextDetails = TrackProductEventContext(
+      productId: args.productId.toString(),
+      imgUrl: args.imgUrl ?? '',
+      variantId: args.variantId.toString(),
+      productName: args.name ?? '',
+      productPrice: args.price?.toString() ?? '',
+      productHandle: args.handle?.toString() ?? '',
+      type: 'product',
+    );
 
     final contexts = await Future.wait([
-      getProductContext(args),
+      getProductContext(contextDetails),
+      getCartContext(cartId),
       getUserContext(),
       getDeviceInfoContext(),
     ]);
 
-    await _trackEvent(
-      pageUrl: pageUrl,
-      pageTitle: args.name ?? '',
-      contexts: contexts,
-      productId: args.productId,
-    );
+    await _trackEvent(params, contexts.whereType<SelfDescribing>().toList());
+  }
+
+  static String _trimCartId(String cartId) {
+    final cartIdMatch =
+        RegExp(r'gid://shopify/Cart/([^?]+)').firstMatch(cartId);
+    return cartIdMatch?.group(1) ?? '';
   }
 
   static Future<void> trackCartEvent(TrackCartEventArgs args) async {
     final merchantUrl =
         (await cacheInstance.getValue(KeyConfig.gkMerchantUrlKey)) ?? '';
-    final pageUrl = '$merchantUrl/cart';
+
+    String cartId = args.cartId ?? '';
+    if (cartId.contains('gid://shopify/Cart/')) {
+      cartId = _trimCartId(cartId);
+    }
+
+    String pageUrl = args.pageUrl ?? '';
+    if (pageUrl.isEmpty) {
+      pageUrl = 'https://$merchantUrl/cart';
+    }
+
+    final params = {'pageUrl': pageUrl, 'cart_id': cartId};
 
     final contexts = await Future.wait([
-      getCartContext(args.cartId),
+      getOtherEventsContext(),
+      getCartContext(cartId),
       getUserContext(),
       getDeviceInfoContext(),
     ]);
 
-    await _trackEvent(
-      pageUrl: pageUrl,
-      pageTitle: 'Cart',
-      contexts: contexts,
-      cartId: args.cartId,
-    );
+    await _trackEvent(params, contexts.whereType<SelfDescribing>().toList());
   }
 
   static Future<void> trackCollectionsEvent(
       TrackCollectionsEventArgs args) async {
     final merchantUrl =
         (await cacheInstance.getValue(KeyConfig.gkMerchantUrlKey)) ?? '';
-    final pageUrl = '$merchantUrl/collections/${args.handle}';
+
+    String pageUrl = args.pageUrl ?? '';
+    if (args.handle != null && merchantUrl.isNotEmpty && pageUrl.isEmpty) {
+      pageUrl = 'https://$merchantUrl/collections/${args.handle}';
+    }
+
+    String cartId = args.cartId;
+    if (cartId.contains('gid://shopify/Cart/')) {
+      cartId = _trimCartId(cartId);
+    }
+
+    final params = {
+      'pageUrl': pageUrl,
+      'cart_id': cartId,
+      'collection_id': args.collectionId.toString(),
+      'name': args.name,
+      'image_url': args.imageUrl ?? '',
+      'handle': args.handle?.toString() ?? '',
+    };
+
+    final contextDetails = TrackCollectionEventContext(
+      collection_id: args.collectionId.toString(),
+      img_url: args.imageUrl,
+      collection_name: args.name,
+      collection_handle: args.handle ?? '',
+      type: 'collection',
+    );
 
     final contexts = await Future.wait([
-      getCollectionsContext(args.collectionId),
+      getCollectionsContext(contextDetails),
       getUserContext(),
+      getCartContext(cartId),
       getDeviceInfoContext(),
     ]);
 
-    await _trackEvent(
-      pageUrl: pageUrl,
-      pageTitle: args.name,
-      contexts: contexts,
-    );
+    await _trackEvent(params, contexts.whereType<SelfDescribing>().toList());
   }
 
   // Custom Event Tracker
@@ -219,12 +307,18 @@ class SnowplowTrackerService {
 
     final filteredData = _filterEventValuesAsPerStructSchema(eventObject);
 
+    final contexts = await Future.wait([
+      getUserContext(),
+      getDeviceInfoContext(),
+    ]);
+
     await snowplow?.track(
       SelfDescribing(
         schema:
-            'iglu:com.snowplowanalytics.snowplow/link_click/jsonschema/1-0-1',
+            'iglu:${SdkConfig.getSchemaVendor(environment)}/structured/jsonschema/1-0-0',
         data: filteredData,
       ),
+      contexts: contexts.whereType<SelfDescribing>().toList(),
     );
   }
 
@@ -286,7 +380,17 @@ class SnowplowTrackerService {
       );
 
       await snowplow?.track(
-        SelfDescribing(schema: 'cds', data: args),
+        SelfDescribing(
+          schema:
+              'iglu:com.snowplowanalytics.snowplow/structured_event/jsonschema/1-0-0',
+          data: {
+            'category': args['category'],
+            'action': args['action'],
+            'label': args['label'],
+            'property': args['property'],
+            'value': args['value'],
+          },
+        ),
       );
     } catch (error) {
       print('Error in snowplowStructuredEvent: $error');
@@ -294,22 +398,25 @@ class SnowplowTrackerService {
     }
   }
 
-  static Future<void> trackOtherEvent([TrackOtherEventArgs? args]) async {
-    final merchantUrl =
-        (await cacheInstance.getValue(KeyConfig.gkMerchantUrlKey)) ?? '';
-    final pageUrl = merchantUrl.isNotEmpty ? '$merchantUrl/cart' : '';
+  static Future<void> trackOtherEvent(TrackOtherEventArgs? args) async {
+    String url = args?.pageUrl ?? '';
+
+    String cartId = args?.cartId ?? '';
+    if (cartId.contains('gid://shopify/Cart/')) {
+      cartId = _trimCartId(cartId);
+    }
+
+    final params = {
+      'pageUrl': url,
+    };
 
     final contexts = await Future.wait([
-      getCartContext(args?.cartId ?? ''),
+      getOtherEventsContext(),
+      getCartContext(cartId),
       getUserContext(),
       getDeviceInfoContext(),
     ]);
 
-    await _trackEvent(
-      pageUrl: pageUrl,
-      pageTitle: 'Cart',
-      contexts: contexts,
-      cartId: args?.cartId,
-    );
+    await _trackEvent(params, contexts.whereType<SelfDescribing>().toList());
   }
 }

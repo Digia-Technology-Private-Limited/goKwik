@@ -72,9 +72,7 @@ class DioClient {
   }
 }
 
-extension DioResponseExtension on Response {
-  BaseResponse<T> toBaseResponse<T>(
-      {T Function(Map<String, dynamic>)? fromJson}) {
+extension DioResponseExtension on Response {BaseResponse<T> toBaseResponse<T>({T Function(Map<String, dynamic>)? fromJson}) {
     return BaseResponse<T>.fromJson(data, fromJson);
   }
 }
