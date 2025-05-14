@@ -113,7 +113,7 @@ class RootCubit extends Cubit<RootState> {
     otpController.text = value;
     try {
       final response = await ShopifyService.shopifyVerifyEmail(
-          emailController.text, otpController.text);
+          shopifyEmailController.text, otpController.text);
 
       // if(response['phone']!=null) {
       //   emit(state.copyWith(otpSent: true, isNewUser: true, isLoading: false));
@@ -164,9 +164,10 @@ class RootCubit extends Cubit<RootState> {
           }).toList(),
         ));
       }
-      if (response['emailRequired'] != null && response['email'] == null) {
+      if (response['emailRequired'] == true && response['email'] == null) {
         emit(state.copyWith(
           isNewUser: true,
+          isLoading: false,
         ));
       }
       if (response?['merchantResponse']?['email'] != null) {

@@ -690,19 +690,19 @@ abstract class ApiService {
       return Success(multipassResponse['data']);
     }
 
-    final userData = {
-      ...responseData?['data'],
-      'phone': phoneNumber,
-    };
+    // final userData = {
+    //   ...responseData,
+    //   'phone': phoneNumber,
+    // };
 
-    await cacheInstance.setValue(
-      KeyConfig.gkVerifiedUserKey,
-      jsonEncode(userData),
-    );
+    // await cacheInstance.setValue(
+    //   KeyConfig.gkVerifiedUserKey,
+    //   jsonEncode(userData),
+    // );
 
-    if (responseForAffluence is Success && responseForAffluence.data != null) {
-      responseData['data']['affluence'] = responseForAffluence;
-    }
+    // if (responseForAffluence is Success && responseForAffluence.data != null) {
+    //   responseData['data']['affluence'] = responseForAffluence;
+    // }
     // await SnowplowTrackerService.sendCustomEventToSnowPlow({
     //   'category': 'login_modal',
     //   'label': 'phone_Number_logged_in',
@@ -711,7 +711,7 @@ abstract class ApiService {
     //   'value': int.tryParse(phoneNumber) ?? 0,
     // });
 
-    return responseData;
+    return Success(responseData);
   }
 
   static Future<bool> checkout() async {
