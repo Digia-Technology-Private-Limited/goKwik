@@ -44,3 +44,9 @@ app.*.map.json
 
 # ignore example folder
 example/
+
+# ignore .vscode folder
+.vscode/
+
+# ignore pubspec.lock file
+pubspec.lock
