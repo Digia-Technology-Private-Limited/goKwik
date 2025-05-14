@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:bloc/bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gokwik/api/api_service.dart';
 import 'package:gokwik/api/base_response.dart';
@@ -100,7 +101,7 @@ class RootCubit extends Cubit<RootState> {
       print('handleOtpSend error ${err}');
       onErrorData?.call(FlowResult(
         flowType: FlowType.resendOtp,
-        error: SingleUseData((err as Failure).message),
+        error: (err as Failure).message,
       ));
       emit(state.copyWith(
           error: SingleUseData((err as Failure).message), isLoading: false));
@@ -111,13 +112,26 @@ class RootCubit extends Cubit<RootState> {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
     otpController.text = value;
+    print('handleEmailOtpVerification ${otpController.text}');
+    print('shopifyEmailController.text ${shopifyEmailController.text}');
     try {
       final response = await ShopifyService.shopifyVerifyEmail(
           shopifyEmailController.text, otpController.text);
 
-      // if(response['phone']!=null) {
-      //   emit(state.copyWith(otpSent: true, isNewUser: true, isLoading: false));
-      // }
+      print('response ${response['data']}');
+
+      if (response['data']['phone'] == null) {
+        response['data']['phone'] = phoneController.text;
+      }
+
+      onSuccessData?.call(FlowResult(
+        flowType: FlowType.emailOtpVerify,
+        data: response['data'],
+      ));
+
+      if (response['phone'] != null) {
+        emit(state.copyWith(otpSent: true, isNewUser: true, isLoading: false));
+      }
       state.copyWith(isSuccess: true, isLoading: false);
     } catch (err) {
       state.copyWith(
@@ -185,15 +199,14 @@ class RootCubit extends Cubit<RootState> {
     } catch (err) {
       otpController.clear();
       onErrorData?.call(FlowResult(
-          flowType: FlowType.otpVerify,
-          error: SingleUseData((err as Failure).message)));
+          flowType: FlowType.otpVerify, error: (err as Failure).message));
       emit(state.copyWith(
           error: SingleUseData((err as Failure).message), isLoading: false));
     }
   }
 
   void handlePhoneChange() {
-    emit(state.copyWith(otpSent: false, isNewUser: true, error: null));
+    emit(state.copyWith(otpSent: false, isNewUser: false, error: null));
   }
 
   void handleEmailChange() {
@@ -297,8 +310,8 @@ class RootCubit extends Cubit<RootState> {
   Future<void> onUserStateUpdated() async {
     final response = await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
     if (response == null) {
-      onErrorData?.call(FlowResult(
-          flowType: FlowType.notLoggedIn, error: 'User Not Logged In'));
+      // onErrorData?.call(FlowResult(
+      //     flowType: FlowType.notLoggedIn, error: 'User Not Logged In'));
       return;
     }
 

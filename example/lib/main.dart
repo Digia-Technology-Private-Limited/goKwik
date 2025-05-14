@@ -49,14 +49,13 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _initializeData() async {
-
-    try{
+    try {
       await GoKwikClient.instance.initializeSDK(InitializeSdkProps(
         mid: '12wyqc2guqmkrw6406j',
         environment: Environment.production,
         isSnowplowTrackingEnabled: true,
       ));
-    }catch(err){
+    } catch (err) {
       print("ERROR OROOOROROR ${err.toString()}");
     }
   }

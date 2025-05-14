@@ -12,7 +12,6 @@ import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/config/storege.dart';
-import 'package:gokwik/module/advertise.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -32,11 +31,9 @@ abstract class ApiService {
         final status = response.statusCode;
         final requestId = response.requestId ?? 'N/A';
 
-        if (data != null && (data != null || response.errorMessage != null)) {
-          message = (data ?? response.errorMessage).toString();
-        } else {
-          message = 'Unexpected error with status: $status';
-        }
+        message = response.errorMessage?.toString() ??
+            response.error_msg?.toString() ??
+            'Unexpected error with status: $status';
 
         return Failure(message);
       }
@@ -157,8 +154,7 @@ abstract class ApiService {
 
       return Success(response.data);
     } catch (err) {
-      final apiError = handleApiError(err);
-      return Failure(apiError.message);
+      throw handleApiError(err);
     }
   }
 
@@ -246,8 +242,6 @@ abstract class ApiService {
           final platform =
               merchantConfigData!.platform.toString().toLowerCase();
           await cacheInstance.setValue(KeyConfig.gkMerchantTypeKey, platform);
-          // Event emission would be handled differently in Flutter
-          //TODO: @Ram
         }
 
         final hostName = getHostName(merchantConfigData!.host);
@@ -318,7 +312,10 @@ abstract class ApiService {
       return {'message': 'Initialization Successful'};
     } catch (error) {
       print('error in initialize sdk: $error');
-      throw handleApiError(error);
+      if (error is Failure) {
+        throw handleApiError(error);
+      }
+      throw error;
     }
   }
 

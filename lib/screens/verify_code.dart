@@ -387,25 +387,39 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                   widget.onVerify(otp);
                 }
               },
-              child: widget.isLoading
-                  ? widget.loadingText != null
-                      ? Text(
-                          widget.loadingText!,
+              child: widget.isSuccess
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          widget.loadingText ?? 'Signing you in...',
                           style: widget.loadingTextStyle,
                         )
-                      : const CircularProgressIndicator(
-                          color: Colors.white,
-                        )
-                  : Text(
-                      widget.submitButtonText,
-                      style: widget.submitButtonTextStyle ??
-                          const TextStyle(
-                            fontSize: 16,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                    ),
+                      ],
+                    )
+                  : widget.isLoading
+                      ? widget.loadingText != null
+                          ? Text(
+                              widget.loadingText!,
+                              style: widget.loadingTextStyle,
+                            )
+                          : const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                      : Text(
+                          widget.submitButtonText,
+                          style: widget.submitButtonTextStyle ??
+                              const TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                        ),
             ),
           ),
         ],

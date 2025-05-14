@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gokwik/screens/main_screen.dart';
 import 'package:gokwik/screens/root.dart';
+import 'package:gokwik/go_kwik_client.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -28,17 +29,22 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: GoKwikLoginAndSignUpFlow(
           onSuccess: (data) {
-            print("onSuccess ${data}");
+            print("onSuccess ${data.flowType}");
+
+            GoKwikClient.instance.logout();
 
             if (data.data != null) {
-              Navigator.pop(context);
+              // add 5 seconds of delay
+              Future.delayed(const Duration(seconds: 5), () {
+                Navigator.pop(context);
+              });
             }
           },
           onError: (error) {
             print("onError::: APPLICATION SIDE ${error.error}");
-            // ScaffoldMessenger.of(context).showSnackBar(
-            //   SnackBar(content: Text(error.error)),
-            // );
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(error.error)),
+            );
           },
           enableGuestLogin: true,
           guestLoginButtonLabel: 'Skip',
@@ -47,21 +53,33 @@ class _LoginScreenState extends State<LoginScreen> {
             Navigator.pop(context);
           },
           inputProps: const TextInputConfig(
-              phoneAuthScreen: PhoneAuthScreenConfig(
-                title: "HELLLO",
-                subTitle: "SUBTITLE",
-                phoneNumberPlaceholder: "Enter your phone",
-                submitButtonText: "Submit",
-                updatesPlaceholder: "Receive updates on WhatsApp",
-                updatesTextStyle: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 16,
-                ),
+            phoneAuthScreen: PhoneAuthScreenConfig(
+              title: "Login to your account",
+              subTitle: "Enter your phone number",
+              phoneNumberPlaceholder: "Enter your phone number",
+              submitButtonText: "Submit",
+              updatesPlaceholder: "Receive updates on WhatsApp",
+              updatesTextStyle: const TextStyle(
+                color: Colors.black,
+                fontSize: 16,
               ),
-              otpVerificationScreen: OtpVerificationScreenConfig(
-                title: "Enter the code sent to your phone",
-                subTitle: "Submit",
-              )),
+            ),
+            otpVerificationScreen: OtpVerificationScreenConfig(
+              title: "Verify your phone number",
+              subTitle: "Enter the 4 digit code sent to your phone",
+              submitButtonText: "Verify",
+            ),
+            emailOtpVerificationScreen: EmailOtpVerificationScreenConfig(
+              title: "Verify your email",
+              subTitle: "Enter the 4 digit code sent to your email",
+              submitButtonText: "Verify",
+            ),
+            shopifyEmailScreen: ShopifyEmailScreenConfig(
+              title: "Enter your email",
+              subTitle: "Enter your email",
+              submitButtonText: "Submit",
+            ),
+          ),
           footerText: 'By continuing, you agree to our',
           // footerHyperlinkStyle: const TextStyle(
           //   color: Colors.black,

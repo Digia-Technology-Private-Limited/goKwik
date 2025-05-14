@@ -1,4 +1,5 @@
 import 'package:gokwik/api/api_service.dart';
+import 'package:gokwik/api/base_response.dart';
 import 'package:gokwik/config/storege.dart';
 import 'package:gokwik/config/types.dart';
 import 'package:gokwik/module/logger.dart';
@@ -20,6 +21,7 @@ class GoKwikClient {
       await SecureStorage.init();
       await ApiService.initializeSdk(props);
     } catch (err) {
+      print("ERROR IN INITIALIZE SDK ${(err as Failure).message}");
       throw ApiService.handleApiError(err);
     }
   }

@@ -8,6 +8,7 @@ class BaseResponse<T> {
   final bool? success;
   final DateTime? timestamp;
   final String? errorMessage;
+  final String? error_msg;
   final String? requestId;
 
   BaseResponse({
@@ -18,6 +19,7 @@ class BaseResponse<T> {
     this.success,
     this.timestamp,
     this.errorMessage,
+    this.error_msg,
     this.requestId,
   });
 
