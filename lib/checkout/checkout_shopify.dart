@@ -5,6 +5,7 @@ import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/flow_result.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CheckoutShopify extends StatefulWidget {
   final String cartId;
@@ -69,7 +70,6 @@ window.addEventListener('load', function() {
   void _initWebViewController() {
     _webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      // ..runJavaScript(injectedJavaScript)
       ..addJavaScriptChannel(
         'Flutter',
         onMessageReceived: (JavaScriptMessage message) {
@@ -87,6 +87,29 @@ window.addEventListener('load', function() {
           },
           onWebResourceError: (error) {
             debugPrint('Web resource error: $error');
+          },
+          onNavigationRequest: (NavigationRequest request) {
+            final url = request.url.toLowerCase();
+
+            // Check if the URL is for a payment app
+            if (url.startsWith('phonepe://') ||
+                url.startsWith('paytm://') ||
+                url.startsWith('tez://') || // For GPay
+                url.startsWith('gpay://') ||
+                url.startsWith('upi://')) {
+              // Try to launch the URL in the native app
+              try {
+                launchUrl(Uri.parse(request.url),
+                    mode: LaunchMode.platformDefault);
+                return NavigationDecision.prevent; // Prevent WebView from loading
+              } catch (e) {
+                debugPrint('Error launching URL: $e');
+                return NavigationDecision.navigate; // Fall back to WebView
+              }
+            }
+
+            // Allow all other navigation
+            return NavigationDecision.navigate;
           },
         ),
       );
