@@ -588,13 +588,13 @@ class ShopifyVerifyCodeResponse {
 
 class VerifiedUser {
   final String? coreToken;
-  final Token token;
+  // final Token? token;
   final String phone;
   final String? email;
 
   VerifiedUser({
     this.coreToken,
-    required this.token,
+    // required this.token,
     required this.phone,
     this.email,
   });
@@ -602,7 +602,7 @@ class VerifiedUser {
   factory VerifiedUser.fromJson(Map<String, dynamic> json) {
     return VerifiedUser(
       coreToken: json['coreToken'],
-      token: Token(isValid: json['token']['isValid']),
+      // token: Token(isValid: json['token']?['isValid']),
       phone: json['phone'],
       email: json['email'],
     );
@@ -611,7 +611,7 @@ class VerifiedUser {
   Map<String, dynamic> toJson() {
     return {
       'coreToken': coreToken,
-      'token': {'isValid': token.isValid},
+      // 'token': {'isValid': token.isValid},
       'phone': phone,
       'email': email,
     };

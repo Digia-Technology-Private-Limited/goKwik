@@ -68,19 +68,19 @@ class SnowplowTrackerService {
   static Future<SelfDescribing?> getUserContext() async {
     final userJson =
         (await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey)) ?? '{}';
-    var user =
-        userJson != "{}" ? VerifiedUser.fromJson(jsonDecode(userJson)) : null;
+    var user = userJson != "{}" ? jsonDecode(userJson) : null;
 
     var phone =
-        user != null ? user!.phone.replaceAll(RegExp(r'^\+91'), '') : null;
+        user != null ? user!['phone']?.replaceAll(RegExp(r'^\+91'), '') : null;
     final numericPhoneNumber = int.tryParse(phone ?? '');
 
-    if (numericPhoneNumber != null || (user != null && user.email != null)) {
+    if (numericPhoneNumber != null ||
+        (user != null && user?['email'] != null)) {
       return _createContext(
         'user/jsonschema/1-0-0',
         {
           'phone': numericPhoneNumber?.toString() ?? '',
-          'email': user!.email ?? '',
+          'email': user?['email'] ?? '',
         },
       );
     }

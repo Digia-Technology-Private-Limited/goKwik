@@ -552,7 +552,7 @@ abstract class ApiService {
           kpToken,
         );
 
-        return Success(res);
+        return res;
       }
 
       if (token != null) {
