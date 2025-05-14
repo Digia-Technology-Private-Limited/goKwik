@@ -60,6 +60,22 @@ class VerifyCodeResponseData {
   final String? coreToken;
 
   VerifyCodeResponseData({this.kpToken, this.token, this.coreToken});
+
+  factory VerifyCodeResponseData.fromJson(Map<String, dynamic> json) {
+    return VerifyCodeResponseData(
+      kpToken: json['kpToken'],
+      token: json['token'],
+      coreToken: json['coreToken'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'kpToken': kpToken,
+      'token': token,
+      'coreToken': coreToken,
+    };
+  }
 }
 
 class VerifyCodeResponse {

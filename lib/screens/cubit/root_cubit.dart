@@ -9,37 +9,13 @@ import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/config/types.dart';
+import 'package:gokwik/module/single_use_data.dart';
 import 'package:gokwik/screens/cubit/root_model.dart';
 // Removed unused import
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../flow_result.dart';
 import '../root.dart';
-
-enum FlowType {
-  otpSend,
-  otpVerify,
-  resendOtp,
-  emailOtpSend,
-  emailOtpVerify,
-  createUser,
-  shopifyEmailSubmit,
-  resendShopifyEmailOtp,
-  alreadyLoggedIn,
-}
-
-class FlowResult {
-  final FlowType flowType;
-  final dynamic data;
-  final dynamic error;
-  final Map<String, dynamic>? extra;
-
-  FlowResult({
-    required this.flowType,
-    this.data,
-    this.error,
-    this.extra,
-  });
-}
 
 class RootCubit extends Cubit<RootState> {
   final phoneController = TextEditingController();
@@ -80,7 +56,7 @@ class RootCubit extends Cubit<RootState> {
           error: (response as Failure).message,
         ));
         emit(state.copyWith(
-            createAccountError: (response as Failure).message,
+            error: SingleUseData((response as Failure).message),
             isLoading: false));
         return;
       }
@@ -111,7 +87,7 @@ class RootCubit extends Cubit<RootState> {
           error: (response as Failure).message,
         ));
         emit(state.copyWith(
-            createAccountError: (response as Failure).message,
+            error: SingleUseData((response as Failure).message),
             isLoading: false));
         return;
       }
@@ -123,11 +99,11 @@ class RootCubit extends Cubit<RootState> {
     } catch (err) {
       print('handleOtpSend error ${err}');
       onErrorData?.call(FlowResult(
-        flowType: FlowType.otpSend,
-        error: (err as Failure).message,
+        flowType: FlowType.resendOtp,
+        error: SingleUseData((err as Failure).message),
       ));
       emit(state.copyWith(
-          createAccountError: (err as Failure).message, isLoading: false));
+          error: SingleUseData((err as Failure).message), isLoading: false));
     }
   }
 
@@ -144,7 +120,8 @@ class RootCubit extends Cubit<RootState> {
       // }
       state.copyWith(isSuccess: true, isLoading: false);
     } catch (err) {
-      state.copyWith(createAccountError: err.toString(), isLoading: false);
+      state.copyWith(
+          error: SingleUseData((err as Failure).message), isLoading: false);
     }
   }
 
@@ -160,67 +137,66 @@ class RootCubit extends Cubit<RootState> {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
     try {
-      final response = (await ApiService.verifyCode(phoneController.text, otp))
-          .getDataOrThrow();
-      final responseData = response.getDataOrThrow();
-      print('handleOtpVerification response ${responseData}');
-      print('state.merchantType.name ${state.merchantType.name}');
+      final response = ((await ApiService.verifyCode(phoneController.text, otp))
+          .getDataOrThrow()) as Map<String, dynamic>;
+      if (state.merchantType == MerchantType.shopify &&
+          response['email'] != null) {
+        response.remove('state');
+        response.remove('accountActivationUrl');
 
-      if (state.merchantType.name == 'shopify' &&
-          responseData.data['email'] != null) {
-        if (responseData.data['phone'] == null) {
-          responseData.data['phone'] = phoneController.text;
+        if (response['phone'] == null) {
+          response['phone'] = phoneController.text;
         }
 
         emit(state.copyWith(
             isSuccess: true,
-            isNewUser: responseData.data['isNewUser'],
+            isNewUser: response['isNewUser'],
             isLoading: false));
 
-        onSuccessData?.call(
-            FlowResult(flowType: FlowType.otpVerify, data: responseData));
+        onSuccessData
+            ?.call(FlowResult(flowType: FlowType.otpVerify, data: response));
       }
-      if (responseData.data['multiple_emails'] != null) {
+      if (response['multiple_emails'] != null) {
         emit(state.copyWith(
-          multipleEmails: responseData.data['multiple_emails'],
-          isSuccess: true,
+          multipleEmails:
+              (response['multiple_emails'] as String?)?.split(',').map((item) {
+            return MultipleEmail(label: item.trim(), value: item.trim());
+          }).toList(),
         ));
       }
-      if (responseData.data['emailRequired'] != null &&
-          responseData.data['email'] == null) {
+      if (response['emailRequired'] != null && response['email'] == null) {
         emit(state.copyWith(
           isNewUser: true,
         ));
       }
-      if (responseData.data['merchantResponse']['email'] != null) {
-        if (responseData.data['merchantResponse']['phone'] == null) {
-          responseData.data['merchantResponse']['phone'] = phoneController.text;
+      if (response?['merchantResponse']?['email'] != null) {
+        if (response?['merchantResponse']?['phone'] == null) {
+          response['merchantResponse']['phone'] = phoneController.text;
         }
         onSuccessData?.call(FlowResult(
           flowType: FlowType.otpVerify,
-          data: responseData.data['merchantResponse'],
+          data: response?['merchantResponse'],
         ));
         emit(state.copyWith(isSuccess: true, isLoading: false));
       }
       otpController.clear();
+      _listenUserStateUpdated();
     } catch (err) {
+      otpController.clear();
       onErrorData?.call(FlowResult(
-        flowType: FlowType.otpVerify,
-        error: (err as Failure).message,
-      ));
+          flowType: FlowType.otpVerify,
+          error: SingleUseData((err as Failure).message)));
       emit(state.copyWith(
-          createAccountError: (err as Failure).message, isLoading: false));
+          error: SingleUseData((err as Failure).message), isLoading: false));
     }
   }
 
   void handlePhoneChange() {
-    emit(state.copyWith(
-        otpSent: false, isNewUser: false, createAccountError: null));
+    emit(state.copyWith(otpSent: false, isNewUser: true, error: null));
   }
 
   void handleEmailChange() {
-    emit(state.copyWith(
-        emailOtpSent: false, isNewUser: true, createAccountError: null));
+    emit(state.copyWith(emailOtpSent: false, isNewUser: true, error: null));
   }
 
   Future<void> linkOpenHandler(String url) async {
@@ -244,8 +220,8 @@ class RootCubit extends Cubit<RootState> {
       emit(state.copyWith(
           isSuccess: true, isUserLoggedIn: true, isLoading: false));
     } catch (err) {
-      emit(
-          state.copyWith(createAccountError: err.toString(), isLoading: false));
+      emit(state.copyWith(
+          error: SingleUseData((err as Failure).message), isLoading: false));
     }
   }
 
@@ -254,14 +230,20 @@ class RootCubit extends Cubit<RootState> {
   ) async {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
-
+    shopifyEmailController.text = email;
     try {
-      await ShopifyService.shopifySendEmailVerificationCode(email);
+      final response =
+          await ShopifyService.shopifySendEmailVerificationCode(email);
+
       emit(state.copyWith(
-          emailOtpSent: true, isNewUser: true, isLoading: false));
+          emailOtpSent: true, isNewUser: false, isLoading: false));
     } catch (err) {
-      emit(
-          state.copyWith(createAccountError: err.toString(), isLoading: false));
+      emit(state.copyWith(
+          error: SingleUseData((err is Failure) ? err.message : err.toString()),
+          isLoading: false,
+          emailOtpSent: false));
+      onErrorData
+          ?.call(FlowResult(flowType: FlowType.emailOtpSend, error: err));
     }
   }
 
@@ -273,8 +255,8 @@ class RootCubit extends Cubit<RootState> {
       emit(state.copyWith(
           emailOtpSent: true, isNewUser: true, isLoading: false));
     } catch (err) {
-      emit(
-          state.copyWith(createAccountError: err.toString(), isLoading: false));
+      emit(state.copyWith(
+          error: SingleUseData((err as Failure).message), isLoading: false));
     }
   }
 
@@ -313,7 +295,11 @@ class RootCubit extends Cubit<RootState> {
 
   Future<void> onUserStateUpdated() async {
     final response = await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
-    if (response == null) return;
+    if (response == null) {
+      onErrorData?.call(FlowResult(
+          flowType: FlowType.notLoggedIn, error: 'User Not Logged In'));
+      return;
+    }
 
     final Map<String, dynamic> responseData = jsonDecode(response);
 

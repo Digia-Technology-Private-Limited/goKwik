@@ -653,8 +653,9 @@ abstract class ApiService {
         );
       }
 
-      if (responseForAffluence != null) {
-        multipassResponse['data']['affluence'] = responseForAffluence;
+      if (responseForAffluence is Success &&
+          responseForAffluence.data != null) {
+        multipassResponse['data']['affluence'] = responseForAffluence.data;
       }
       // await SnowplowTrackerService.sendCustomEventToSnowPlow({
       //   'category': 'login_modal',
@@ -669,10 +670,10 @@ abstract class ApiService {
 
     if (responseData?['email'] != null) {
       final multipassResponse = await ShopifyService.getShopifyMultipassToken(
-        phone: phoneNumber,
-        email: responseData?['email'],
-        id: responseData?['shopifyCustomerId'],
-      );
+          phone: phoneNumber,
+          email: responseData?['email'],
+          id: responseData?['shopifyCustomerId'],
+          state: responseData?['state']);
 
       await SnowplowTrackerService.sendCustomEventToSnowPlow({
         'category': 'login_modal',
@@ -682,8 +683,9 @@ abstract class ApiService {
         'value': int.tryParse(phoneNumber) ?? 0,
       });
 
-      if (responseForAffluence != null) {
-        multipassResponse['data']['affluence'] = responseForAffluence;
+      if (responseForAffluence is Success &&
+          responseForAffluence.data != null) {
+        multipassResponse['data']['affluence'] = responseForAffluence.data;
       }
       return Success(multipassResponse['data']);
     }
@@ -698,7 +700,7 @@ abstract class ApiService {
       jsonEncode(userData),
     );
 
-    if (responseForAffluence != null) {
+    if (responseForAffluence is Success && responseForAffluence.data != null) {
       responseData['data']['affluence'] = responseForAffluence;
     }
     // await SnowplowTrackerService.sendCustomEventToSnowPlow({
@@ -749,7 +751,6 @@ abstract class ApiService {
       // await prefs.remove(KeyConfig.gkRequestIdKey);
       // await prefs.remove(KeyConfig.kpRequestIdKey);
       // await prefs.remove(KeyConfig.gkAuthTokenKey);
-      KwikPassCache().clearCache();
       await SecureStorage.clearAllSecureData();
 
       await initializeSdk(InitializeSdkProps(

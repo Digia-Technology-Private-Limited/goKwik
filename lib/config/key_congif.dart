@@ -39,4 +39,46 @@ class KeyConfig {
   static const kcMerchantId = 'kc-merchant-id';
   static const kcMerchantToken = 'kc-merchant-token';
   static const kcNotificationEventUrl = 'kc-notif-event-url';
+
+  static const List<String> allKeys = [
+    gkTokenKey,
+    gkCoreTokenKey,
+    gkAccessTokenKey,
+    checkoutAccessTokenKey,
+    gkKpToken,
+    gkEnvironmentKey,
+    gkVerifiedUserKey,
+    gkMerchantIdKey,
+    gkMerchantUrlKey,
+    gkMerchantTypeKey,
+    gkRequestIdKey,
+    kpRequestIdKey,
+    gkAuthTokenKey,
+    isSnowplowTrackingEnabled,
+    gkDeviceModel,
+    gkAppDomain,
+    gkOperatingSystem,
+    gkDeviveId,
+    gkDeviceUniqueId,
+    gkGoogleAnalyticsId,
+    gkScreenResolution,
+    gkCarrierInfo,
+    gkBatteryStatus,
+    gkLanguage,
+    gkTimeZone,
+    gkAppVersion,
+    gkAppVersionCode,
+    gkGoogleAdId,
+    gkDeviceInfo,
+    gkNotificationToken,
+    gkNotificationEnabled,
+    gkMerchantConfig,
+    gkUserPhone,
+    kcMerchantId,
+    kcMerchantToken,
+    kcNotificationEventUrl,
+  ];
+
+  /// 🔄 Function to get all keys (optional if you want a method instead of accessing `KeyConfig.allKeys`)
+  static List<String> getAllKeys() => allKeys;
 }

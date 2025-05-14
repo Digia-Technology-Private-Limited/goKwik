@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'key_congif.dart';
+
 class SecureStorage {
   static SharedPreferences? _prefs;
 
@@ -39,7 +41,9 @@ class SecureStorage {
   static Future<void> clearAllSecureData() async {
     try {
       if (_prefs == null) throw Exception('SharedPreferences not initialized');
-      await _prefs!.clear();
+      for (final key in KeyConfig.allKeys) {
+        await _prefs!.remove(key);
+      }
     } catch (e) {
       throw Exception('Failed to clear all data: $e');
     }

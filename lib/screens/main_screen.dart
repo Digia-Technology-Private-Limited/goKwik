@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gokwik/config/types.dart';
+import 'package:gokwik/flow_result.dart';
 import 'package:gokwik/screens/cubit/root_cubit.dart';
 import 'package:gokwik/screens/root.dart';
 
@@ -30,13 +31,14 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
   final Function(FlowResult)? onError;
 
   // For new user
-  final CreateUserConfig createUserConfig;
+  final CreateUserConfig? createUserConfig;
 
   // Guest user
   final bool enableGuestLogin;
   final String guestLoginButtonLabel;
   final VoidCallback? onGuestLoginPress;
   final BoxDecoration? guestContainerStyle;
+  final TextStyle? guesLoginTextStyle;
 
   // Input config
   final TextInputConfig? inputProps;
@@ -59,18 +61,14 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
     this.footerHyperlinkStyle,
     this.onSuccess,
     this.onError,
-    this.createUserConfig = const CreateUserConfig(
-      isEmailRequired: true,
-      isNameRequired: true,
-      showEmail: true,
-      showUserName: true,
-    ),
+    this.createUserConfig,
     this.enableGuestLogin = false,
     this.guestLoginButtonLabel = 'Skip',
     this.onGuestLoginPress,
     this.guestContainerStyle,
     this.inputProps,
     this.merchantType,
+    this.guesLoginTextStyle,
   });
 
   @override
@@ -93,8 +91,7 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
         footerUrls: footerUrls,
         footerTextStyle: footerTextStyle,
         footerHyperlinkStyle: footerHyperlinkStyle,
-        // onSuccess: onSuccess,
-        // onError: onError,
+        guesLoginTextStyle: guesLoginTextStyle,
         createUserConfig: createUserConfig,
         enableGuestLogin: enableGuestLogin,
         guestLoginButtonLabel: guestLoginButtonLabel,

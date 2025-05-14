@@ -36,9 +36,9 @@ class _LoginScreenState extends State<LoginScreen> {
           },
           onError: (error) {
             print("onError::: APPLICATION SIDE ${error.error}");
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(error.error)),
-            );
+            // ScaffoldMessenger.of(context).showSnackBar(
+            //   SnackBar(content: Text(error.error)),
+            // );
           },
           enableGuestLogin: true,
           guestLoginButtonLabel: 'Skip',

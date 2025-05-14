@@ -3,12 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:gokwik/api/sdk_config.dart';
 import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/key_congif.dart';
+import 'package:gokwik/flow_result.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class CheckoutShopify extends StatefulWidget {
   final String cartId;
+  final Function(FlowResult)? onSuccess;
+  final Function(FlowResult)? onError;
 
-  const CheckoutShopify({Key? key, required this.cartId}) : super(key: key);
+  const CheckoutShopify({
+    Key? key,
+    required this.cartId,
+    this.onSuccess,
+    this.onError,
+  }) : super(key: key);
 
   @override
   _CheckoutShopifyState createState() => _CheckoutShopifyState();
@@ -17,10 +25,43 @@ class CheckoutShopify extends StatefulWidget {
 class _CheckoutShopifyState extends State<CheckoutShopify> {
   String webUrl = '';
   late final WebViewController _webViewController;
+  late final WebViewCookieManager _cookieManager;
+
+  final String injectedJavaScript = '''
+  (function checkGoKwikSdk() {
+  if (typeof gokwikSdk !== 'undefined' && typeof gokwikSdk.on === 'function') {
+    gokwikSdk.on('modal_closed', function (data) {
+      Flutter.postMessage(JSON.stringify({ type: 'modal_closed', data: data }));
+    });
+
+    gokwikSdk.on('orderSuccess', function (data) {
+      Flutter.postMessage(JSON.stringify({ type: 'orderSuccess', data: data }));
+    });
+
+    gokwikSdk.on('openInBrowserTab', function (data) {
+      Flutter.postMessage(JSON.stringify({ type: 'openInBrowserTab', data: data }));
+    });
+
+    console.log('GoKwik SDK hooks set');
+  } else {
+    setTimeout(checkGoKwikSdk, 500);
+    console.log('Retrying: GoKwik SDK not ready');
+  }
+})();
+
+document.addEventListener("gk-checkout-disable", function(event) {
+  Flutter.postMessage(JSON.stringify({ type: 'gk-checkout-disable', data: event.detail }));
+});
+window.addEventListener('load', function() {
+  checkGoKwikSdk();
+});
+
+  ''';
 
   @override
   void initState() {
     super.initState();
+    _cookieManager = WebViewCookieManager();
     _initWebViewController();
     initiateCheckout();
   }
@@ -28,6 +69,7 @@ class _CheckoutShopifyState extends State<CheckoutShopify> {
   void _initWebViewController() {
     _webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      // ..runJavaScript(injectedJavaScript)
       ..addJavaScriptChannel(
         'Flutter',
         onMessageReceived: (JavaScriptMessage message) {
@@ -39,8 +81,9 @@ class _CheckoutShopifyState extends State<CheckoutShopify> {
           onPageStarted: (url) {
             debugPrint('Page started loading: $url');
           },
-          onPageFinished: (url) {
+          onPageFinished: (url) async {
             debugPrint('Page finished loading: $url');
+            await _webViewController.runJavaScript(injectedJavaScript);
           },
           onWebResourceError: (error) {
             debugPrint('Web resource error: $error');
@@ -96,13 +139,77 @@ class _CheckoutShopifyState extends State<CheckoutShopify> {
 
     setState(() {
       webUrl = url;
-      _webViewController.loadRequest(Uri.parse(url));
     });
+
+    _webViewController.loadRequest(Uri.parse(url));
   }
 
   void handleMessage(String message) {
-    final decoded = jsonDecode(message);
-    debugPrint('Received message from WebView: $decoded');
+    try {
+      final decoded = jsonDecode(message);
+      final event = decoded['type'];
+      final data = decoded['data'];
+
+      switch (event) {
+        case 'orderSuccess':
+          widget.onSuccess?.call(
+            FlowResult(
+              flowType: FlowType.checkoutSuccess,
+              data: data,
+              extra: decoded,
+            ),
+          );
+          break;
+        case 'modal_closed':
+          widget.onError?.call(
+            FlowResult(
+              flowType: FlowType.modalClosed,
+              error: 'User closed modal',
+              extra: decoded,
+            ),
+          );
+          break;
+        case 'openInBrowserTab':
+          widget.onSuccess?.call(
+            FlowResult(
+              flowType: FlowType.openInBrowserTab,
+              data: data,
+              extra: decoded,
+            ),
+          );
+          break;
+        default:
+          widget.onError?.call(
+            FlowResult(
+              flowType: FlowType.checkoutFailed,
+              error: 'Some error Occured',
+              extra: decoded,
+            ),
+          );
+          debugPrint('Unhandled WebView event: $event');
+          break;
+      }
+    } catch (e) {
+      widget.onError?.call(
+        FlowResult(
+          flowType: FlowType.checkoutFailed,
+          error: e,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _resetWebView();
+    super.dispose();
+  }
+
+  // Clear cache and cookies first
+  void _resetWebView() async {
+    await _webViewController.clearCache();
+    await _webViewController.clearLocalStorage();
+    await _cookieManager.clearCookies();
   }
 
   @override
