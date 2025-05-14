@@ -70,6 +70,7 @@ window.addEventListener('load', function() {
   void _initWebViewController() {
     _webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      // ..runJavaScript(injectedJavaScript)
       ..addJavaScriptChannel(
         'Flutter',
         onMessageReceived: (JavaScriptMessage message) {

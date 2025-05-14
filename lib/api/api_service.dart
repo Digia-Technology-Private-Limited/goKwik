@@ -40,6 +40,7 @@ abstract class ApiService {
     }
 
     return Failure(message);
+
   }
 
   static String getHostName(String url) {
@@ -90,7 +91,9 @@ abstract class ApiService {
           response.errorMessage ?? 'Failed to fetch customer intelligence');
     } catch (err) {
       final apiError = handleApiError(err);
-      return Failure(apiError.message);
+
+      return apiError;
+
     }
   }
 
@@ -125,7 +128,9 @@ abstract class ApiService {
       );
       return Success(response);
     } catch (err) {
-      throw handleApiError(err);
+
+      final apiError = handleApiError(err);
+      return apiError;
     }
   }
 
@@ -619,6 +624,7 @@ abstract class ApiService {
     final responseForAffluence = null;
     //  await customerIntelligence();
 
+
     if (responseData?['state'] == 'DISABLED' ||
         responseData?['state'] == 'ENABLED') {
       final multipassResponse = await ShopifyService.getShopifyMultipassToken(
@@ -632,6 +638,7 @@ abstract class ApiService {
 
       if (multipassResponse?['data']?['accountActivationUrl'] != null &&
           multipassResponse?['data']?['shopifyCustomerId'] != null) {
+
         final activationUrlParts =
             multipassResponse['data']['accountActivationUrl'].split('/');
         final token = activationUrlParts.last;
@@ -707,6 +714,7 @@ abstract class ApiService {
     // });
 
     return Success(responseData);
+
   }
 
   static Future<bool> checkout() async {

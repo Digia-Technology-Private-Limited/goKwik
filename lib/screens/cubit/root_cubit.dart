@@ -97,6 +97,11 @@ class RootCubit extends Cubit<RootState> {
       //   data: (response as Success).data,
       // ));
       emit(state.copyWith(otpSent: true, isLoading: false));
+      onSuccessData?.call(FlowResult(
+        flowType: FlowType.otpSend,
+        data: (response as Success).data,
+      ));
+
     } catch (err) {
       print('handleOtpSend error ${err}');
       onErrorData?.call(FlowResult(
@@ -207,6 +212,7 @@ class RootCubit extends Cubit<RootState> {
 
   void handlePhoneChange() {
     emit(state.copyWith(otpSent: false, isNewUser: false, error: null));
+
   }
 
   void handleEmailChange() {
