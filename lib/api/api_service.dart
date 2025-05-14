@@ -106,14 +106,14 @@ abstract class ApiService {
     };
 
     try {
-      final phone = await cacheInstance.getValue(KeyConfig.gkUserPhone);
-      await SnowplowTrackerService.sendCustomEventToSnowPlow({
-        'category': 'login_modal',
-        'label': 'account_activated',
-        'action': 'automated',
-        'property': 'phone_number',
-        'value': int.tryParse(phone ?? '0') ?? 0,
-      });
+      // final phone = await cacheInstance.getValue(KeyConfig.gkUserPhone);
+      // await SnowplowTrackerService.sendCustomEventToSnowPlow({
+      //   'category': 'login_modal',
+      //   'label': 'account_activated',
+      //   'action': 'automated',
+      //   'property': 'phone_number',
+      //   'value': int.tryParse(phone ?? '0') ?? 0,
+      // });
 
       final response = await Dio().post(
         'https://$url/account/activate',
@@ -125,8 +125,7 @@ abstract class ApiService {
       );
       return Success(response);
     } catch (err) {
-      final apiError = handleApiError(err);
-      return Failure(apiError.message);
+      throw handleApiError(err);
     }
   }
 
@@ -661,7 +660,6 @@ abstract class ApiService {
       //   'property': 'phone_number',
       //   'value': int.tryParse(phoneNumber) ?? 0,
       // });
-
       return Success(multipassResponse);
     }
 
