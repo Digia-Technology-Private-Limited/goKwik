@@ -78,43 +78,52 @@ window.addEventListener('load', function() {
         },
       )
       ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (url) {
-            debugPrint('Page started loading: $url');
-          },
-          onPageFinished: (url) async {
-            debugPrint('Page finished loading: $url');
-            await _webViewController.runJavaScript(injectedJavaScript);
-          },
-          onWebResourceError: (error) {
-            debugPrint('Web resource error: $error');
-          },
-          onNavigationRequest: (NavigationRequest request) {
-            final url = request.url.toLowerCase();
+        NavigationDelegate(onPageStarted: (url) {
+          debugPrint('Page started loading: $url');
+        }, onPageFinished: (url) async {
+          debugPrint('Page finished loading: $url');
+          await _webViewController.runJavaScript(injectedJavaScript);
+        }, onWebResourceError: (error) {
+          debugPrint('Web resource error: $error');
+        }, onNavigationRequest: (NavigationRequest request) async {
+          final uri = Uri.tryParse(request.url);
+          if (uri == null) return NavigationDecision.prevent;
 
-            // Check if the URL is for a payment app
-            if (url.startsWith('phonepe://') ||
-                url.startsWith('paytm://') ||
-                url.startsWith('tez://') || // For GPay
-                url.startsWith('gpay://') ||
-                url.startsWith('upi://')) {
-              // Try to launch the URL in the native app
-              try {
-                launchUrl(Uri.parse(request.url),
-                    mode: LaunchMode.platformDefault);
-                return NavigationDecision.prevent; // Prevent WebView from loading
-              } catch (e) {
-                debugPrint('Error launching URL: $e');
-                return NavigationDecision.navigate; // Fall back to WebView
-              }
-            }
-
-            // Allow all other navigation
+          // Allow standard web links
+          if (uri.scheme == 'http' || uri.scheme == 'https') {
             return NavigationDecision.navigate;
-          },
-        ),
+          }
+
+          // Handle UPI app links
+          try {
+            final launched = await launchUrl(
+              uri,
+              mode: LaunchMode.platformDefault,
+            );
+
+            if (!launched) {
+              debugPrint('Launch error ');
+              // _showAppMissingSnackbar(
+              //     context, uri); // Show snackbar instead of dialog
+            }
+            return NavigationDecision.prevent;
+          } catch (e) {
+            debugPrint('Launch error: $e');
+            // _showAppMissingSnackbar(context, uri);
+            return NavigationDecision.prevent;
+          }
+        }),
       );
   }
+
+  // void _showAppMissingSnackbar(BuildContext context, Uri uri) {
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     const SnackBar(
+  //       content: Text('Please Install a UPI app or use web payment'),
+  //       duration: Duration(seconds: 2),
+  //     ),
+  //   );
+  // }
 
   Future<void> initiateCheckout() async {
     final environment =
@@ -238,10 +247,19 @@ window.addEventListener('load', function() {
 
   @override
   Widget build(BuildContext context) {
-    if (webUrl.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return WebViewWidget(controller: _webViewController);
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) async {
+        if (await _webViewController.canGoBack()) {
+          await _webViewController.goBack();
+        } else {
+          if (context.mounted) {
+            Navigator.pop(context);
+          }
+        }
+      },
+      child: webUrl.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : WebViewWidget(controller: _webViewController),
+    );
   }
 }
