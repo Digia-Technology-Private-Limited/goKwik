@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/types.dart';
 import 'package:gokwik/screens/create_account.dart';
 import 'package:gokwik/screens/cubit/root_cubit.dart';
@@ -78,7 +79,16 @@ class RootScreen extends StatefulWidget {
 class _RootScreenState extends State<RootScreen> {
   @override
   void initState() {
+    sendCustomEvent();
     super.initState();
+  }
+
+  void sendCustomEvent() {
+    SnowplowTrackerService.sendCustomEventToSnowPlow({
+      'category': 'login_modal',
+      'action': 'click',
+      'label': 'open_login_modal',
+    });
   }
 
   @override
@@ -164,7 +174,7 @@ class _RootScreenState extends State<RootScreen> {
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 22),
                                 decoration: widget.formContainerStyle,
-                                child: _isUserLoggedIn
+                                child: _isUserLoggedIn && !state.isSuccess
                                     ? const Text(
                                         'You are already logged in',
                                         style: TextStyle(
@@ -229,7 +239,8 @@ class _RootScreenState extends State<RootScreen> {
                                         : _emailOtpSent
                                             ? VerifyCodeForm(
                                                 otpLabel: cubit
-                                                    .shopifyEmailController.text,
+                                                    .shopifyEmailController
+                                                    .text,
                                                 onEdit: () {
                                                   cubit.handleEmailChange();
                                                 },

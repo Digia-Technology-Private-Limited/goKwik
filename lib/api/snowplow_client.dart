@@ -41,17 +41,11 @@ abstract class SnowplowClient {
       method: Method.get,
       trackerConfig: TrackerConfiguration(
         appId: appId,
-        // screenViewAutotracking: false,
-        // lifecycleAutotracking: false,
-        // installAutotracking: true,
-        // exceptionAutotracking: true,
-        // diagnosticAutotracking: false,
-        // applicationContext: true,
+        screenEngagementAutotracking: false,
+        applicationContext: true,
         platformContext: true,
         geoLocationContext: false,
         sessionContext: true,
-        // deepLinkContext: true,
-        // screenContext: true,
       ),
     );
 

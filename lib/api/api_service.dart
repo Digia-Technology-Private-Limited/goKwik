@@ -12,6 +12,7 @@ import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/config/storege.dart';
+import 'package:gokwik/module/advertise.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -31,16 +32,18 @@ abstract class ApiService {
         final status = response.statusCode;
         final requestId = response.requestId ?? 'N/A';
 
-        message = response.errorMessage?.toString() ??
+        message = response.error?.toString() ??
+            response.errorMessage?.toString() ??
             response.error_msg?.toString() ??
             'Unexpected error with status: $status';
 
         return Failure(message);
       }
+
+      print("ERROR MESSAGE: ${error.toString()}");
     }
 
     return Failure(message);
-
   }
 
   static String getHostName(String url) {
@@ -93,7 +96,6 @@ abstract class ApiService {
       final apiError = handleApiError(err);
 
       return apiError;
-
     }
   }
 
@@ -128,7 +130,6 @@ abstract class ApiService {
       );
       return Success(response);
     } catch (err) {
-
       final apiError = handleApiError(err);
       return apiError;
     }
@@ -266,6 +267,7 @@ abstract class ApiService {
         deviceId = androidInfo.id;
       } else if (Platform.isIOS) {
         final iosInfo = await deviceInfo.iosInfo;
+        print('iosInfo ${iosInfo.toString()}');
         osVersion = 'iOS ${iosInfo.systemVersion}';
         deviceModel = iosInfo.model;
         deviceId = iosInfo.identifierForVendor ?? 'Unknown';
@@ -294,13 +296,16 @@ abstract class ApiService {
         KeyConfig.gkTimeZone: DateTime.now().timeZoneName,
       };
 
-      print('deviceInfoDetails ${deviceInfoDetails}');
+      try {
+        final advertisingInfo = await AdvertisingInfo.getAdvertisingInfo();
 
-      // final advertisingInfo = await AdvertisingInfo.getAdvertisingInfo();
-      // print('advertisingInfo ${advertisingInfo}');
-      // if (advertisingInfo.id != null) {
-      //   deviceInfoDetails[KeyConfig.gkGoogleAdId] = advertisingInfo.id!;
-      // }
+        if (advertisingInfo.id != null) {
+          deviceInfoDetails[KeyConfig.gkGoogleAdId] = advertisingInfo.id!;
+        }
+      } catch (e) {
+        print('error in getAdvertisingInfo: $e');
+        deviceInfoDetails[KeyConfig.gkGoogleAdId] = "";
+      }
 
       await cacheInstance.setValue(
         KeyConfig.gkDeviceInfo,
@@ -312,6 +317,8 @@ abstract class ApiService {
         gokwik.options.headers[KeyConfig.kpRequestIdKey] = requestId;
         gokwik.options.headers[KeyConfig.gkRequestIdKey] = requestId;
       }
+
+      print('Initialization Successful');
 
       return {'message': 'Initialization Successful'};
     } catch (error) {
@@ -532,10 +539,10 @@ abstract class ApiService {
       ))
           .toBaseResponse();
 
-      print("RESPONSE FOR VERIFY CODE ::::: ${response.data}");
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to verify OTP');
       }
+      print("RESPONSE FOR VERIFY CODE ::::: ${response.data}");
 
       final data = response.data;
       final token = data?['token'];
@@ -624,7 +631,6 @@ abstract class ApiService {
     final responseForAffluence = null;
     //  await customerIntelligence();
 
-
     if (responseData?['state'] == 'DISABLED' ||
         responseData?['state'] == 'ENABLED') {
       final multipassResponse = await ShopifyService.getShopifyMultipassToken(
@@ -638,7 +644,6 @@ abstract class ApiService {
 
       if (multipassResponse?['data']?['accountActivationUrl'] != null &&
           multipassResponse?['data']?['shopifyCustomerId'] != null) {
-
         final activationUrlParts =
             multipassResponse['data']['accountActivationUrl'].split('/');
         final token = activationUrlParts.last;
@@ -714,7 +719,6 @@ abstract class ApiService {
     // });
 
     return Success(responseData);
-
   }
 
   static Future<bool> checkout() async {

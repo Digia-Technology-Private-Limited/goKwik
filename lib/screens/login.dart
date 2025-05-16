@@ -219,10 +219,9 @@ class _LoginState extends State<Login> {
                           style: widget.loaderConfig?.loadingTextStyle,
                         )
                       : const SizedBox(
-                          width: 20,
-                          height: 20,
+                          width: 16,
+                          height: 16,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2,
                             color: Colors.white,
                           ),
                         )

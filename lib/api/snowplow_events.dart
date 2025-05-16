@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
+
+import 'package:flutter/services.dart';
 import 'package:gokwik/api/snowplow_client.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:snowplow_tracker/snowplow_tracker.dart';
+import 'package:uuid/uuid.dart';
+
 import '../config/cache_instance.dart';
 import '../config/types.dart';
 import 'sdk_config.dart';
@@ -66,13 +68,17 @@ class SnowplowTrackerService {
   }
 
   static Future<SelfDescribing?> getUserContext() async {
-    final userJson =
-        (await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey)) ?? '{}';
-    var user = userJson != "{}" ? jsonDecode(userJson) : null;
+    final userJson = await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
+    print("USER JSON: $userJson");
+    var user = userJson != null ? jsonDecode(userJson) : null;
+
+    print("USER: $user");
 
     var phone =
         user != null ? user!['phone']?.replaceAll(RegExp(r'^\+91'), '') : null;
     final numericPhoneNumber = int.tryParse(phone ?? '');
+
+    print("NUMERIC PHONE NUMBER: $numericPhoneNumber");
 
     if (numericPhoneNumber != null ||
         (user != null && user?['email'] != null)) {
@@ -155,13 +161,12 @@ class SnowplowTrackerService {
         'cart_id': params['cartId']?.toString() ?? '',
       };
 
-      await snowplow.track(
-        SelfDescribing(
-          schema: 'iglu:com.snowplowanalytics.mobile/web_page/jsonschema/1-0-0',
-          data: data,
-        ),
-        contexts: eventContext,
-      );
+      // await snowplow.track(
+      //   params as Event,
+      //   contexts: eventContext,
+      // );
+
+      print("TRACKED EVENT");
     } catch (error) {
       print('Error tracking event: $error');
       throw error;
@@ -287,6 +292,9 @@ class SnowplowTrackerService {
   // Custom Event Tracker
   static Future<void> sendCustomEventToSnowPlow(
       Map<String, dynamic> eventObject) async {
+    print(
+        "EVENT OBJECT from sendCustomEventToSnowPlow: ${eventObject.map((key, value) => MapEntry(key, value.toString()))}");
+
     final snowplowTrackingEnabled =
         await cacheInstance.getValue(KeyConfig.isSnowplowTrackingEnabled);
     if (snowplowTrackingEnabled == 'false') return;

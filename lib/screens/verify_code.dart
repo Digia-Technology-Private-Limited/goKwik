@@ -76,7 +76,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   bool _isResendDisabled = true;
   int _attempts = 0;
   final List<FocusNode> _focusNodes = [];
-  final List<TextEditingController> _controllers = [];
+  // final List<TextEditingController> _controllers = [];
   final _formKey = GlobalKey<FormState>();
   String? _errorText;
 
@@ -89,10 +89,10 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   @override
   void initState() {
     super.initState();
-    for (int i = 0; i < _cellCount; i++) {
-      _focusNodes.add(FocusNode());
-      _controllers.add(TextEditingController());
-    }
+    // for (int i = 0; i < _cellCount; i++) {
+    //   _focusNodes.add(FocusNode());
+    //   _controllers.add(TextEditingController());
+    // }
     _startTimer();
     // TODO: Implement SMS user consent for Android
 
@@ -148,20 +148,22 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     for (var node in _focusNodes) {
       node.dispose();
     }
-    for (var controller in _controllers) {
-      controller.dispose();
-    }
+    // for (var controller in _controllers) {
+    //   controller.dispose();
+    // }
     controller.stopListen();
     super.dispose();
   }
 
   void _startTimer() {
     Future.delayed(const Duration(seconds: 1), () {
-      if (_seconds > 0 && _isResendDisabled) {
-        setState(() => _seconds--);
-        _startTimer();
-      } else {
-        setState(() => _isResendDisabled = false);
+      if (mounted) {
+        if (_seconds > 0 && _isResendDisabled) {
+          setState(() => _seconds--);
+          _startTimer();
+        } else {
+          setState(() => _isResendDisabled = false);
+        }
       }
     });
   }
@@ -180,19 +182,20 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
 
   void _onChanged(String value) {
     print('onChanged value - $value');
+    pinputController.text = value;
 
-    if (value.length == 1 &&
-        _controllers.indexWhere((c) => c.text.isEmpty) < _cellCount - 1) {
-      _focusNodes[_controllers.indexWhere((c) => c.text.isEmpty)]
-          .requestFocus();
-    }
+    // if (value.length == 1 &&
+    //     _controllers.indexWhere((c) => c.text.isEmpty) < _cellCount - 1) {
+    //   _focusNodes[_controllers.indexWhere((c) => c.text.isEmpty)]
+    //       .requestFocus();
+    // }
     _validateOtp();
   }
 
   void _onBackspace(int index) {
-    if (index > 0 && _controllers[index].text.isEmpty) {
-      _focusNodes[index - 1].requestFocus();
-    }
+    // if (index > 0 && _controllers[index].text.isEmpty) {
+    //   _focusNodes[index - 1].requestFocus();
+    // }
     _validateOtp();
   }
 
@@ -391,13 +394,23 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                   ? Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const CircularProgressIndicator(
-                          color: Colors.white,
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           widget.loadingText ?? 'Signing you in...',
-                          style: widget.loadingTextStyle,
+                          style: widget.loadingTextStyle ??
+                              const TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
                         )
                       ],
                     )
@@ -407,8 +420,12 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                               widget.loadingText!,
                               style: widget.loadingTextStyle,
                             )
-                          : const CircularProgressIndicator(
-                              color: Colors.white,
+                          : const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                              ),
                             )
                       : Text(
                           widget.submitButtonText,

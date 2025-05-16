@@ -385,8 +385,12 @@ class _ShopifyEmailFormState extends State<ShopifyEmailForm> {
                           widget.loaderConfig?.loadingText ?? 'Loading...',
                           style: widget.loaderConfig?.loadingTextStyle,
                         )
-                      : const CircularProgressIndicator(
-                          color: Colors.white,
+                      : const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                          ),
                         )
                   : Text(
                       submitButtonText,

@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:bloc/bloc.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gokwik/api/api_service.dart';
 import 'package:gokwik/api/base_response.dart';
@@ -61,10 +60,10 @@ class RootCubit extends Cubit<RootState> {
             isLoading: false));
         return;
       }
-      onSuccessData?.call(FlowResult(
-        flowType: FlowType.resendOtp,
-        data: (response as Success).data,
-      ));
+      // onSuccessData?.call(FlowResult(
+      //   flowType: FlowType.resendOtp,
+      //   data: (response as Success).data,
+      // ));
       emit(state.copyWith(isLoading: false));
     } catch (err) {
       onErrorData?.call(FlowResult(
@@ -92,16 +91,7 @@ class RootCubit extends Cubit<RootState> {
             isLoading: false));
         return;
       }
-      // onSuccessData?.call(FlowResult(
-      //   flowType: FlowType.otpSend,
-      //   data: (response as Success).data,
-      // ));
       emit(state.copyWith(otpSent: true, isLoading: false));
-      onSuccessData?.call(FlowResult(
-        flowType: FlowType.otpSend,
-        data: (response as Success).data,
-      ));
-
     } catch (err) {
       print('handleOtpSend error ${err}');
       onErrorData?.call(FlowResult(
@@ -137,10 +127,10 @@ class RootCubit extends Cubit<RootState> {
       if (response['phone'] != null) {
         emit(state.copyWith(otpSent: true, isNewUser: true, isLoading: false));
       }
-      state.copyWith(isSuccess: true, isLoading: false);
+      emit(state.copyWith(isSuccess: true, isLoading: false));
     } catch (err) {
-      state.copyWith(
-          error: SingleUseData((err as Failure).message), isLoading: false);
+      emit(state.copyWith(
+          error: SingleUseData((err as Failure).message), isLoading: false));
     }
   }
 
@@ -158,22 +148,30 @@ class RootCubit extends Cubit<RootState> {
     try {
       final response = ((await ApiService.verifyCode(phoneController.text, otp))
           .getDataOrThrow()) as Map<String, dynamic>;
-      if (state.merchantType == MerchantType.shopify &&
-          response['email'] != null) {
-        response.remove('state');
-        response.remove('accountActivationUrl');
 
-        if (response['phone'] == null) {
-          response['phone'] = phoneController.text;
+      print("RESPONSE checking here for testing: ${response}");
+      print("STATE MERCHANT TYPE: ${state.merchantType}");
+      print("RESPONSE EMAIL: ${response['data']['email']}");
+      print("MerchantType.shopify: ${MerchantType.shopify}");
+
+      if (state.merchantType == MerchantType.shopify &&
+          response['data']['email'] != null) {
+        response['data'].remove('state');
+        response['data'].remove('accountActivationUrl');
+
+        if (response['data']['phone'] == null) {
+          response['data']['phone'] = phoneController.text;
         }
 
-        emit(state.copyWith(
-            isSuccess: true,
-            isNewUser: response['isNewUser'],
-            isLoading: false));
+        print("RESPONSE BEFORE STORING RESPONSE: ${response['data']}");
 
-        onSuccessData
-            ?.call(FlowResult(flowType: FlowType.otpVerify, data: response));
+        cacheInstance.setValue(
+            KeyConfig.gkVerifiedUserKey, jsonEncode(response['data']));
+
+        emit(state.copyWith(isSuccess: true, isLoading: false));
+        print("STATE IS SUCCESS HERE?: ${state.isSuccess}");
+        onSuccessData?.call(
+            FlowResult(flowType: FlowType.otpVerify, data: response['data']));
       }
       if (response['multiple_emails'] != null) {
         emit(state.copyWith(
@@ -200,7 +198,7 @@ class RootCubit extends Cubit<RootState> {
         emit(state.copyWith(isSuccess: true, isLoading: false));
       }
       otpController.clear();
-      _listenUserStateUpdated();
+      // _listenUserStateUpdated();
     } catch (err) {
       otpController.clear();
       onErrorData?.call(FlowResult(
@@ -212,7 +210,6 @@ class RootCubit extends Cubit<RootState> {
 
   void handlePhoneChange() {
     emit(state.copyWith(otpSent: false, isNewUser: false, error: null));
-
   }
 
   void handleEmailChange() {
