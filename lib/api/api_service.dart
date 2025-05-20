@@ -111,14 +111,14 @@ abstract class ApiService {
     };
 
     try {
-      // final phone = await cacheInstance.getValue(KeyConfig.gkUserPhone);
-      // await SnowplowTrackerService.sendCustomEventToSnowPlow({
-      //   'category': 'login_modal',
-      //   'label': 'account_activated',
-      //   'action': 'automated',
-      //   'property': 'phone_number',
-      //   'value': int.tryParse(phone ?? '0') ?? 0,
-      // });
+      final phone = await cacheInstance.getValue(KeyConfig.gkUserPhone);
+      await SnowplowTrackerService.sendCustomEventToSnowPlow({
+        'category': 'login_modal',
+        'label': 'account_activated',
+        'action': 'automated',
+        'property': 'phone_number',
+        'value': int.tryParse(phone ?? '0') ?? 0,
+      });
 
       final response = await Dio().post(
         'https://$url/account/activate',
@@ -522,19 +522,36 @@ abstract class ApiService {
     try {
       final gokwik = DioClient().getClient();
 
-      // await SnowplowTrackerService.sendCustomEventToSnowPlow({
-      //   'category': 'login_modal',
-      //   'label': 'submit_otp',
-      //   'action': 'automated',
-      //   'property': 'phone_number',
-      //   'value': int.tryParse(phoneNumber) ?? 0,
-      // });
+      await SnowplowTrackerService.sendCustomEventToSnowPlow({
+        'category': 'login_modal',
+        'label': 'submit_otp',
+        'action': 'automated',
+        'property': 'phone_number',
+        'value': int.tryParse(phoneNumber) ?? 0,
+      });
+
+      final deviceInfoJson =
+          await cacheInstance.getValue(KeyConfig.gkDeviceInfo);
+      final deviceInfoDetails =
+          deviceInfoJson != null ? jsonDecode(deviceInfoJson) : {};
+
+      final Map<String, String> bodyParams = {};
+
+      if (Platform.isAndroid) {
+        bodyParams['google_ad_id'] =
+            deviceInfoDetails[KeyConfig.gkGoogleAdId] ?? '';
+      }
+      if (Platform.isIOS) {
+        bodyParams['ios_ad_id'] =
+            deviceInfoDetails[KeyConfig.gkGoogleAdId] ?? '';
+      }
 
       final response = (await gokwik.post(
         'auth/otp/verify',
         data: {
           'phone': phoneNumber,
           'otp': int.tryParse(code),
+          ...bodyParams,
         },
       ))
           .toBaseResponse();
@@ -628,8 +645,7 @@ abstract class ApiService {
       await cacheInstance.setValue(KeyConfig.checkoutAccessTokenKey, coreToken);
     }
 
-    final responseForAffluence = null;
-    //  await customerIntelligence();
+    final responseForAffluence = await customerIntelligence();
 
     if (responseData?['state'] == 'DISABLED' ||
         responseData?['state'] == 'ENABLED') {
@@ -665,13 +681,13 @@ abstract class ApiService {
           responseForAffluence.data != null) {
         multipassResponse['data']['affluence'] = responseForAffluence.data;
       }
-      // await SnowplowTrackerService.sendCustomEventToSnowPlow({
-      //   'category': 'login_modal',
-      //   'label': 'phone_Number_logged_in',
-      //   'action': 'logged_in',
-      //   'property': 'phone_number',
-      //   'value': int.tryParse(phoneNumber) ?? 0,
-      // });
+      await SnowplowTrackerService.sendCustomEventToSnowPlow({
+        'category': 'login_modal',
+        'label': 'phone_Number_logged_in',
+        'action': 'logged_in',
+        'property': 'phone_number',
+        'value': int.tryParse(phoneNumber) ?? 0,
+      });
       return Success(multipassResponse);
     }
 
@@ -697,26 +713,26 @@ abstract class ApiService {
       return Success(multipassResponse['data']);
     }
 
-    // final userData = {
-    //   ...responseData,
-    //   'phone': phoneNumber,
-    // };
+    final userData = {
+      ...responseData,
+      'phone': phoneNumber,
+    };
 
-    // await cacheInstance.setValue(
-    //   KeyConfig.gkVerifiedUserKey,
-    //   jsonEncode(userData),
-    // );
+    await cacheInstance.setValue(
+      KeyConfig.gkVerifiedUserKey,
+      jsonEncode(userData),
+    );
 
-    // if (responseForAffluence is Success && responseForAffluence.data != null) {
-    //   responseData['data']['affluence'] = responseForAffluence;
-    // }
-    // await SnowplowTrackerService.sendCustomEventToSnowPlow({
-    //   'category': 'login_modal',
-    //   'label': 'phone_Number_logged_in',
-    //   'action': 'logged_in',
-    //   'property': 'phone_number',
-    //   'value': int.tryParse(phoneNumber) ?? 0,
-    // });
+    if (responseForAffluence is Success && responseForAffluence.data != null) {
+      responseData['data']['affluence'] = responseForAffluence;
+    }
+    await SnowplowTrackerService.sendCustomEventToSnowPlow({
+      'category': 'login_modal',
+      'label': 'phone_Number_logged_in',
+      'action': 'logged_in',
+      'property': 'phone_number',
+      'value': int.tryParse(phoneNumber) ?? 0,
+    });
 
     return Success(responseData);
   }

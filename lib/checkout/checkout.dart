@@ -12,6 +12,7 @@ import 'package:gokwik/config/key_congif.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../api/sdk_config.dart';
 
@@ -55,6 +56,13 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
   bool _isLoading = true;
   bool _canGoBack = false;
   AppLifecycleState? _appState;
+
+  static const Map<String, String> UPI_APP_PACKAGES = {
+    'googlepay': 'com.google.android.apps.nbu.paisa.user',
+    'phonepe': 'com.phonepe.app',
+    'bhim': 'in.org.npci.upiapp',
+    'paytm': 'net.one97.paytm',
+  };
 
   @override
   void initState() {
@@ -234,12 +242,110 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
     }
   }
 
+  void _showAlert(String title, String message, {List<Widget>? buttons, Map<String, dynamic>? options}) {
+    String displayMessage = message;
+    
+    // Handle UPI app not installed errors with platform-specific messages
+    if (title == 'Error' && message == 'UPI_APP_NOT_INSTALLED') {
+      displayMessage = Platform.isAndroid 
+          ? 'UPI App is not installed.'
+          : 'UPI not supported on iOS.';
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(displayMessage),
+          actions: buttons?.map((button) => TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: button,
+          )).toList() ?? [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _convertToIntentUrl(String url, String app) {
+    final packageName = UPI_APP_PACKAGES[app];
+
+    if (url.isEmpty || packageName == null) {
+      _showAlert('Error', 'Invalid URL or unsupported app: $url, $app');
+      debugPrint('Invalid URL or unsupported app: $url, $app');
+      return '';
+    }
+
+    try {
+      final scheme = url.split('://')[0];
+      final path = url.split('://')[1];
+
+      return 'intent://$path#Intent;scheme=$scheme;package=$packageName;end;';
+    } catch (error) {
+      _showAlert('Error', 'Error converting to intent URL: $error');
+      debugPrint('Error converting to intent URL: $error');
+      return '';
+    }
+  }
+
+  Future<void> _handlePaymentIntent(String url) async {
+    try {
+      String? app;
+      if (url.contains('phonepe')) {
+        app = 'phonepe';
+      } else if (url.contains('tez')) {
+        app = 'googlepay';
+      } else if (url.contains('paytm')) {
+        app = 'paytm';
+      } else if (url.contains('bhim')) {
+        app = 'bhim';
+      } else {
+        _showAlert('Error', 'Unsupported app in URL: $url');
+        debugPrint('Unsupported app in URL: $url');
+        return;
+      }
+
+      try {
+        final intentUrl = _convertToIntentUrl(url, app!);
+
+        if (await canLaunchUrl(Uri.parse(url))) {
+          await launchUrl(Uri.parse(url)).catchError((error) {
+            _showAlert('Error', 'UPI_APP_NOT_INSTALLED');
+          });
+        } else if (await canLaunchUrl(Uri.parse(intentUrl))) {
+          await launchUrl(Uri.parse(intentUrl)).catchError((error) {
+            _showAlert('Error', 'UPI_APP_NOT_INSTALLED');
+          });
+        } else {
+          _showAlert('Error', 'UPI_APP_NOT_INSTALLED');
+        }
+      } catch (innerError) {
+        debugPrint('Error opening URL: $innerError');
+        _showAlert('Error', 'UPI_APP_NOT_INSTALLED');
+      }
+    } catch (error) {
+      _showAlert('Error', error.toString());
+      debugPrint('Error handling payment intent: $error');
+    }
+  }
+
   void _handleMessage(dynamic message) async {
     try {
       final merchantType =
           await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
       final parsedData = jsonDecode(message);
       final gkToken = await cacheInstance.getValue(KeyConfig.gkAccessTokenKey);
+
+      // Handle payment intent here
+      if (parsedData['data']?['type'] == 'upiLink') {
+        final url = parsedData['data']['link'];
+        await _handlePaymentIntent(url);
+      }
 
       if (merchantType == 'shopify' &&
           parsedData['eventname'] == 'orderSuccess' &&

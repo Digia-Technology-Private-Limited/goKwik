@@ -354,12 +354,6 @@ class RootCubit extends Cubit<RootState> {
         emit(state.copyWith(isUserLoggedIn: true));
         return;
       }
-
-      SnowplowTrackerService.sendCustomEventToSnowPlow({
-        'category': 'login_modal',
-        'label': 'open_login_modal',
-        'action': 'click',
-      });
     }
 
     if (state.merchantType == MerchantType.custom) {
@@ -373,11 +367,6 @@ class RootCubit extends Cubit<RootState> {
         emit(state.copyWith(isUserLoggedIn: true));
         return;
       }
-      SnowplowTrackerService.sendCustomEventToSnowPlow({
-        'category': 'login_modal',
-        'label': 'open_login_modal',
-        'action': 'click',
-      });
     }
   }
 

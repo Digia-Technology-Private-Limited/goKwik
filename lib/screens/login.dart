@@ -56,6 +56,7 @@ class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _phoneController;
   String? _errorText;
+  static const _phoneRegex = r'^[0-9]{10}$';
 
   @override
   void initState() {
@@ -73,7 +74,7 @@ class _LoginState extends State<Login> {
     if (value == null || value.isEmpty) {
       return 'Phone number is required';
     }
-    if (!RegExp(r'^[0-9]{10}$').hasMatch(value)) {
+    if (!RegExp(_phoneRegex).hasMatch(value)) {
       return 'Enter a valid 10-digit phone number';
     }
     return null;
@@ -110,10 +111,10 @@ class _LoginState extends State<Login> {
           TextFormField(
             controller: _phoneController,
             decoration: widget.config?.textFieldInputStyle ??
-                InputDecoration(
-                  labelText: widget.config?.phoneNumberPlaceholder,
-                  border: const OutlineInputBorder(),
-                  errorStyle: const TextStyle(color: Colors.red),
+                const InputDecoration(
+                  labelText: 'Enter your phone',
+                  border: OutlineInputBorder(),
+                  errorStyle: TextStyle(color: Colors.red),
                   counterText: "",
                 ),
             style: widget.config?.inputTextStyle,
@@ -162,15 +163,15 @@ class _LoginState extends State<Login> {
                       decoration: widget.config?.checkboxContainerStyle ??
                           BoxDecoration(
                             border: Border.all(
-                                color: const Color(0xFF0964C5), width: 2),
-                            borderRadius: BorderRadius.circular(5),
+                                color: Color(0xFF0964C5), width: 2),
+                            borderRadius: BorderRadius.all(Radius.circular(5)),
                           ),
                       child: widget.formData.notifications
                           ? Container(
                               decoration: widget.config?.checkboxStyle ??
-                                  BoxDecoration(
-                                    color: const Color(0xFF0964C5),
-                                    borderRadius: BorderRadius.circular(3),
+                                  const BoxDecoration(
+                                    color: Color(0xFF0964C5),
+                                    borderRadius: BorderRadius.all(Radius.circular(3)),
                                   ),
                               child: const Icon(
                                 Icons.check,
@@ -200,8 +201,8 @@ class _LoginState extends State<Login> {
                   ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: const Color(0xFF007AFF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(6)),
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),

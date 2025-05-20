@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:gokwik/config/key_congif.dart';
 import 'package:snowplow_tracker/snowplow_tracker.dart';
+
 import '../config/cache_instance.dart';
 import '../config/types.dart';
 import 'sdk_config.dart';
@@ -27,12 +28,8 @@ abstract class SnowplowClient {
     final mid = args.mid;
 
     final collectorUrl = SdkConfig.getSnowplowUrl(environment.name);
-    final shopDomain = await cacheInstance.getValue(KeyConfig.gkMerchantUrlKey);
 
-    String appId = '';
-    if (shopDomain != null && mid != null) {
-      appId = mid;
-    }
+    String appId = mid;
 
     // Initialize Snowplow tracker
     _snowplowClient = await Snowplow.createTracker(
@@ -67,11 +64,9 @@ abstract class SnowplowClient {
       KeyConfig.isSnowplowTrackingEnabled,
     );
 
-    if (snowplowTrackingEnabled == 'false') {
-      return _snowplowClient;
-    }
-
-    if (_snowplowClient == null && args != null) {
+    if (snowplowTrackingEnabled == 'true' &&
+        _snowplowClient == null &&
+        args != null) {
       await initializeSnowplowClient(args);
     }
 

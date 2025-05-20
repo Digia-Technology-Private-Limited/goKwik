@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/services.dart';
 import 'package:gokwik/api/snowplow_client.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:snowplow_tracker/snowplow_tracker.dart';
@@ -12,7 +11,6 @@ import '../config/types.dart';
 import 'sdk_config.dart';
 
 class SnowplowTrackerService {
-  static SnowplowTracker? _snowplowClient;
   String? eventId = Uuid().v4();
 
   // Helper to fetch environment
@@ -154,15 +152,10 @@ class SnowplowTrackerService {
       final snowplow = await _initializeSnowplowClient();
       if (snowplow == null) return;
 
-      final data = {
-        'page_url': params['pageUrl']?.toString() ?? '',
-        'page_title': params['pageTitle']?.toString() ?? '',
-        'product_id': params['productId']?.toString() ?? '',
-        'cart_id': params['cartId']?.toString() ?? '',
-      };
-
       // await snowplow.track(
-      //   params as Event,
+      //   PageViewEvent(
+      //     title: params['pageTitle']?.toString() ?? '',
+      //   ),
       //   contexts: eventContext,
       // );
 

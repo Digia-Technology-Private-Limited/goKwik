@@ -89,14 +89,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   @override
   void initState() {
     super.initState();
-    // for (int i = 0; i < _cellCount; i++) {
-    //   _focusNodes.add(FocusNode());
-    //   _controllers.add(TextEditingController());
-    // }
     _startTimer();
-    // TODO: Implement SMS user consent for Android
-
-    print("INIIIIIIIT");
 
     _initInteractor();
     controller = OTPTextEditController(
@@ -109,11 +102,6 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
           final exp = RegExp(r'(\d{4})');
 
           final otp = exp.stringMatch(code ?? '') ?? '';
-          // widget.onVerify(otp);
-
-          print('code ${code}');
-          print('exp ${exp.stringMatch(code ?? '')}');
-
           pinputController.text = otp;
           pinputController.selection = TextSelection.fromPosition(
             TextPosition(offset: pinputController.text.length),
@@ -137,10 +125,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
 
   Future<void> _initInteractor() async {
     _otpInteractor = OTPInteractor();
-
-    // You can receive your app signature by using this method.
-    final appSignature = await _otpInteractor.getAppSignature();
-    // print('Your app signature: $appSignature');
+    await _otpInteractor.getAppSignature();
   }
 
   @override
@@ -148,9 +133,6 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     for (var node in _focusNodes) {
       node.dispose();
     }
-    // for (var controller in _controllers) {
-    //   controller.dispose();
-    // }
     controller.stopListen();
     super.dispose();
   }
@@ -181,21 +163,11 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   }
 
   void _onChanged(String value) {
-    print('onChanged value - $value');
     pinputController.text = value;
-
-    // if (value.length == 1 &&
-    //     _controllers.indexWhere((c) => c.text.isEmpty) < _cellCount - 1) {
-    //   _focusNodes[_controllers.indexWhere((c) => c.text.isEmpty)]
-    //       .requestFocus();
-    // }
     _validateOtp();
   }
 
   void _onBackspace(int index) {
-    // if (index > 0 && _controllers[index].text.isEmpty) {
-    //   _focusNodes[index - 1].requestFocus();
-    // }
     _validateOtp();
   }
 

@@ -421,20 +421,6 @@ class _RootScreenState extends State<RootScreen> {
   }
 }
 
-// class CreateAccountForm {
-//   final String email;
-//   final String name;
-//   final String dob;
-//   final String gender;
-
-//   CreateAccountForm(
-//       {required this.email,
-//       required this.name,
-//       required this.dob,
-//       required this.gender});
-// }
-// Supporting classes and enums
-
 class CreateUserConfig {
   final bool isEmailRequired;
   final bool isNameRequired;
