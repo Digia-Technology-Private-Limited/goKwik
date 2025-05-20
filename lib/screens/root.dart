@@ -27,6 +27,7 @@ class RootScreen extends StatefulWidget {
   // URLs
   final String? footerText;
   final List<FooterUrl>? footerUrls;
+  final Widget? extraFooter;
   final TextStyle? footerTextStyle;
   final TextStyle? footerHyperlinkStyle;
 
@@ -51,6 +52,7 @@ class RootScreen extends StatefulWidget {
   const RootScreen({
     super.key,
     this.bannerImage,
+    this.extraFooter,
     this.logo,
     this.bannerImageStyle,
     this.logoStyle,
@@ -343,6 +345,8 @@ class _RootScreenState extends State<RootScreen> {
                                 ),
                                 child: Column(
                                   children: [
+                                    if (widget.extraFooter != null)
+                                      widget.extraFooter!,
                                     if (widget.footerText != null)
                                       Text(
                                         widget.footerText!,
@@ -358,9 +362,6 @@ class _RootScreenState extends State<RootScreen> {
                                       spacing: 8,
                                       children:
                                           (widget.footerUrls ?? []).map((url) {
-                                        if (url.widget != null) {
-                                          return url.widget!;
-                                        }
                                         return GestureDetector(
                                           onTap: () =>
                                               cubit.linkOpenHandler(url.url),
@@ -687,12 +688,10 @@ class LoadingConfig {
 }
 
 class FooterUrl {
-  final Widget? widget;
   final String label;
   final String url;
 
   const FooterUrl({
-    this.widget,
     required this.label,
     required this.url,
   });
