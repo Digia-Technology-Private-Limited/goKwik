@@ -358,6 +358,9 @@ class _RootScreenState extends State<RootScreen> {
                                       spacing: 8,
                                       children:
                                           (widget.footerUrls ?? []).map((url) {
+                                        if (url.widget != null) {
+                                          return url.widget!;
+                                        }
                                         return GestureDetector(
                                           onTap: () =>
                                               cubit.linkOpenHandler(url.url),
@@ -684,10 +687,12 @@ class LoadingConfig {
 }
 
 class FooterUrl {
+  final Widget? widget;
   final String label;
   final String url;
 
   const FooterUrl({
+    this.widget,
     required this.label,
     required this.url,
   });
