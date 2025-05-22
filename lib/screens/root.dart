@@ -253,27 +253,8 @@ class _RootScreenState extends State<RootScreen> {
                                                     .resendShopifyEmailOtp(),
                                                 initialValue: cubit
                                                     .shopifyOtpController.text,
-                                                title: widget
-                                                    .inputProps
-                                                    ?.emailOtpVerificationScreen
-                                                    ?.title,
-                                                subTitle: widget
-                                                    .inputProps
-                                                    ?.emailOtpVerificationScreen
-                                                    ?.subTitle,
-                                                submitButtonText: widget
-                                                        .inputProps
-                                                        ?.emailOtpVerificationScreen
-                                                        ?.submitButtonText ??
-                                                    'Verify',
-                                                editStyle: widget
-                                                    .inputProps
-                                                    ?.emailOtpVerificationScreen
-                                                    ?.editStyle,
-                                                editLabelStyle: widget
-                                                    .inputProps
-                                                    ?.emailOtpVerificationScreen
-                                                    ?.editStyle,
+                                                config: widget.inputProps
+                                                    ?.otpVerificationScreen,
                                               )
                                             : _otpSent
                                                 ? VerifyCodeForm(
@@ -281,27 +262,8 @@ class _RootScreenState extends State<RootScreen> {
                                                         '+91 ${cubit.phoneController.text}',
                                                     onEdit: () => cubit
                                                         .handlePhoneChange(),
-                                                    title: widget
-                                                        .inputProps
-                                                        ?.otpVerificationScreen
-                                                        ?.title,
-                                                    subTitle: widget
-                                                        .inputProps
-                                                        ?.otpVerificationScreen
-                                                        ?.subTitle,
-                                                    submitButtonText: widget
-                                                            .inputProps
-                                                            ?.otpVerificationScreen
-                                                            ?.submitButtonText ??
-                                                        'Verify',
-                                                    editStyle: widget
-                                                        .inputProps
-                                                        ?.otpVerificationScreen
-                                                        ?.editStyle,
-                                                    editLabelStyle: widget
-                                                        .inputProps
-                                                        ?.otpVerificationScreen
-                                                        ?.editLabelStyle,
+                                                    config: widget.inputProps
+                                                        ?.otpVerificationScreen,
                                                     isLoading: _isLoading,
                                                     isSuccess: state.isSuccess,
                                                     onVerify: (value) => cubit
@@ -536,13 +498,13 @@ class OtpVerificationScreenConfig {
   final TextStyle? submitButtonTextStyle;
   final TextStyle? titleStyle;
   final TextStyle? subTitleStyle;
-  final BoxDecoration? pincodeCellStyle;
-  final BoxDecoration? pincodeCellContainerStyle;
-  final InputDecoration? inputStyle;
+  // final BoxDecoration? pincodeCellStyle;
+  // final BoxDecoration? pincodeCellContainerStyle;
+  // final InputDecoration? inputStyle;
 
   final TextStyle? loadingTextStyle;
-  final String? otpPlaceholder;
-  final TextStyle? otpPlaceholderStyle;
+  // final String? otpPlaceholder;
+  // final TextStyle? otpPlaceholderStyle;
   final TextStyle? resendButtonTextStyle;
   final TextStyle? resendTextStyle;
   final TextStyle? cellTextStyle;
@@ -558,12 +520,12 @@ class OtpVerificationScreenConfig {
     this.submitButtonTextStyle,
     this.titleStyle,
     this.subTitleStyle,
-    this.pincodeCellStyle,
-    this.pincodeCellContainerStyle,
-    this.inputStyle,
+    // this.pincodeCellStyle,
+    // this.pincodeCellContainerStyle,
+    // this.inputStyle,
     this.loadingTextStyle,
-    this.otpPlaceholder,
-    this.otpPlaceholderStyle,
+    // this.otpPlaceholder,
+    // this.otpPlaceholderStyle,
     this.editLabelStyle,
     this.resendButtonTextStyle,
     this.resendTextStyle,
