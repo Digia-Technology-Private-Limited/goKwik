@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:gokwik/api/snowplow_client.dart';
+import 'package:gokwik/api/http_snowplow_tracker.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:snowplow_tracker/snowplow_tracker.dart';
 import 'package:uuid/uuid.dart';
@@ -70,7 +71,8 @@ class SnowplowTrackerService {
     print("USER JSON: $userJson");
     var user = userJson != null ? jsonDecode(userJson) : null;
 
-    print("USER: $user");
+    print("USER: $user"
+    );
 
     var phone =
         user != null ? user!['phone']?.replaceAll(RegExp(r'^\+91'), '') : null;
@@ -132,7 +134,7 @@ class SnowplowTrackerService {
     return _createContext('product/jsonschema/1-1-0', {'type': 'other'});
   }
 
-  // Generic event tracker
+  // Generic event tracker using HTTP method
   static Future<void> _trackEvent(
     Map<String, dynamic> params,
     List<SelfDescribing> eventContext,
@@ -149,21 +151,60 @@ class SnowplowTrackerService {
             'data': e.data,
           }).toList())}');
 
-      final snowplow = await _initializeSnowplowClient();
-      if (snowplow == null) return;
-
-      // await snowplow.track(
-      //   PageViewEvent(
-      //     title: params['pageTitle']?.toString() ?? '',
-      //   ),
-      //   contexts: eventContext,
-      // );
-
-      print("TRACKED EVENT");
+      // Track event via HTTP method
+      await _trackEventViaHttp(params, eventContext);
+      print("TRACKED EVENT VIA HTTP");
     } catch (error) {
-      print('Error tracking event: $error');
-      throw error;
+      print('Error tracking event via HTTP: $error');
     }
+  }
+
+  // HTTP tracker fallback method
+  static Future<void> _trackEventViaHttp(
+    Map<String, dynamic> params,
+    List<SelfDescribing> eventContext,
+  ) async {
+    // Extract custom properties from context
+    Map<String, dynamic>? customProperties;
+    String? productId;
+    String? collectionId;
+    String? cartId;
+
+    for (final context in eventContext) {
+      if (context.schema.contains('product/jsonschema')) {
+        final data = context.data;
+        if (data['type'] == 'product') {
+          productId = data['product_id'];
+          customProperties = {
+            'product_name': data['product_name'],
+            'product_price': data['product_price'],
+            'product_handle': data['product_handle'],
+            'variant_id': data['variant_id'],
+            'img_url': data['img_url'],
+            'type': data['type']
+          };
+        } else if (data['type'] == 'collection') {
+          collectionId = data['collection_id'];
+          customProperties = {
+            'collection_name': data['collection_name'],
+            'collection_handle': data['collection_handle'],
+            'img_url': data['img_url'],
+            'type': data['type']
+          };
+        }
+      } else if (context.schema.contains('cart/jsonschema')) {
+        cartId = context.data['id'];
+      }
+    }
+
+    await HttpSnowplowTracker.trackPageView(
+      pageUrl: params['page_url']?.toString() ?? '',
+      pageTitle: params['page_title']?.toString() ?? '',
+      cartId: cartId,
+      productId: productId,
+      collectionId: collectionId,
+      customProperties: customProperties,
+    );
   }
 
   // Specific Event Trackers

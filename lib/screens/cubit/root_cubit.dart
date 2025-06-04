@@ -11,7 +11,7 @@ import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/config/types.dart';
 import 'package:gokwik/module/single_use_data.dart';
 import 'package:gokwik/screens/cubit/root_model.dart';
-// Removed unused import
+
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../flow_result.dart';
@@ -144,57 +144,75 @@ class RootCubit extends Cubit<RootState> {
     print('handleOtpVerification ${otp}');
     print('phoneController.text ${phoneController.text}');
     if (!formKey.currentState!.validate()) return;
+    if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
     try {
-      final response = ((await ApiService.verifyCode(phoneController.text, otp))
-          .getDataOrThrow()) as Map<String, dynamic>;
+      dynamic responses =
+          ((await ApiService.verifyCode(phoneController.text, otp))
+              .getDataOrThrow());
 
-      print("RESPONSE checking here for testing: ${response}");
-      print("STATE MERCHANT TYPE: ${state.merchantType}");
-      print("RESPONSE EMAIL: ${response['data']['email']}");
-      print("MerchantType.shopify: ${MerchantType.shopify}");
+      if (state.merchantType == MerchantType.shopify) {
+        print("object inside shopify");
+        if (responses.containsKey('email')) {
+          responses['data']?.remove('state');
+          responses['data']?.remove('accountActivationUrl');
 
-      if (state.merchantType == MerchantType.shopify &&
-          response['data']['email'] != null) {
-        response['data'].remove('state');
-        response['data'].remove('accountActivationUrl');
-
-        if (response['data']['phone'] == null) {
-          response['data']['phone'] = phoneController.text;
+          if (responses['data']?['phone'] == "null") {
+            responses['data']?['phone'] = phoneController.text;
+          }
         }
 
-        print("RESPONSE BEFORE STORING RESPONSE: ${response['data']}");
-
-        cacheInstance.setValue(
-            KeyConfig.gkVerifiedUserKey, jsonEncode(response['data']));
-
+        print("RESPONSE BEFORE STORING RESPONSE: ${responses['data']}");
         emit(state.copyWith(isSuccess: true, isLoading: false));
         print("STATE IS SUCCESS HERE?: ${state.isSuccess}");
         onSuccessData?.call(
-            FlowResult(flowType: FlowType.otpVerify, data: response['data']));
+          FlowResult(flowType: FlowType.otpVerify, data: responses['data']),
+        );
       }
-      if (response['multiple_emails'] != null) {
+
+      print("RESPONSE FOR MULTIPLE EMAILS: $responses");
+
+      if (responses.containsKey('multiple_emails') &&
+          responses['multiple_emails'] != "null") {
         emit(state.copyWith(
-          multipleEmails:
-              (response['multiple_emails'] as String?)?.split(',').map((item) {
+          multipleEmails: (responses['multiple_emails'] as String?)
+              ?.split(',')
+              .map((item) {
             return MultipleEmail(label: item.trim(), value: item.trim());
           }).toList(),
         ));
       }
-      if (response['emailRequired'] == true && response['email'] == null) {
+
+      final responseMap = responses.toJson();
+
+      print("RESPONSE FOR MULTIPLE EMAILS II: ${responseMap['email']}");
+
+      if (responseMap['emailRequired'] == true &&
+          responseMap['email'] == "null") {
+        debugPrint("Statement True");
         emit(state.copyWith(
           isNewUser: true,
           isLoading: false,
         ));
+        return;
       }
-      if (response?['merchantResponse']?['email'] != null) {
-        if (response?['merchantResponse']?['phone'] == null) {
-          response['merchantResponse']['phone'] = phoneController.text;
+
+      print("RESPONSE FOR MULTIPLE EMAILS III: $responseMap");
+
+      if (responseMap.containsKey('merchantResponse') &&
+          responseMap['merchantResponse'].containsKey('email') &&
+          responseMap['merchantResponse']['email'] != "null") {
+        if (responseMap.containsKey('merchantResponse')) {
+          responseMap['merchantResponse']['phone'] ??= phoneController.text;
         }
-        onSuccessData?.call(FlowResult(
-          flowType: FlowType.otpVerify,
-          data: response?['merchantResponse'],
-        ));
+
+        onSuccessData?.call(
+          FlowResult(
+            flowType: FlowType.otpVerify,
+            data: responseMap['merchantResponse'],
+          ),
+        );
+
         emit(state.copyWith(isSuccess: true, isLoading: false));
       }
       otpController.clear();
@@ -226,7 +244,14 @@ class RootCubit extends Cubit<RootState> {
   Future<void> handleCreateUser() async {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
-    try {
+
+    debugPrint("EMAIL ${emailController.text}");
+    debugPrint("USERNAME ${usernameController.text}");
+    debugPrint("DOB ${dobController.value}");
+    debugPrint("GENDER ${genderController.value}");
+
+    return;
+    /* try {
       final response = await ApiService.createUserApi(
         email: emailController.text,
         name: usernameController.text,
@@ -234,12 +259,16 @@ class RootCubit extends Cubit<RootState> {
         gender: genderController.value,
       );
 
+      debugPrint("response.getDataOrThrow()) ${response.getDataOrThrow()}");
+
+      onSuccessData?.call(
+          FlowResult(flowType: FlowType.createUser, data: response.getDataOrThrow()));
       emit(state.copyWith(
           isSuccess: true, isUserLoggedIn: true, isLoading: false));
     } catch (err) {
       emit(state.copyWith(
           error: SingleUseData((err as Failure).message), isLoading: false));
-    }
+    }*/
   }
 
   Future<void> handleShopifySubmit(

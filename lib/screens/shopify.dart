@@ -44,7 +44,10 @@ class _ShopifyEmailFormState extends State<ShopifyEmailForm> {
         widget.config?.emailPlaceholder ?? 'Enter your email';
     final title = widget.config?.title ?? 'Submit your details';
     final submitButtonText = widget.config?.submitButtonText ?? 'Submit';
-    final subTitle = widget.config?.subTitle;
+    final subTitle = widget.config?.subTitle ??
+        (widget.multipleEmail.isNotEmpty
+            ? "Select your email to continue"
+            : "Enter your email to continue");
 
     return Form(
       key: _formKey,

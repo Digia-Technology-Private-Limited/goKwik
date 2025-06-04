@@ -56,6 +56,8 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
   bool _isLoading = true;
   bool _canGoBack = false;
   AppLifecycleState? _appState;
+  String? _merchantType;
+  bool _listenersSetup = false;
 
   static const Map<String, String> UPI_APP_PACKAGES = {
     'googlepay': 'com.google.android.apps.nbu.paisa.user',
@@ -67,15 +69,18 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-
-    // Initialize WebView for Android
-    // if (Platform.isAndroid) {
-    //   WebView.platformCreated;
-    // }
-
     _initializeWebViewController();
     _initiateCheckout();
+    _setupListeners();
+  }
+
+  Future<void> _setupListeners() async {
+    _merchantType = await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
+    
+    if (_merchantType == 'shopify' && !_listenersSetup) {
+      WidgetsBinding.instance.addObserver(this);
+      _listenersSetup = true;
+    }
   }
 
   void _initializeWebViewController() {
@@ -85,7 +90,7 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
         NavigationDelegate(
           onPageStarted: (String url) {
             setState(() {
-              _isLoading = true;
+              _isLoading = false;
             });
           },
           onPageFinished: (String url) async {
@@ -93,7 +98,12 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
               _isLoading = false;
             });
             _webViewController.runJavaScript(_getInjectJavaScript());
-            _canGoBack = await _webViewController.canGoBack();
+            
+            // Update canGoBack state
+            final canGoBack = await _webViewController.canGoBack();
+            setState(() {
+              _canGoBack = canGoBack;
+            });
           },
           onProgress: (int progress) {
             if (progress == 100) {
@@ -125,7 +135,9 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    if (_listenersSetup) {
+      WidgetsBinding.instance.removeObserver(this);
+    }
     super.dispose();
   }
 
@@ -134,7 +146,9 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
     setState(() {
       _appState = state;
     });
-    if (_webviewUrl != null && _webviewUrl!.contains('shopify')) {
+    
+    // Only send app state changes for Shopify merchant type
+    if (_merchantType == 'shopify') {
       _sendAppStateToWebView(state);
     }
   }
@@ -214,6 +228,7 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
 
     setState(() {
       _webviewUrl = webViewUrl;
+      _isLoading = false;
     });
     _webViewController.loadRequest(Uri.parse(webViewUrl));
   }
@@ -222,17 +237,24 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
     _webViewController.runJavaScript(
       'window.postMessage(${jsonEncode({
             'action': 'appState',
-            'state': state.toString()
+            'state': state.name // Use .name instead of .toString() for cleaner output
           })}, "*")',
     );
   }
 
   Future<bool> _handleBackButton() async {
-    bool canGoBack = await _webViewController.canGoBack();
-    if (canGoBack) {
+    if (kDebugMode) {
+      print('Back button pressed. Can go back: $_canGoBack');
+    }
+    
+    if (_canGoBack) {
       await _webViewController.goBack();
       return true;
     } else {
+      // This is hardware back press - send message to webview
+      if (kDebugMode) {
+        print('Sending hardwareBackPress message to webview');
+      }
       _webViewController.runJavaScript(
         'window.postMessage(${jsonEncode({
               'action': 'hardwareBackPress'
@@ -485,12 +507,21 @@ document.addEventListener("gk-checkout-disable", (event) => {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: _merchantType != 'shopify',
       onPopInvoked: (didPop) async {
         if (didPop) return;
-        final shouldPop = await _handleBackButton();
-        if (shouldPop && context.mounted) {
-          Navigator.of(context).pop();
+        
+        // Only handle back button for Shopify merchant type
+        if (_merchantType == 'shopify') {
+          final shouldPop = await _handleBackButton();
+          if (shouldPop && context.mounted) {
+            Navigator.of(context).pop();
+          }
+        } else {
+          // For non-Shopify, allow normal back navigation
+          if (context.mounted) {
+            Navigator.of(context).pop();
+          }
         }
       },
       child: Scaffold(
@@ -498,7 +529,7 @@ document.addEventListener("gk-checkout-disable", (event) => {
           children: [
             if (_webviewUrl != null)
               WebViewWidget(controller: _webViewController),
-            if (_isLoading) const Center(child: CircularProgressIndicator()),
+            // if (_isLoading) const Center(child: CircularProgressIndicator()),
           ],
         ),
       ),

@@ -139,6 +139,7 @@ abstract class ApiService {
     try {
       final goKwik = DioClient().getClient();
       final response = (await goKwik.get('auth/browser')).toBaseResponse();
+      print("RESPONSE IN GET BROWSER TOKEN ${response.data}");
       final data = response.data ?? {};
       final requestId = data['requestId'];
       final token = data['token'];
@@ -159,6 +160,7 @@ abstract class ApiService {
 
       return Success(response.data);
     } catch (err) {
+      print("ERROR IN GET BROWSER TOKEN ${err.toString()}");
       throw handleApiError(err);
     }
   }
@@ -171,6 +173,8 @@ abstract class ApiService {
       final response = (await gokwik.get('configurations/$mid')).toBaseResponse(
         fromJson: (json) => MerchantConfig.fromJson(json),
       );
+
+      print("RESPONSE IN INITIALIZE MERCHANT ${response.data}");
 
       final merchantRes = response.data;
       await cacheInstance.setValue(
@@ -193,6 +197,7 @@ abstract class ApiService {
       final kcMerchantId = args.kcMerchantId ?? '';
       final kcMerchantToken = args.kcMerchantToken ?? '';
       final isSnowplowTrackingEnabled = args.isSnowplowTrackingEnabled ?? true;
+      final mode = args.mode ?? 'debug';
       await DioClient().initialize(args.environment.name);
 
       final gokwik = DioClient().getClient();
@@ -206,6 +211,10 @@ abstract class ApiService {
       // );
 
       await Future.wait([
+        cacheInstance.setValue(
+          KeyConfig.gkMode,
+          mode.toString(),
+        ),
         cacheInstance.setValue(
           KeyConfig.isSnowplowTrackingEnabled,
           isSnowplowTrackingEnabled.toString(),
@@ -239,8 +248,9 @@ abstract class ApiService {
             checkoutAccessToken;
       }
 
-      await getBrowserToken();
+      // await getBrowserToken();
       final merchantConfig = await initializeMerchant(mid, environment.name);
+
       if (merchantConfig.isSuccess) {
         final merchantConfigData = merchantConfig.getDataOrThrow();
         if (merchantConfigData?.platform != null) {
@@ -402,10 +412,14 @@ abstract class ApiService {
   static Future<Result<LoginResponseData?>> loginKpUser() async {
     try {
       final gokwik = DioClient().getClient();
+      print("LOGIN KP USER");
       final response =
           (await gokwik.get('customer/custom/login')).toBaseResponse(
         fromJson: (json) => LoginResponseData.fromJson(json),
       );
+
+      print("LOGIN KP USER RESPONSE ::::: ${response.data}");
+
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to login');
       }
@@ -481,6 +495,7 @@ abstract class ApiService {
   static Future<Result<String>> validateUserToken() async {
     try {
       final gokwik = DioClient().getClient();
+      print("VALIDATE USER TOKEN");
 
       final results = await Future.wait([
         cacheInstance.getValue(KeyConfig.gkAccessTokenKey),
@@ -498,22 +513,45 @@ abstract class ApiService {
             checkoutAccessToken;
       }
 
+      print("VALIDATE USER TOKEN HEADERS ::::: ${gokwik.options.headers}");
+
       final response = (await gokwik.get('auth/validate-token'))
           .toBaseResponse<ValidateUserTokenResponseData>(
-        fromJson: (json) => ValidateUserTokenResponseData.fromJson(json),
+        fromJson: (json) {
+          print("VALIDATE USER TOKEN RAW JSON ::::: $json");
+          if (json == null) {
+            throw Exception('Response data is null');
+          }
+          return ValidateUserTokenResponseData.fromJson(json);
+        },
       );
+
+      print("VALIDATE USER TOKEN RESPONSE ::::: ${response.data}");
+
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to validate token');
       }
-      final responseData = jsonEncode(response.data);
 
-      await cacheInstance.setValue(
-        KeyConfig.gkVerifiedUserKey,
-        responseData,
-      );
+      if (response.data == null) {
+        return Failure('No data received from validate token response');
+      }
 
-      return Success(responseData);
+      try {
+        final responseData = jsonEncode(response.data);
+
+        await cacheInstance.setValue(
+          KeyConfig.gkVerifiedUserKey,
+          responseData,
+        );
+
+        return Success(responseData);
+      } catch (e) {
+        print("VALIDATE USER TOKEN PARSING ERROR ::::: $e");
+        return Failure('Error parsing validate token response: $e');
+      }
     } catch (err) {
+      print("VALIDATE USER TOKEN ERROR ::::: ${err.toString()}");
+      print("VALIDATE USER TOKEN ERROR 2 ::::: ${(err as Failure).toString()}");
       throw handleApiError(err);
     }
   }
@@ -568,6 +606,8 @@ abstract class ApiService {
       final merchantType =
           await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
 
+      print("MERCHANT TYPE ::::: ${merchantType}");
+
       if (merchantType == 'shopify') {
         final res = await _handleShopifyVerifyResponse(
           response.data,
@@ -591,29 +631,44 @@ abstract class ApiService {
       final responseForAffluence = await customerIntelligence();
 
       await validateUserToken();
+      print("VALIDATE USER TOKEN COMPLETED");
       final loginResponse = await loginKpUser();
 
+      final responseData = loginResponse.getDataOrThrow();
       if (loginResponse.isSuccess) {
-        final responseData = loginResponse.getDataOrThrow();
+        print("LOGIN KP USER RESPONSE DATA ::::: ${responseData?.email}");
         if (responseData?.email != null) {
-          await cacheInstance.setValue(
-            KeyConfig.gkVerifiedUserKey,
-            jsonEncode(responseData),
-          );
+          if (responseData != null) {
+            final updatedData = LoginResponseData(
+              phone: responseData.phone,
+              emailRequired: responseData.emailRequired,
+              email: responseData.email,
+              merchantResponse: responseData.merchantResponse,
+              isSuccess: responseData.isSuccess,
+              message: responseData.message,
+              /*  affluence: responseForAffluence.isSuccess
+                  ? responseForAffluence.getDataOrThrow()
+                  : responseData.affluence,*/
+            );
+
+            await cacheInstance.setValue(
+              KeyConfig.gkVerifiedUserKey,
+              jsonEncode(updatedData),
+            );
+            await SnowplowTrackerService.sendCustomEventToSnowPlow({
+              'category': 'login_modal',
+              'label': 'phone_Number_logged_in',
+              'action': 'logged_in',
+              'property': 'phone_number',
+              'value': int.tryParse(phoneNumber) ?? 0,
+            });
+
+            return Success(updatedData);
+          }
         }
       }
 
-      if (responseForAffluence.isSuccess) {
-        // loginResponse.data?.email; = responseForAffluence;
-      }
-
-      await SnowplowTrackerService.sendCustomEventToSnowPlow({
-        'category': 'login_modal',
-        'label': 'phone_Number_logged_in',
-        'action': 'logged_in',
-        'property': 'phone_number',
-        'value': int.tryParse(phoneNumber) ?? 0,
-      });
+      print("LOGIN RESPONSE ::::: ${loginResponse.getDataOrThrow()}");
 
       return loginResponse;
     } catch (error) {

@@ -11,7 +11,7 @@ class VerifyCodeForm extends StatefulWidget {
   final ValueChanged<String> onVerify;
   final String? Function(String?)? validator;
   final String? initialValue;
-  final OtpVerificationScreenConfig? config;
+  final dynamic config; // Can be OtpVerificationScreenConfig or EmailOtpVerificationScreenConfig
   final bool isLoading;
   final bool isSuccess;
   final String? error;
@@ -50,6 +50,113 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   late OTPInteractor _otpInteractor;
 
   final pinputController = TextEditingController();
+
+  // Helper methods to safely access config properties
+  String get configTitle {
+    if (widget.config is OtpVerificationScreenConfig) {
+      return (widget.config as OtpVerificationScreenConfig).title;
+    } else if (widget.config is EmailOtpVerificationScreenConfig) {
+      return (widget.config as EmailOtpVerificationScreenConfig).title ?? "Verify Code";
+    }
+    return "Verify Code";
+  }
+
+  TextStyle? get configTitleStyle {
+    if (widget.config is OtpVerificationScreenConfig) {
+      return (widget.config as OtpVerificationScreenConfig).titleStyle;
+    }
+    return null;
+  }
+
+  String? get configSubTitle {
+    if (widget.config is OtpVerificationScreenConfig) {
+      return (widget.config as OtpVerificationScreenConfig).subTitle;
+    } else if (widget.config is EmailOtpVerificationScreenConfig) {
+      return (widget.config as EmailOtpVerificationScreenConfig).subTitle;
+    }
+    return null;
+  }
+
+  TextStyle? get configSubTitleStyle {
+    if (widget.config is OtpVerificationScreenConfig) {
+      return (widget.config as OtpVerificationScreenConfig).subTitleStyle;
+    }
+    return null;
+  }
+
+  TextStyle? get configEditLabelStyle {
+    if (widget.config is OtpVerificationScreenConfig) {
+      return (widget.config as OtpVerificationScreenConfig).editLabelStyle;
+    }
+    return null;
+  }
+
+  TextStyle? get configEditStyle {
+    if (widget.config is OtpVerificationScreenConfig) {
+      return (widget.config as OtpVerificationScreenConfig).editStyle;
+    } else if (widget.config is EmailOtpVerificationScreenConfig) {
+      return (widget.config as EmailOtpVerificationScreenConfig).editStyle;
+    }
+    return null;
+  }
+
+  TextStyle? get configCellTextStyle {
+    if (widget.config is OtpVerificationScreenConfig) {
+      return (widget.config as OtpVerificationScreenConfig).cellTextStyle;
+    }
+    return null;
+  }
+
+  TextStyle? get configResendTextStyle {
+    if (widget.config is OtpVerificationScreenConfig) {
+      return (widget.config as OtpVerificationScreenConfig).resendTextStyle;
+    }
+    return null;
+  }
+
+  TextStyle? get configResendButtonTextStyle {
+    if (widget.config is OtpVerificationScreenConfig) {
+      return (widget.config as OtpVerificationScreenConfig).resendButtonTextStyle;
+    }
+    return null;
+  }
+
+  ButtonStyle? get configSubmitButtonStyleBox {
+    if (widget.config is OtpVerificationScreenConfig) {
+      return (widget.config as OtpVerificationScreenConfig).submitButtonStyleBox;
+    }
+    return null;
+  }
+
+  String get configLoadingText {
+    if (widget.config is OtpVerificationScreenConfig) {
+      return (widget.config as OtpVerificationScreenConfig).loadingText ?? 'Signing you in...';
+    }
+    return 'Signing you in...';
+  }
+
+  TextStyle? get configLoadingTextStyle {
+    if (widget.config is OtpVerificationScreenConfig) {
+      return (widget.config as OtpVerificationScreenConfig).loadingTextStyle;
+    }
+    return null;
+  }
+
+  String get configSubmitButtonText {
+    if (widget.config is OtpVerificationScreenConfig) {
+      return (widget.config as OtpVerificationScreenConfig).submitButtonText;
+    } else if (widget.config is EmailOtpVerificationScreenConfig) {
+      return (widget.config as EmailOtpVerificationScreenConfig).submitButtonText ?? 'Verify';
+    }
+    return 'Verify';
+  }
+
+  TextStyle? get configSubmitButtonTextStyle {
+    if (widget.config is OtpVerificationScreenConfig) {
+      return (widget.config as OtpVerificationScreenConfig).submitButtonTextStyle;
+    }
+    return null;
+  }
 
   @override
   void initState() {
@@ -171,21 +278,20 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (widget.config?.title != null)
             Text(
-              widget.config!.title,
-              style: widget.config?.titleStyle ??
+              configTitle,
+              style: configTitleStyle ??
                   const TextStyle(
                     fontSize: 20,
                     color: Colors.black,
                   ),
             ),
-          if (widget.config?.subTitle != null)
+          if (configSubTitle != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                widget.config!.subTitle!,
-                style: widget.config?.subTitleStyle ??
+                configSubTitle!,
+                style: configSubTitleStyle ??
                     const TextStyle(
                       fontSize: 16,
                       color: Color(0xFF999999),
@@ -196,7 +302,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
             children: [
               Text(
                 widget.otpLabel,
-                style: widget.config?.editLabelStyle ??
+                style: configEditLabelStyle ??
                     const TextStyle(
                       fontSize: 20,
                       color: Color(0x9E000000),
@@ -207,7 +313,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                 onTap: widget.onEdit,
                 child: Text(
                   'Edit',
-                  style: widget.config?.editStyle ??
+                  style: configEditStyle ??
                       const TextStyle(
                         fontSize: 16,
                         color: Colors.black,
@@ -256,7 +362,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
               selectedFillColor: Colors.white,
             ),
             mainAxisAlignment: MainAxisAlignment.start,
-            textStyle: widget.config?.cellTextStyle ??
+            textStyle: configCellTextStyle ??
                 const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -280,7 +386,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
               child: Text.rich(
                 TextSpan(
                   text: 'OTP not received? ',
-                  style: widget.config?.resendTextStyle ??
+                  style: configResendTextStyle ??
                       const TextStyle(
                         fontSize: 14,
                         color: Colors.black,
@@ -293,7 +399,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                           _isResendDisabled
                               ? 'Resend in ${_seconds}s'
                               : 'Resend OTP',
-                          style: widget.config?.resendButtonTextStyle ??
+                          style: configResendButtonTextStyle ??
                               const TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF0964C5),
@@ -310,7 +416,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              style: widget.config?.submitButtonStyleBox ??
+              style: configSubmitButtonStyleBox ??
                   ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF007AFF),
                     shape: RoundedRectangleBorder(
@@ -340,8 +446,8 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          widget.config?.loadingText ?? 'Signing you in...',
-                          style: widget.config?.loadingTextStyle ??
+                          configLoadingText,
+                          style: configLoadingTextStyle ??
                               const TextStyle(
                                 fontSize: 16,
                                 color: Colors.white,
@@ -352,10 +458,10 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                       ],
                     )
                   : widget.isLoading
-                      ? widget.config?.loadingText != null
+                      ? configLoadingText.isNotEmpty
                           ? Text(
-                              widget.config!.loadingText!,
-                              style: widget.config?.loadingTextStyle,
+                              configLoadingText,
+                              style: configLoadingTextStyle,
                             )
                           : const SizedBox(
                               width: 16,
@@ -365,8 +471,8 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                               ),
                             )
                       : Text(
-                          widget.config?.submitButtonText ?? 'Verify',
-                          style: widget.config?.submitButtonTextStyle ??
+                          configSubmitButtonText,
+                          style: configSubmitButtonTextStyle ??
                               const TextStyle(
                                 fontSize: 16,
                                 color: Colors.white,

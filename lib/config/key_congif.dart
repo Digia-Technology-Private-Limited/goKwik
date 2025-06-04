@@ -1,4 +1,5 @@
 class KeyConfig {
+  static const gkMode = 'gk-mode';
   static const gkTokenKey = 'gk-token';
   static const gkCoreTokenKey = 'gk-coreToken';
   static const gkAccessTokenKey = 'gk-access-token';

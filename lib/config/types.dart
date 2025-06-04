@@ -16,6 +16,7 @@ class InitializeSdkProps {
   final MerchantType? merchantType; // 'shopify' or 'custom'
   final String? kcMerchantId;
   final String? kcMerchantToken;
+  final String? mode; // 'debug' or 'release'
 
   InitializeSdkProps({
     required this.mid,
@@ -25,6 +26,7 @@ class InitializeSdkProps {
     this.merchantType,
     this.kcMerchantId,
     this.kcMerchantToken,
+    this.mode,
   });
 }
 
@@ -52,6 +54,34 @@ class Token {
   final bool isValid;
 
   Token({required this.isValid});
+}
+
+class TokenData {
+  final bool isExpired;
+  final bool isValid;
+  final String jwe;
+
+  TokenData({
+    required this.isExpired,
+    required this.isValid,
+    required this.jwe,
+  });
+
+  factory TokenData.fromJson(Map<String, dynamic> json) {
+    return TokenData(
+      isExpired: json['isExpired'] ?? false,
+      isValid: json['isValid'] ?? false,
+      jwe: json['jwe'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'isExpired': isExpired,
+      'isValid': isValid,
+      'jwe': jwe,
+    };
+  }
 }
 
 class VerifyCodeResponseData {
@@ -245,8 +275,8 @@ class LoginResponse {
 }
 
 class ValidateUserTokenResponseData {
-  final String? coreToken;
-  final Token token;
+  final TokenData? coreToken;
+  final TokenData token;
   final String phone;
   final String? email;
 
@@ -259,17 +289,19 @@ class ValidateUserTokenResponseData {
 
   factory ValidateUserTokenResponseData.fromJson(Map<String, dynamic> json) {
     return ValidateUserTokenResponseData(
-      coreToken: json['coreToken'],
-      token: Token(isValid: json['token']['isValid']),
-      phone: json['phone'],
+      coreToken: json['coreToken'] != null
+          ? TokenData.fromJson(json['coreToken'])
+          : null,
+      token: TokenData.fromJson(json['token']),
+      phone: json['phone'] ?? '',
       email: json['email'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'coreToken': coreToken,
-      'token': {'isValid': token.isValid},
+      'coreToken': coreToken?.toJson(),
+      'token': token.toJson(),
       'phone': phone,
       'email': email,
     };
@@ -292,6 +324,28 @@ class ValidateUserTokenResponse {
     required this.isSuccess,
     required this.error,
   });
+
+  factory ValidateUserTokenResponse.fromJson(Map<String, dynamic> json) {
+    return ValidateUserTokenResponse(
+      data: ValidateUserTokenResponseData.fromJson(json['data']),
+      success: json['success'] ?? false,
+      statusCode: json['status_code'] ?? 200,
+      timestamp: json['timestamp'] ?? 0,
+      isSuccess: json['isSuccess'] ?? false,
+      error: json['error'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'data': data.toJson(),
+      'success': success,
+      'status_code': statusCode,
+      'timestamp': timestamp,
+      'isSuccess': isSuccess,
+      'error': error,
+    };
+  }
 }
 
 class TrackProductEventContext {
@@ -489,6 +543,7 @@ class LoginResponseData {
   final MerchantResponse merchantResponse;
   final bool isSuccess;
   final String? message;
+  final dynamic affluence;
 
   LoginResponseData({
     required this.phone,
@@ -497,23 +552,24 @@ class LoginResponseData {
     required this.merchantResponse,
     required this.isSuccess,
     this.message,
+    this.affluence,
   });
 
   factory LoginResponseData.fromJson(Map<String, dynamic> json) {
     return LoginResponseData(
-      phone: json['phone'],
-      emailRequired: json['emailRequired'],
-      email: json['email'],
-      merchantResponse: MerchantResponse(
-        email: json['merchantResponse']['email'],
-        id: json['merchantResponse']['id'],
-        token: json['merchantResponse']['token'],
-        refreshToken: json['merchantResponse']['refreshToken'],
-        csrfToken: json['merchantResponse']['csrfToken'],
-      ),
-      isSuccess: json['isSuccess'],
-      message: json['message'],
-    );
+        phone: json['phone'].toString(),
+        emailRequired: json['emailRequired'],
+        email: json['email'].toString(),
+        merchantResponse: MerchantResponse(
+          email: json['merchantResponse']['email'].toString(),
+          id: json['merchantResponse']['id'].toString(),
+          token: json['merchantResponse']['token'].toString(),
+          refreshToken: json['merchantResponse']['refreshToken'].toString(),
+          csrfToken: json['merchantResponse']['csrfToken'].toString(),
+        ),
+        isSuccess: json['isSuccess'],
+        message: json['message'].toString(),
+        affluence: json['affluence']);
   }
 
   Map<String, dynamic> toJson() {
@@ -530,6 +586,7 @@ class LoginResponseData {
       },
       'isSuccess': isSuccess,
       'message': message,
+      'affluence': affluence,
     };
   }
 }

@@ -174,6 +174,7 @@ class _RootScreenState extends State<RootScreen> {
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 22),
                                 decoration: widget.formContainerStyle,
+                                //Todo:Uncomment this part
                                 child: _isUserLoggedIn && !state.isSuccess
                                     ? const Text(
                                         'You are already logged in',
@@ -191,11 +192,11 @@ class _RootScreenState extends State<RootScreen> {
                                                 isEmailRequired: widget
                                                         .createUserConfig
                                                         ?.isEmailRequired ??
-                                                    false,
+                                                    true,
                                                 isNameRequired: widget
                                                         .createUserConfig
                                                         ?.isNameRequired ??
-                                                    false,
+                                                    true,
                                                 isGenderRequired: widget
                                                         .createUserConfig
                                                         ?.isGenderRequired ??
@@ -216,11 +217,11 @@ class _RootScreenState extends State<RootScreen> {
                                                     true,
                                                 showDob: widget.createUserConfig
                                                         ?.showDob ??
-                                                    true,
+                                                    false,
                                                 showGender: widget
                                                         .createUserConfig
                                                         ?.showGender ??
-                                                    true,
+                                                    false,
                                               )
                                             : ShopifyEmailForm(
                                                 initialValue: cubit
@@ -254,7 +255,7 @@ class _RootScreenState extends State<RootScreen> {
                                                 initialValue: cubit
                                                     .shopifyOtpController.text,
                                                 config: widget.inputProps
-                                                    ?.otpVerificationScreen,
+                                                    ?.emailOtpVerificationScreen,
                                               )
                                             : _otpSent
                                                 ? VerifyCodeForm(
@@ -511,8 +512,8 @@ class OtpVerificationScreenConfig {
   final String? loadingText;
 
   const OtpVerificationScreenConfig({
-    this.title = 'OTP Verification',
-    this.subTitle,
+    this.title = 'Verify Code',
+    this.subTitle = 'Enter the 4-digit code sent to your phone',
     this.submitButtonText = 'Verify',
     this.editStyle,
     // this.phoneTextStyle,
@@ -542,8 +543,8 @@ class EmailOtpVerificationScreenConfig {
   final TextStyle? emailTextStyle;
 
   const EmailOtpVerificationScreenConfig({
-    this.title,
-    this.subTitle,
+    this.title = 'Verify Email',
+    this.subTitle = 'Enter the 4-digit code sent to your email-address',
     this.submitButtonText,
     this.editStyle,
     this.emailTextStyle,
@@ -596,6 +597,7 @@ class CreateUserScreenConfig {
   final String? genderPlaceholder;
   final String? submitButtonText;
   final String? dobFormat;
+  final DateTime? dob;
   final BoxDecoration? radioContainerStyle;
   final BoxDecoration? radioCircleStyle;
   final BoxDecoration? radioSelectedStyle;
@@ -612,6 +614,7 @@ class CreateUserScreenConfig {
     this.genderPlaceholder,
     this.submitButtonText,
     this.dobFormat,
+    this.dob,
     this.radioContainerStyle,
     this.radioCircleStyle,
     this.radioSelectedStyle,

@@ -88,25 +88,23 @@ class _LoginState extends State<Login> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 10),
-          if (widget.config?.title != null)
-            Text(
-              widget.config!.title!,
-              style: widget.config?.titleTextStyle ??
-                  const TextStyle(
-                    fontSize: 20,
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-          if (widget.config?.subTitle != null)
-            Text(
-              widget.config!.subTitle!,
-              style: widget.config?.subtitleTextStyle ??
-                  const TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
-            ),
+          Text(
+            widget.config?.title ?? "Login/ Signup",
+            style: widget.config?.titleTextStyle ??
+                const TextStyle(
+                  fontSize: 20,
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          Text(
+            widget.config?.subTitle ?? "Enter your phone number to continue",
+            style: widget.config?.subtitleTextStyle ??
+                const TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+          ),
           const SizedBox(height: 10),
           TextFormField(
             controller: _phoneController,
@@ -162,8 +160,8 @@ class _LoginState extends State<Login> {
                       height: 20,
                       decoration: widget.config?.checkboxContainerStyle ??
                           BoxDecoration(
-                            border: Border.all(
-                                color: Color(0xFF0964C5), width: 2),
+                            border:
+                                Border.all(color: Color(0xFF0964C5), width: 2),
                             borderRadius: BorderRadius.all(Radius.circular(5)),
                           ),
                       child: widget.formData.notifications
@@ -171,7 +169,8 @@ class _LoginState extends State<Login> {
                               decoration: widget.config?.checkboxStyle ??
                                   const BoxDecoration(
                                     color: Color(0xFF0964C5),
-                                    borderRadius: BorderRadius.all(Radius.circular(3)),
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(3)),
                                   ),
                               child: const Icon(
                                 Icons.check,
