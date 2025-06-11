@@ -92,6 +92,13 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
             setState(() {
               _isLoading = false;
             });
+            
+            // Send navigation event for page start
+            _sendNavigationEvent('pageStarted', {
+              'url': url,
+              'isLoading': true,
+              'canGoBack': _canGoBack,
+            });
           },
           onPageFinished: (String url) async {
             setState(() {
@@ -101,8 +108,17 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
             
             // Update canGoBack state
             final canGoBack = await _webViewController.canGoBack();
+            final canGoForward = await _webViewController.canGoForward();
             setState(() {
               _canGoBack = canGoBack;
+            });
+            
+            // Send navigation event for page finished
+            _sendNavigationEvent('pageFinished', {
+              'url': url,
+              'isLoading': false,
+              'canGoBack': canGoBack,
+              'canGoForward': canGoForward,
             });
           },
           onProgress: (int progress) {
@@ -111,17 +127,44 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
                 _isLoading = false;
               });
             }
+            
+            // Send navigation event for progress updates
+            _sendNavigationEvent('progress', {
+              'progress': progress,
+              'isLoading': progress < 100,
+            });
           },
           onNavigationRequest: (NavigationRequest request) {
             setState(() {
               _isLoading = true;
             });
+            
+            // Send navigation event for navigation request
+            _sendNavigationEvent('navigationRequest', {
+              'url': request.url,
+              'isMainFrame': request.isMainFrame,
+            });
+            
             return NavigationDecision.navigate;
           },
           onWebResourceError: (WebResourceError error) {
             if (kDebugMode) {
               print('WebView error: ${error.description}');
             }
+            
+            // Send navigation event for web resource error
+            _sendNavigationEvent('webResourceError', {
+              'description': error.description,
+              'errorCode': error.errorCode,
+              'errorType': error.errorType?.name,
+            });
+          },
+          onUrlChange: (UrlChange change) {
+            // Send navigation event for URL changes
+            _sendNavigationEvent('urlChange', {
+              'url': change.url,
+              'previousUrl': _webviewUrl,
+            });
           },
         ),
       )
@@ -176,6 +219,7 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
 
       setState(() {
         _webviewUrl = webviewUrl;
+        _isLoading = false;
       });
       _webViewController.loadRequest(Uri.parse(webviewUrl));
       return;
@@ -240,6 +284,30 @@ class _CheckoutState extends State<Checkout> with WidgetsBindingObserver {
             'state': state.name // Use .name instead of .toString() for cleaner output
           })}, "*")',
     );
+  }
+
+  void _sendNavigationEvent(String navigationType, Map<String, dynamic> navigationData) {
+    try {
+      final navigationEvent = {
+        'eventname': 'navigation',
+        'data': {
+          'type': navigationType,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+          ...navigationData,
+        }
+      };
+      
+      // Send the navigation event through the onMessage callback
+      widget.onMessage(navigationEvent);
+      
+      if (kDebugMode) {
+        print('Navigation event sent: $navigationType - ${navigationEvent['data']}');
+      }
+    } catch (error) {
+      if (kDebugMode) {
+        print('Error sending navigation event: $error');
+      }
+    }
   }
 
   Future<bool> _handleBackButton() async {
@@ -525,6 +593,7 @@ document.addEventListener("gk-checkout-disable", (event) => {
         }
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         body: Stack(
           children: [
             if (_webviewUrl != null)
