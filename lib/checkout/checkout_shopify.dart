@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gokwik/api/sdk_config.dart';
 import 'package:gokwik/config/cache_instance.dart';
@@ -11,12 +12,15 @@ class CheckoutShopify extends StatefulWidget {
   final String cartId;
   final Function(FlowResult)? onSuccess;
   final Function(FlowResult)? onError;
+  final Function(dynamic)? onMessage;
+
 
   const CheckoutShopify({
     Key? key,
     required this.cartId,
     this.onSuccess,
     this.onError,
+    this.onMessage,
   }) : super(key: key);
 
   @override
@@ -70,7 +74,7 @@ window.addEventListener('load', function() {
   void _initWebViewController() {
     _webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      // ..runJavaScript(injectedJavaScript)
+    // ..runJavaScript(injectedJavaScript)
       ..addJavaScriptChannel(
         'Flutter',
         onMessageReceived: (JavaScriptMessage message) {
@@ -78,11 +82,28 @@ window.addEventListener('load', function() {
         },
       )
       ..setNavigationDelegate(
-        NavigationDelegate(onPageStarted: (url) {
+        NavigationDelegate(onPageStarted: (url)  async {
           debugPrint('Page started loading: $url');
+          final canGoBack = await _webViewController.canGoBack();
+          final canGoForward = await _webViewController.canGoForward();
+
+          _sendNavigationEvent('pageStarted', {
+            'url': url,
+            'isLoading': true,
+            'canGoBack': canGoBack,
+          });
         }, onPageFinished: (url) async {
           debugPrint('Page finished loading: $url');
           await _webViewController.runJavaScript(injectedJavaScript);
+          final canGoBack = await _webViewController.canGoBack();
+          final canGoForward = await _webViewController.canGoForward();
+
+          _sendNavigationEvent('pageFinished', {
+            'url': url,
+            'isLoading': false,
+            'canGoBack': canGoBack,
+            'canGoForward': canGoForward,
+          });
         }, onWebResourceError: (error) {
           debugPrint('Web resource error: $error');
         }, onNavigationRequest: (NavigationRequest request) async {
@@ -105,14 +126,29 @@ window.addEventListener('load', function() {
               debugPrint('Launch error ');
               // _showAppMissingSnackbar(
               //     context, uri); // Show snackbar instead of dialog
+            }else{
+              // Send navigation event for navigation request
+              _sendNavigationEvent('navigationRequest', {
+                'url': request.url,
+                'isMainFrame': request.isMainFrame,
+              });
             }
+
             return NavigationDecision.prevent;
           } catch (e) {
             debugPrint('Launch error: $e');
             // _showAppMissingSnackbar(context, uri);
             return NavigationDecision.prevent;
           }
-        }),
+        },   onUrlChange: (UrlChange change) {
+          // Send navigation event for URL changes
+          _sendNavigationEvent('urlChange', {
+            'url': change.url,
+            'previousUrl': webUrl,
+          });
+        },
+
+        ),
       );
   }
 
@@ -127,7 +163,7 @@ window.addEventListener('load', function() {
 
   Future<void> initiateCheckout() async {
     final environment =
-        await cacheInstance.getValue(KeyConfig.gkEnvironmentKey);
+    await cacheInstance.getValue(KeyConfig.gkEnvironmentKey);
 
     final merchantInfo = {
       'mid': await cacheInstance.getValue(KeyConfig.gkMerchantIdKey),
@@ -158,7 +194,7 @@ window.addEventListener('load', function() {
     final encodedStoreInfo = base64Encode(utf8.encode(jsonEncode(storeInfo)));
 
     String checkoutBaseUrl =
-        SdkConfig.fromEnvironment(environment!).checkoutUrl['shopify']!;
+    SdkConfig.fromEnvironment(environment!).checkoutUrl['shopify']!;
 
     String url = '$checkoutBaseUrl$encodedStoreInfo';
 
@@ -177,6 +213,29 @@ window.addEventListener('load', function() {
     _webViewController.loadRequest(Uri.parse(url));
   }
 
+  void _sendNavigationEvent(String navigationType, Map<String, dynamic> navigationData) {
+    try {
+      final navigationEvent = {
+        'eventname': 'navigation',
+        'data': {
+          'type': navigationType,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+          ...navigationData,
+        }
+      };
+
+      // Send the navigation event through the onMessage callback
+      widget.onMessage?.call(navigationEvent);
+
+      if (kDebugMode) {
+        print('Navigation event sent: $navigationType - ${navigationEvent['data']}');
+      }
+    } catch (error) {
+      if (kDebugMode) {
+        print('Error sending navigation event: $error');
+      }
+    }
+  }
   void handleMessage(String message) {
     try {
       final decoded = jsonDecode(message);
@@ -259,7 +318,7 @@ window.addEventListener('load', function() {
       },
       child: webUrl.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : WebViewWidget(controller: _webViewController),
+          : Scaffold( body: WebViewWidget(controller: _webViewController),),
     );
   }
 }
