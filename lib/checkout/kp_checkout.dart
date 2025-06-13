@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:gokwik/checkout/checkout.dart';
+import 'package:gokwik/checkout/checkout_shopify.dart';
 import 'package:gokwik/config/types.dart';
 
 typedef EventCallback = void Function(Map<String, dynamic> message);
@@ -24,7 +24,7 @@ class KPCheckout extends StatelessWidget {
   Widget build(BuildContext context) {
     final merchantParams = checkoutData.checkoutData.merchantParams;
 
-    return Checkout(
+    return CheckoutShopify(
       checkoutId: merchantParams?.merchantCheckoutId ?? '',
       cartId: merchantParams?.cartId ?? '',
       storefrontToken: merchantParams?.storefrontToken ?? '',
