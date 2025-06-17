@@ -26,6 +26,8 @@ class RootState {
   final List<MultipleEmail> multipleEmails;
   final String? gender;
   final RootScreenStep currentStep;
+  final bool isDevBuild;
+  final String reqId;
 
   const RootState({
     this.isUserLoggedIn = false,
@@ -40,6 +42,8 @@ class RootState {
     this.multipleEmails = const [],
     this.gender,
     this.currentStep = RootScreenStep.phoneInput,
+    this.isDevBuild = false,
+    this.reqId = '',
   });
 
   RootState copyWith({
@@ -55,6 +59,8 @@ class RootState {
     List<MultipleEmail>? multipleEmails,
     String? gender,
     RootScreenStep? currentStep,
+    bool? isDevBuild,
+    String? reqId,
   }) {
     return RootState(
       isUserLoggedIn: isUserLoggedIn ?? this.isUserLoggedIn,
@@ -69,6 +75,8 @@ class RootState {
       multipleEmails: multipleEmails ?? this.multipleEmails,
       gender: gender ?? this.gender,
       currentStep: currentStep ?? this.currentStep,
+      isDevBuild: isDevBuild ?? this.isDevBuild,
+      reqId: reqId ?? this.reqId,
     );
   }
 }

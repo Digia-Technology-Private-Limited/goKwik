@@ -36,6 +36,7 @@ class RootCubit extends Cubit<RootState> {
       : super(const RootState(merchantType: MerchantType.shopify)) {
     _listenMerchantType();
     _listenUserStateUpdated();
+    _initializeDevMode();
   }
 
   Future<void> resendPhoneOtp() async {
@@ -278,6 +279,22 @@ class RootCubit extends Cubit<RootState> {
     emit(state.copyWith(isLoading: true));
     shopifyEmailController.text = email;
     try {
+      // Validate disposable email
+      final isValidEmail = await ShopifyService.validateDisposableEmail(email);
+      
+      if (!isValidEmail) {
+        emit(state.copyWith(isLoading: false));
+        final errorMessage = 'Entered email is not valid';
+        emit(state.copyWith(
+            error: SingleUseData(errorMessage),
+            isLoading: false,
+            emailOtpSent: false));
+        onErrorData?.call(FlowResult(
+            flowType: FlowType.emailOtpSend,
+            error: errorMessage));
+        return;
+      }
+
       final response =
           await ShopifyService.shopifySendEmailVerificationCode(email);
 
@@ -396,6 +413,26 @@ class RootCubit extends Cubit<RootState> {
         emit(state.copyWith(isUserLoggedIn: true));
         return;
       }
+    }
+  }
+
+  Future<void> _initializeDevMode() async {
+    try {
+      final mode = await cacheInstance.getValue(KeyConfig.gkMode);
+      final isDev = mode == 'debug';
+      
+      if (isDev) {
+        final requestId = await cacheInstance.getValue(KeyConfig.gkRequestIdKey);
+        emit(state.copyWith(
+          isDevBuild: true,
+          reqId: requestId ?? '',
+        ));
+      } else {
+        emit(state.copyWith(isDevBuild: false));
+      }
+    } catch (err) {
+      print('Error initializing dev mode: $err');
+      emit(state.copyWith(isDevBuild: false));
     }
   }
 

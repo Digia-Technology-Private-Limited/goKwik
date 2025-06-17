@@ -1,7 +1,6 @@
 library gokwik;
 
 export 'go_kwik_client.dart';
-export 'checkout/checkout.dart';
 
 //Analtics Report
 export 'api/snowplow_events.dart';

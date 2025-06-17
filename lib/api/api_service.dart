@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gokwik/api/base_response.dart';
 import 'package:gokwik/api/httpClient.dart';
@@ -197,7 +198,7 @@ abstract class ApiService {
       final kcMerchantId = args.kcMerchantId ?? '';
       final kcMerchantToken = args.kcMerchantToken ?? '';
       final isSnowplowTrackingEnabled = args.isSnowplowTrackingEnabled ?? true;
-      final mode = args.mode ?? 'debug';
+      final mode = args.mode ?? (kDebugMode ? 'debug' : 'release');
       await DioClient().initialize(args.environment.name);
 
       final gokwik = DioClient().getClient();

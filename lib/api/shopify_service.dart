@@ -192,4 +192,17 @@ class ShopifyService {
       throw await ApiService.handleApiError(error);
     }
   }
+
+  static Future<bool> validateDisposableEmail(String email) async {
+    try {
+      final gokwik = DioClient().getClient();
+
+      final response = await gokwik.get('disposable-email/validate/$email');
+
+      return response.data?['data'] != null &&
+             response.data?['success'] == true;
+    } catch (error) {
+      throw ApiService.handleApiError(error);
+    }
+  }
 }

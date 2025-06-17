@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gokwik/api/snowplow_events.dart';
+import 'package:gokwik/config/cache_instance.dart';
+import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/config/types.dart';
 import 'package:gokwik/screens/create_account.dart';
 import 'package:gokwik/screens/cubit/root_cubit.dart';
@@ -122,6 +124,8 @@ class _RootScreenState extends State<RootScreen> {
           // final _multipleEmails = state.multipleEmails;
           final _merchantType = state.merchantType;
           // final _notifications = state.notifications;
+          final _isDevBuild = state.isDevBuild;
+          final _reqId = state.reqId;
 
           return SafeArea(
             child: Stack(
@@ -341,6 +345,39 @@ class _RootScreenState extends State<RootScreen> {
                                   ],
                                 ),
                               ),
+                              // Dev mode debug info
+                              if (_isDevBuild && _reqId.isNotEmpty)
+                                Container(
+                                  margin: const EdgeInsets.only(top: 16),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.1),
+                                    border: Border.all(color: Colors.red, width: 1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'DEBUG MODE',
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      if (_reqId.isNotEmpty)
+                                        Text(
+                                          'Request ID: $_reqId',
+                                          style: const TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 10,
+                                            fontFamily: 'monospace',
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
                             ],
                           ),
                         ),
