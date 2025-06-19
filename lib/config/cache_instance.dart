@@ -123,7 +123,6 @@ class KwikPassCache {
       }
       return null;
     } catch (e) {
-      print('Error fetching key $key: $e');
       return null;
     }
   }
@@ -133,7 +132,6 @@ class KwikPassCache {
     try {
       await SecureStorage.storeSecureData(key, value);
     } catch (e) {
-      print('Error storing key $key: $e');
     }
   }
 
@@ -151,7 +149,6 @@ class KwikPassCache {
     try {
       await SecureStorage.clearSecureData(key);
     } catch (e) {
-      print('Error removing key $key: $e');
     }
   }
 
@@ -196,7 +193,6 @@ class KwikPassCache {
 
       return userId;
     } catch (e) {
-      print('Error getting stored Snowplow user ID: $e');
       return null;
     }
   }

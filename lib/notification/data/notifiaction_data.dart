@@ -109,7 +109,6 @@ class NotificationData {
       }
       return [];
     } catch (error) {
-      print('Error parsing JSON string to Action array: $error');
       return [];
     }
   }

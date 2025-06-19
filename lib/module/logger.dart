@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:intl/intl.dart';
@@ -89,28 +88,23 @@ class Logger {
         });
       }
     } catch (e) {
-      print('⚠️ Logger error: $e');
     }
   }
 
   void _printColored(LogLevel level, String message) {
-    const ansiReset = '\x1B[0m';
+   /* const ansiReset = '\x1B[0m';
     const ansiRed = '\x1B[31m';
     const ansiYellow = '\x1B[33m';
     const ansiBlue = '\x1B[34m';
-
+*/
     switch (level) {
       case LogLevel.error:
-        print('$ansiRed$message$ansiReset');
         break;
       case LogLevel.warning:
-        print('$ansiYellow$message$ansiReset');
         break;
       case LogLevel.info:
-        print('$ansiBlue$message$ansiReset');
         break;
       default:
-        print(message);
     }
   }
 
@@ -138,7 +132,7 @@ class Logger {
     final directory =
         await getDownloadsDirectory() ?? await getTemporaryDirectory();
     final exportFile = File(
-        '${directory!.path}/exported_logs_${DateTime.now().millisecondsSinceEpoch}.txt');
+        '${directory.path}/exported_logs_${DateTime.now().millisecondsSinceEpoch}.txt');
     await exportFile.writeAsString(await getLogs());
     return exportFile.path;
   }

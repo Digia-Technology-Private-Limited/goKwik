@@ -117,19 +117,17 @@ class _CreateAccountState extends State<CreateAccount> {
           _genderError == null &&
           _dobError == null) {
         //_submitForm(cubit);
-        debugPrint("Called");
       }
     } else if (widget.isNameRequired && widget.isEmailRequired) {
       if (_emailError == null && _nameError == null) {
         //_submitForm(cubit);
-        debugPrint("Second Called");
       }
     }
   }
 
-  void _submitForm(RootCubit cubit) {
+/*  void _submitForm(RootCubit cubit) {
     cubit.handleCreateUser();
-  }
+  }*/
 
   String? _validateEmail(String? value) {
     if (widget.isEmailRequired && (value == null || value.isEmpty)) {
@@ -268,7 +266,7 @@ class _CreateAccountState extends State<CreateAccount> {
                                   Text(
                                     dob != null
                                         ? DateFormat(dobFormat)
-                                            .format(dob ?? DateTime.now())
+                                            .format(dob)
                                         : 'Select your date of birth',
                                     style: dob != null
                                         ? widget.inputStyle ??

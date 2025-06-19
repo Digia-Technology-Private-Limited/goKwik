@@ -105,7 +105,7 @@ window.addEventListener('load', function() {
           onPageStarted: (url) async {
             debugPrint('Page started loading: $url');
             final canGoBack = await _webViewController.canGoBack();
-            final canGoForward = await _webViewController.canGoForward();
+            // final canGoForward = await _webViewController.canGoForward();
 
             _sendNavigationEvent('pageStarted', {
               'url': url,
@@ -242,7 +242,7 @@ window.addEventListener('load', function() {
     final encodedStoreInfo = base64Encode(utf8.encode(jsonEncode(storeInfo)));
 
     String checkoutBaseUrl =
-        SdkConfig.fromEnvironment(environment!).checkoutUrl['shopify']!;
+        SdkConfig.fromEnvironment(environment).checkoutUrl['shopify']!;
 
     String url = '$checkoutBaseUrl$encodedStoreInfo';
 
@@ -277,12 +277,9 @@ window.addEventListener('load', function() {
       widget.onMessage?.call(navigationEvent);
 
       if (kDebugMode) {
-        print(
-            'Navigation event sent: $navigationType - ${navigationEvent['data']}');
       }
     } catch (error) {
       if (kDebugMode) {
-        print('Error sending navigation event: $error');
       }
     }
   }
@@ -329,7 +326,6 @@ window.addEventListener('load', function() {
               extra: decoded,
             ),
           );
-          debugPrint('Unhandled WebView event: $event');
           break;
       }
     } catch (e) {

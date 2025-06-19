@@ -81,7 +81,6 @@ class RootCubit extends Cubit<RootState> {
     try {
       final response = await ApiService.sendVerificationCode(
           phoneController.text, state.notifications);
-      print('handleOtpSend response ${response}');
       if (response.isFailure) {
         onErrorData?.call(FlowResult(
           flowType: FlowType.otpSend,
@@ -94,7 +93,6 @@ class RootCubit extends Cubit<RootState> {
       }
       emit(state.copyWith(otpSent: true, isLoading: false));
     } catch (err) {
-      print('handleOtpSend error ${err}');
       onErrorData?.call(FlowResult(
         flowType: FlowType.resendOtp,
         error: (err as Failure).message,
@@ -108,13 +106,10 @@ class RootCubit extends Cubit<RootState> {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
     otpController.text = value;
-    print('handleEmailOtpVerification ${otpController.text}');
-    print('shopifyEmailController.text ${shopifyEmailController.text}');
     try {
       final response = await ShopifyService.shopifyVerifyEmail(
           shopifyEmailController.text, otpController.text);
 
-      print('response ${response['data']}');
 
       if (response['data']['phone'] == null) {
         response['data']['phone'] = phoneController.text;
@@ -142,8 +137,6 @@ class RootCubit extends Cubit<RootState> {
   Future<void> handleOtpVerification(
     String otp,
   ) async {
-    print('handleOtpVerification ${otp}');
-    print('phoneController.text ${phoneController.text}');
     if (!formKey.currentState!.validate()) return;
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
@@ -153,7 +146,6 @@ class RootCubit extends Cubit<RootState> {
               .getDataOrThrow());
 
       if (state.merchantType == MerchantType.shopify) {
-        print("object inside shopify");
         if (responses.containsKey('email')) {
           responses['data']?.remove('state');
           responses['data']?.remove('accountActivationUrl');
@@ -163,15 +155,12 @@ class RootCubit extends Cubit<RootState> {
           }
         }
 
-        print("RESPONSE BEFORE STORING RESPONSE: ${responses['data']}");
         emit(state.copyWith(isSuccess: true, isLoading: false));
-        print("STATE IS SUCCESS HERE?: ${state.isSuccess}");
         onSuccessData?.call(
           FlowResult(flowType: FlowType.otpVerify, data: responses['data']),
         );
       }
 
-      print("RESPONSE FOR MULTIPLE EMAILS: $responses");
 
       if (responses.containsKey('multiple_emails') &&
           responses['multiple_emails'] != "null") {
@@ -186,11 +175,9 @@ class RootCubit extends Cubit<RootState> {
 
       final responseMap = responses.toJson();
 
-      print("RESPONSE FOR MULTIPLE EMAILS II: ${responseMap['email']}");
 
       if (responseMap['emailRequired'] == true &&
           responseMap['email'] == "null") {
-        debugPrint("Statement True");
         emit(state.copyWith(
           isNewUser: true,
           isLoading: false,
@@ -198,7 +185,6 @@ class RootCubit extends Cubit<RootState> {
         return;
       }
 
-      print("RESPONSE FOR MULTIPLE EMAILS III: $responseMap");
 
       if (responseMap.containsKey('merchantResponse') &&
           responseMap['merchantResponse'].containsKey('email') &&
@@ -246,21 +232,13 @@ class RootCubit extends Cubit<RootState> {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
 
-    debugPrint("EMAIL ${emailController.text}");
-    debugPrint("USERNAME ${usernameController.text}");
-    debugPrint("DOB ${dobController.value}");
-    debugPrint("GENDER ${genderController.value}");
-
-    return;
-    /* try {
+    try {
       final response = await ApiService.createUserApi(
         email: emailController.text,
         name: usernameController.text,
         dob: dobController.value?.toIso8601String(),
         gender: genderController.value,
       );
-
-      debugPrint("response.getDataOrThrow()) ${response.getDataOrThrow()}");
 
       onSuccessData?.call(
           FlowResult(flowType: FlowType.createUser, data: response.getDataOrThrow()));
@@ -269,7 +247,7 @@ class RootCubit extends Cubit<RootState> {
     } catch (err) {
       emit(state.copyWith(
           error: SingleUseData((err as Failure).message), isLoading: false));
-    }*/
+    }
   }
 
   Future<void> handleShopifySubmit(
@@ -295,8 +273,7 @@ class RootCubit extends Cubit<RootState> {
         return;
       }
 
-      final response =
-          await ShopifyService.shopifySendEmailVerificationCode(email);
+      await ShopifyService.shopifySendEmailVerificationCode(email);
 
       emit(state.copyWith(
           emailOtpSent: true, isNewUser: false, isLoading: false));
@@ -431,7 +408,6 @@ class RootCubit extends Cubit<RootState> {
         emit(state.copyWith(isDevBuild: false));
       }
     } catch (err) {
-      print('Error initializing dev mode: $err');
       emit(state.copyWith(isDevBuild: false));
     }
   }

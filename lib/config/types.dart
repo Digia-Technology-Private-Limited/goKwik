@@ -878,12 +878,12 @@ class MerchantParams extends CheckoutShopifyProps {
 }
 
 class KPCheckoutProps {
-  final CheckoutData checkoutData;
+  final CheckoutData? checkoutData;
   final Function(dynamic)? onEvent;
   final Function(dynamic)? onError;
 
   KPCheckoutProps({
-    required this.checkoutData,
+    this.checkoutData,
     this.onEvent,
     this.onError,
   });
@@ -956,7 +956,7 @@ class ApiErrorResponse {
   final int? errorCode;
   final String requestId;
   final bool result;
-  final dynamic? response;
+  final dynamic response;
 
   ApiErrorResponse({
     required this.message,

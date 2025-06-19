@@ -22,7 +22,7 @@ class KPCheckout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final merchantParams = checkoutData.checkoutData.merchantParams;
+    final merchantParams = checkoutData.checkoutData?.merchantParams;
 
     return CheckoutShopify(
       checkoutId: merchantParams?.merchantCheckoutId ?? '',

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gokwik/api/snowplow_events.dart';
-import 'package:gokwik/config/cache_instance.dart';
-import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/config/types.dart';
 import 'package:gokwik/screens/create_account.dart';
 import 'package:gokwik/screens/cubit/root_cubit.dart';
@@ -114,18 +112,18 @@ class _RootScreenState extends State<RootScreen> {
         },
         builder: (context, state) {
           final cubit = context.read<RootCubit>();
-          final _isUserLoggedIn = state.isUserLoggedIn;
-          final _isNewUser = state.isNewUser;
-          final _isLoading = state.isLoading;
-          final _otpSent = state.otpSent;
-          final _emailOtpSent = state.emailOtpSent;
+          final isUserLoggedIn = state.isUserLoggedIn;
+          final isNewUserState = state.isNewUser;
+          final isLoading = state.isLoading;
+          final otpSent = state.otpSent;
+          final emailOtpSent = state.emailOtpSent;
           // final _isSuccess = state.isSuccess;
-          final _error = state.error;
+          final errorState = state.error;
           // final _multipleEmails = state.multipleEmails;
-          final _merchantType = state.merchantType;
+          final merchantType = state.merchantType;
           // final _notifications = state.notifications;
-          final _isDevBuild = state.isDevBuild;
-          final _reqId = state.reqId;
+          final isDevBuild = state.isDevBuild;
+          final reqId = state.reqId;
 
           return SafeArea(
             child: Stack(
@@ -179,7 +177,7 @@ class _RootScreenState extends State<RootScreen> {
                                     const EdgeInsets.symmetric(horizontal: 22),
                                 decoration: widget.formContainerStyle,
                                 //Todo:Uncomment this part
-                                child: _isUserLoggedIn && !state.isSuccess
+                                child: isUserLoggedIn && !state.isSuccess
                                     ? const Text(
                                         'You are already logged in',
                                         style: TextStyle(
@@ -188,8 +186,8 @@ class _RootScreenState extends State<RootScreen> {
                                         ),
                                         textAlign: TextAlign.center,
                                       )
-                                    : _isNewUser
-                                        ? _merchantType == MerchantType.custom
+                                    : isNewUserState
+                                        ? merchantType == MerchantType.custom
                                             ? CreateAccount(
                                                 titleStyle: widget
                                                     .inputProps?.titleStyle,
@@ -209,7 +207,7 @@ class _RootScreenState extends State<RootScreen> {
                                                         .createUserConfig
                                                         ?.isDobRequired ??
                                                     false,
-                                                createAccountError: _error,
+                                                createAccountError: errorState,
                                                 inputConfig: widget.inputProps!,
                                                 showEmail: widget
                                                         .createUserConfig
@@ -241,7 +239,7 @@ class _RootScreenState extends State<RootScreen> {
                                                 multipleEmail:
                                                     state.multipleEmails,
                                               )
-                                        : _emailOtpSent
+                                        : emailOtpSent
                                             ? VerifyCodeForm(
                                                 otpLabel: cubit
                                                     .shopifyEmailController
@@ -249,7 +247,7 @@ class _RootScreenState extends State<RootScreen> {
                                                 onEdit: () {
                                                   cubit.handleEmailChange();
                                                 },
-                                                isLoading: _isLoading,
+                                                isLoading: isLoading,
                                                 isSuccess: state.isSuccess,
                                                 onVerify: (value) => cubit
                                                     .handleEmailOtpVerification(
@@ -261,7 +259,7 @@ class _RootScreenState extends State<RootScreen> {
                                                 config: widget.inputProps
                                                     ?.emailOtpVerificationScreen,
                                               )
-                                            : _otpSent
+                                            : otpSent
                                                 ? VerifyCodeForm(
                                                     otpLabel:
                                                         '+91 ${cubit.phoneController.text}',
@@ -269,7 +267,7 @@ class _RootScreenState extends State<RootScreen> {
                                                         .handlePhoneChange(),
                                                     config: widget.inputProps
                                                         ?.otpVerificationScreen,
-                                                    isLoading: _isLoading,
+                                                    isLoading: isLoading,
                                                     isSuccess: state.isSuccess,
                                                     onVerify: (value) => cubit
                                                         .handleOtpVerification(
@@ -346,7 +344,7 @@ class _RootScreenState extends State<RootScreen> {
                                 ),
                               ),
                               // Dev mode debug info
-                              if (_isDevBuild && _reqId.isNotEmpty)
+                              if (isDevBuild && reqId.isNotEmpty)
                                 Container(
                                   margin: const EdgeInsets.only(top: 16),
                                   padding: const EdgeInsets.all(12),
@@ -366,9 +364,9 @@ class _RootScreenState extends State<RootScreen> {
                                           fontSize: 12,
                                         ),
                                       ),
-                                      if (_reqId.isNotEmpty)
+                                      if (reqId.isNotEmpty)
                                         Text(
-                                          'Request ID: $_reqId',
+                                          'Request ID: $reqId',
                                           style: const TextStyle(
                                             color: Colors.red,
                                             fontSize: 10,

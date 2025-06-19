@@ -12,7 +12,7 @@ class ShopifyEmailForm extends StatefulWidget {
   final String? initialValue;
 
   const ShopifyEmailForm({
-    Key? key,
+    super.key,
     this.multipleEmail = const [],
     required this.onSubmitEmail,
     this.isLoading = false,
@@ -21,9 +21,10 @@ class ShopifyEmailForm extends StatefulWidget {
     this.loaderConfig,
     this.onChanged,
     this.initialValue,
-  }) : super(key: key);
+  });
 
   @override
+  // ignore: library_private_types_in_public_api
   _ShopifyEmailFormState createState() => _ShopifyEmailFormState();
 }
 
@@ -62,7 +63,6 @@ class _ShopifyEmailFormState extends State<ShopifyEmailForm> {
                   color: Colors.black,
                 ),
           ),
-          if (subTitle != null) ...[
             const SizedBox(height: 4),
             Text(
               subTitle,
@@ -72,7 +72,7 @@ class _ShopifyEmailFormState extends State<ShopifyEmailForm> {
                     color: Color(0xFF999999),
                   ),
             ),
-          ],
+
           const SizedBox(height: 16),
           if (widget.multipleEmail.isNotEmpty)
             _buildEmailDropdown(emailPlaceholder)

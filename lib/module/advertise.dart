@@ -1,6 +1,5 @@
 import 'package:advertising_id/advertising_id.dart';
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
-import 'package:flutter/services.dart';
 import 'package:gokwik/module/logger.dart';
 
 class AdvertisingInfoResponse {

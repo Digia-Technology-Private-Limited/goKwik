@@ -21,7 +21,7 @@ class SnowplowTrackerService {
   }
 
   // Helper to initialize Snowplow client
-  static Future<SnowplowTracker?> _initializeSnowplowClient() async {
+  /*static Future<SnowplowTracker?> _initializeSnowplowClient() async {
     final snowplowTrackingEnabled =
         (await cacheInstance.getValue(KeyConfig.isSnowplowTrackingEnabled)) ==
             'true';
@@ -41,7 +41,7 @@ class SnowplowTrackerService {
           shopDomain: shopDomain,
           isSnowplowTrackingEnabled: snowplowTrackingEnabled),
     );
-  }
+  }*/
 
   // Generic context creation helper
   static Future<SelfDescribing> _createContext(
@@ -68,17 +68,10 @@ class SnowplowTrackerService {
 
   static Future<SelfDescribing?> getUserContext() async {
     final userJson = await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
-    print("USER JSON: $userJson");
     var user = userJson != null ? jsonDecode(userJson) : null;
-
-    print("USER: $user"
-    );
-
     var phone =
         user != null ? user!['phone']?.replaceAll(RegExp(r'^\+91'), '') : null;
     final numericPhoneNumber = int.tryParse(phone ?? '');
-
-    print("NUMERIC PHONE NUMBER: $numericPhoneNumber");
 
     if (numericPhoneNumber != null ||
         (user != null && user?['email'] != null)) {
@@ -145,17 +138,9 @@ class SnowplowTrackerService {
 
     try {
       // Log event parameters and context
-      print('EVENT PARAMS: ${jsonEncode(params)}');
-      print('EVENT CONTEXT: ${jsonEncode(eventContext.map((e) => {
-            'schema': e.schema,
-            'data': e.data,
-          }).toList())}');
-
       // Track event via HTTP method
       await _trackEventViaHttp(params, eventContext);
-      print("TRACKED EVENT VIA HTTP");
     } catch (error) {
-      print('Error tracking event via HTTP: $error');
     }
   }
 
@@ -259,12 +244,12 @@ class SnowplowTrackerService {
     final merchantUrl =
         (await cacheInstance.getValue(KeyConfig.gkMerchantUrlKey)) ?? '';
 
-    String cartId = args.cartId ?? '';
+    String cartId = args.cartId;
     if (cartId.contains('gid://shopify/Cart/')) {
       cartId = _trimCartId(cartId);
     }
 
-    String pageUrl = args.pageUrl ?? '';
+    String pageUrl = args.pageUrl;
     if (pageUrl.isEmpty) {
       pageUrl = 'https://$merchantUrl/cart';
     }
@@ -326,9 +311,6 @@ class SnowplowTrackerService {
   // Custom Event Tracker
   static Future<void> sendCustomEventToSnowPlow(
       Map<String, dynamic> eventObject) async {
-    print(
-        "EVENT OBJECT from sendCustomEventToSnowPlow: ${eventObject.map((key, value) => MapEntry(key, value.toString()))}");
-
     final snowplowTrackingEnabled =
         await cacheInstance.getValue(KeyConfig.isSnowplowTrackingEnabled);
     if (snowplowTrackingEnabled == 'false') return;
@@ -435,7 +417,6 @@ class SnowplowTrackerService {
         ),
       );
     } catch (error) {
-      print('Error in snowplowStructuredEvent: $error');
       throw error;
     }
   }

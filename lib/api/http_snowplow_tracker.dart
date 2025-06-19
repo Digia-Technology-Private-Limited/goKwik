@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:uuid/uuid.dart';
 import '../config/cache_instance.dart';
 import '../config/key_congif.dart';
-import '../config/types.dart';
+// import '../config/types.dart';
 import 'sdk_config.dart';
 
 class HttpSnowplowTracker {
@@ -165,7 +165,6 @@ class HttpSnowplowTracker {
     for (final field in requiredFields) {
       final value = payload[field];
       if (value == null || value.toString().isEmpty) {
-        print('Missing or empty required field: $field');
         return false;
       }
     }
@@ -192,7 +191,6 @@ class HttpSnowplowTracker {
         };
       }
     } catch (e) {
-      print('Error parsing user context: $e');
     }
     return null;
   }
@@ -268,18 +266,14 @@ class HttpSnowplowTracker {
   // Helper method to print large JSON strings without truncation
   static void _printLargeJson(String label, String jsonString) {
     const int chunkSize = 800; // Safe chunk size for console output
-    print('=== $label START ===');
     
     if (jsonString.length <= chunkSize) {
-      print(jsonString);
     } else {
       for (int i = 0; i < jsonString.length; i += chunkSize) {
-        int end = (i + chunkSize < jsonString.length) ? i + chunkSize : jsonString.length;
-        print('${jsonString.substring(i, end)}');
+         (i + chunkSize < jsonString.length) ? i + chunkSize : jsonString.length;
       }
     }
-    
-    print('=== $label END ===');
+
   }
 
   // Send event to Snowplow collector
@@ -289,9 +283,6 @@ class HttpSnowplowTracker {
         'schema': 'iglu:com.snowplowanalytics.snowplow/payload_data/jsonschema/1-0-4',
         'data': [payload]
       };
-
-      print('Sending $eventType to: $_cachedCollectorUrl/com.snowplowanalytics.snowplow/tp2');
-      print('Event ID: ${payload['eid']}');
 
       final response = await _dio.post(
         '$_cachedCollectorUrl/com.snowplowanalytics.snowplow/tp2',
@@ -307,13 +298,9 @@ class HttpSnowplowTracker {
       );
 
       if (response.statusCode == 200) {
-        print('$eventType sent successfully');
       } else {
-        print('Failed to send $eventType: ${response.statusCode}');
-        print('Response data: ${response.data}');
       }
     } catch (error) {
-      print('Error sending $eventType: $error');
     }
   }
 
@@ -334,14 +321,12 @@ class HttpSnowplowTracker {
   }) async {
     if (!await _isTrackingEnabled()) return;
 
-    print('Tracking pageview: $pageTitle - $pageUrl');
 
     final payload = await _createBasePayload('pv');
     payload['url'] = pageUrl;
     payload['page'] = pageTitle;
 
     if (!_validatePayload(payload)) {
-      print('Invalid payload for pageview event');
       return;
     }
 
@@ -384,7 +369,6 @@ class HttpSnowplowTracker {
     if (value != null) payload['se_va'] = value.toString();
 
     if (!_validatePayload(payload)) {
-      print('Invalid payload for structured event');
       return;
     }
 

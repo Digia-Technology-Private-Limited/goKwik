@@ -27,11 +27,10 @@ abstract class ApiService {
 
     if (error is DioException) {
       final response = error.response?.toBaseResponse();
-      print('response in handleApiError ${response}');
       if (response != null) {
-        final data = response.error;
+        // final data = response.error;
         final status = response.statusCode;
-        final requestId = response.requestId ?? 'N/A';
+        // final requestId = response.requestId ?? 'N/A';
 
         message = response.error?.toString() ??
             response.errorMessage?.toString() ??
@@ -40,8 +39,6 @@ abstract class ApiService {
 
         return Failure(message);
       }
-
-      print("ERROR MESSAGE: ${error.toString()}");
     }
 
     return Failure(message);
@@ -140,7 +137,6 @@ abstract class ApiService {
     try {
       final goKwik = DioClient().getClient();
       final response = (await goKwik.get('auth/browser')).toBaseResponse();
-      print("RESPONSE IN GET BROWSER TOKEN ${response.data}");
       final data = response.data ?? {};
       final requestId = data['requestId'];
       final token = data['token'];
@@ -161,7 +157,6 @@ abstract class ApiService {
 
       return Success(response.data);
     } catch (err) {
-      print("ERROR IN GET BROWSER TOKEN ${err.toString()}");
       throw handleApiError(err);
     }
   }
@@ -175,8 +170,6 @@ abstract class ApiService {
         fromJson: (json) => MerchantConfig.fromJson(json),
       );
 
-      print("RESPONSE IN INITIALIZE MERCHANT ${response.data}");
-
       final merchantRes = response.data;
       await cacheInstance.setValue(
         KeyConfig.gkMerchantConfig,
@@ -185,7 +178,6 @@ abstract class ApiService {
 
       return Success(merchantRes);
     } catch (error) {
-      print('Error fetching merchant configuration: $error');
       throw handleApiError(error);
     }
   }
@@ -278,7 +270,6 @@ abstract class ApiService {
         deviceId = androidInfo.id;
       } else if (Platform.isIOS) {
         final iosInfo = await deviceInfo.iosInfo;
-        print('iosInfo ${iosInfo.toString()}');
         osVersion = 'iOS ${iosInfo.systemVersion}';
         deviceModel = iosInfo.model;
         deviceId = iosInfo.identifierForVendor ?? 'Unknown';
@@ -314,7 +305,6 @@ abstract class ApiService {
           deviceInfoDetails[KeyConfig.gkGoogleAdId] = advertisingInfo.id!;
         }
       } catch (e) {
-        print('error in getAdvertisingInfo: $e');
         deviceInfoDetails[KeyConfig.gkGoogleAdId] = "";
       }
 
@@ -329,11 +319,9 @@ abstract class ApiService {
         gokwik.options.headers[KeyConfig.gkRequestIdKey] = requestId;
       }
 
-      print('Initialization Successful');
 
       return {'message': 'Initialization Successful'};
     } catch (error) {
-      print('error in initialize sdk: $error');
       if (error is Failure) {
         throw handleApiError(error);
       }
@@ -386,7 +374,6 @@ abstract class ApiService {
 
       // if(response.statusCode == 200){
       //   var res = OtpSentResponseData.fromJson(response.data);
-      //   print("RESPONSE :::::::: ${res}");
       // }else{
       //   //manage error
       // }
@@ -413,13 +400,10 @@ abstract class ApiService {
   static Future<Result<LoginResponseData?>> loginKpUser() async {
     try {
       final gokwik = DioClient().getClient();
-      print("LOGIN KP USER");
       final response =
           (await gokwik.get('customer/custom/login')).toBaseResponse(
         fromJson: (json) => LoginResponseData.fromJson(json),
       );
-
-      print("LOGIN KP USER RESPONSE ::::: ${response.data}");
 
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to login');
@@ -496,7 +480,6 @@ abstract class ApiService {
   static Future<Result<String>> validateUserToken() async {
     try {
       final gokwik = DioClient().getClient();
-      print("VALIDATE USER TOKEN");
 
       final results = await Future.wait([
         cacheInstance.getValue(KeyConfig.gkAccessTokenKey),
@@ -514,20 +497,15 @@ abstract class ApiService {
             checkoutAccessToken;
       }
 
-      print("VALIDATE USER TOKEN HEADERS ::::: ${gokwik.options.headers}");
-
       final response = (await gokwik.get('auth/validate-token'))
           .toBaseResponse<ValidateUserTokenResponseData>(
         fromJson: (json) {
-          print("VALIDATE USER TOKEN RAW JSON ::::: $json");
-          if (json == null) {
-            throw Exception('Response data is null');
-          }
+          // if (json == null) {
+          //   throw Exception('Response data is null');
+          // }
           return ValidateUserTokenResponseData.fromJson(json);
         },
       );
-
-      print("VALIDATE USER TOKEN RESPONSE ::::: ${response.data}");
 
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to validate token');
@@ -547,12 +525,9 @@ abstract class ApiService {
 
         return Success(responseData);
       } catch (e) {
-        print("VALIDATE USER TOKEN PARSING ERROR ::::: $e");
         return Failure('Error parsing validate token response: $e');
       }
     } catch (err) {
-      print("VALIDATE USER TOKEN ERROR ::::: ${err.toString()}");
-      print("VALIDATE USER TOKEN ERROR 2 ::::: ${(err as Failure).toString()}");
       throw handleApiError(err);
     }
   }
@@ -598,7 +573,6 @@ abstract class ApiService {
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to verify OTP');
       }
-      print("RESPONSE FOR VERIFY CODE ::::: ${response.data}");
 
       final data = response.data;
       final token = data?['token'];
@@ -606,8 +580,6 @@ abstract class ApiService {
       final kpToken = data?['kpToken'];
       final merchantType =
           await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
-
-      print("MERCHANT TYPE ::::: ${merchantType}");
 
       if (merchantType == 'shopify') {
         final res = await _handleShopifyVerifyResponse(
@@ -629,15 +601,13 @@ abstract class ApiService {
             KeyConfig.checkoutAccessTokenKey, coreToken);
       }
 
-      final responseForAffluence = await customerIntelligence();
+      // final responseForAffluence = await customerIntelligence();
 
       await validateUserToken();
-      print("VALIDATE USER TOKEN COMPLETED");
       final loginResponse = await loginKpUser();
 
       final responseData = loginResponse.getDataOrThrow();
       if (loginResponse.isSuccess) {
-        print("LOGIN KP USER RESPONSE DATA ::::: ${responseData?.email}");
         if (responseData?.email != null) {
           if (responseData != null) {
             final updatedData = LoginResponseData(
@@ -668,8 +638,6 @@ abstract class ApiService {
           }
         }
       }
-
-      print("LOGIN RESPONSE ::::: ${loginResponse.getDataOrThrow()}");
 
       return loginResponse;
     } catch (error) {
@@ -712,10 +680,8 @@ abstract class ApiService {
         state: responseData?['state'],
       );
 
-      print("MULTIPASS RESPONSE ::::: ${multipassResponse}");
-
-      if (multipassResponse?['data']?['accountActivationUrl'] != null &&
-          multipassResponse?['data']?['shopifyCustomerId'] != null) {
+      if (multipassResponse['data']?['accountActivationUrl'] != null &&
+          multipassResponse['data']?['shopifyCustomerId'] != null) {
         final activationUrlParts =
             multipassResponse['data']['accountActivationUrl'].split('/');
         final token = activationUrlParts.last;

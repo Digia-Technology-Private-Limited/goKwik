@@ -9,7 +9,6 @@ import 'package:gokwik/config/key_congif.dart';
 import '../config/cache_instance.dart';
 
 class ShopifyService {
-  static final ShopifyService _instance = ShopifyService._internal();
 
   ShopifyService._internal();
   static Future<Map<String, dynamic>> getShopifyMultipassToken({

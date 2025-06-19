@@ -55,7 +55,7 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _phoneController;
-  String? _errorText;
+/*  String? _errorText;*/
   static const _phoneRegex = r'^[0-9]{10}$';
 
   @override
@@ -161,8 +161,8 @@ class _LoginState extends State<Login> {
                       decoration: widget.config?.checkboxContainerStyle ??
                           BoxDecoration(
                             border:
-                                Border.all(color: Color(0xFF0964C5), width: 2),
-                            borderRadius: BorderRadius.all(Radius.circular(5)),
+                                Border.all(color: const Color(0xFF0964C5), width: 2),
+                            borderRadius: const BorderRadius.all(Radius.circular(5)),
                           ),
                       child: widget.formData.notifications
                           ? Container(

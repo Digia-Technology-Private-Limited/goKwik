@@ -41,7 +41,6 @@ class KwikChatNotification {
 
       return notificationData;
     } catch (e) {
-      print('Error getting notification data: $e');
       rethrow;
     }
   }
@@ -51,7 +50,6 @@ class KwikChatNotification {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(KeyConfig.gkNotificationToken, token);
     } catch (e) {
-      print('Error saving FCM token: $e');
     }
   }
 
@@ -95,12 +93,10 @@ class KwikChatNotification {
           if (await canLaunchUrl(Uri.parse(url))) {
             await launchUrl(Uri.parse(url));
           } else {
-            print('Could not launch $url');
           }
         }
       }
     } catch (e) {
-      print('Error handling notification action: $e');
     }
   }
 

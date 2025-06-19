@@ -77,7 +77,7 @@ class NotificationBuilder {
   }
 
   NotificationData build() {
-    if (_title.isEmpty || _body.isEmpty || _platform != null) {
+    if (_title.isEmpty || _body.isEmpty) {
       throw Exception("Title, message, and platform are required fields.");
     }
     return NotificationData(
@@ -86,7 +86,7 @@ class NotificationBuilder {
       subtitle: _subtitle,
       summary: _summary,
       body: _body,
-      platform: _platform!.name,
+      platform: _platform.name,
       channel: _channel,
       image: _image,
       url: _url,
