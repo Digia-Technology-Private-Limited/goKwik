@@ -49,6 +49,7 @@ class KwikChatNotification {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(KeyConfig.gkNotificationToken, token);
+    // ignore: empty_catches
     } catch (e) {
     }
   }
@@ -96,6 +97,7 @@ class KwikChatNotification {
           }
         }
       }
+    // ignore: empty_catches
     } catch (e) {
     }
   }

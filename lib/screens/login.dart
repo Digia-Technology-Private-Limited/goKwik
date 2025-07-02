@@ -30,7 +30,7 @@ class Login extends StatefulWidget {
   final BoxDecoration? checkedDecoration;
 
   const Login({
-    Key? key,
+    super.key,
     required this.onSubmit,
     required this.formData,
     required this.onFormChanged,
@@ -46,7 +46,7 @@ class Login extends StatefulWidget {
     this.checkedDecoration,
     this.config,
     this.loaderConfig,
-  }) : super(key: key);
+  });
 
   @override
   State<Login> createState() => _LoginState();

@@ -114,7 +114,6 @@ class KwikPassCache {
     if (_cache.containsKey(key)) {
       return _cache[key];
     }
-
     try {
       final value = await SecureStorage.getSecureData(key);
       if (value != null) {

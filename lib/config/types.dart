@@ -815,12 +815,12 @@ class ThirdPartyServiceProvider {
 
   factory ThirdPartyServiceProvider.fromJson(Map<String, dynamic> json) {
     return ThirdPartyServiceProvider(
-      name: json['name'],
-      type: json['type'],
-      identifier: json['identifier'],
+      name: json['name'].toString(),
+      type: json['type'].toString(),
+      identifier: json['identifier'].toString(),
       events: json['events'] ?? [],
       marketingEvents: json['marketingEvents'] ?? [],
-      rules: json['rules'],
+      rules: json['rules'].toString(),
     );
   }
 

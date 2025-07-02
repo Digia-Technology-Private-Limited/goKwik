@@ -11,7 +11,7 @@ class CustomButton extends StatelessWidget {
   final VoidCallback onVerify;
 
   const CustomButton({
-    Key? key,
+    super.key,
     required this.isLoading,
     required this.isSuccess,
     this.loadingText,
@@ -20,7 +20,7 @@ class CustomButton extends StatelessWidget {
     this.submitButtonTextStyle,
     required this.submitButtonText,
     required this.onVerify,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

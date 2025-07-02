@@ -31,16 +31,13 @@ abstract class ApiService {
         // final data = response.error;
         final status = response.statusCode;
         // final requestId = response.requestId ?? 'N/A';
-
         message = response.error?.toString() ??
             response.errorMessage?.toString() ??
             response.error_msg?.toString() ??
             'Unexpected error with status: $status';
-
         return Failure(message);
       }
     }
-
     return Failure(message);
   }
 
@@ -276,6 +273,7 @@ abstract class ApiService {
       }
 
       final packageInfo = await PackageInfo.fromPlatform();
+      // ignore: deprecated_member_use
       final window = WidgetsBinding.instance.window;
       final screenSize = window.physicalSize;
       final screenResolution =
@@ -400,15 +398,24 @@ abstract class ApiService {
   static Future<Result<LoginResponseData?>> loginKpUser() async {
     try {
       final gokwik = DioClient().getClient();
+      // final response =
+      //     (await gokwik.get('customer/custom/login')).toBaseResponse(
+      //   fromJson: (json) => LoginResponseData.fromJson(json),
+      // );
+
       final response =
-          (await gokwik.get('customer/custom/login')).toBaseResponse(
+      (await gokwik.get('customer/custom/login')).toBaseResponse(
         fromJson: (json) => LoginResponseData.fromJson(json),
       );
+      if(response.statusCode == 200){
 
-      if (response.isSuccess == false) {
-        return Failure(response.errorMessage ?? 'Failed to login');
       }
+      // if (response.isSuccess == false) {
+      //   return Failure(response.errorMessage ?? 'Failed to login');
+      // }
+
       return Success(response.data);
+      // return Success(loginKpData);
     } catch (err) {
       throw handleApiError(err);
     }
@@ -570,18 +577,19 @@ abstract class ApiService {
       ))
           .toBaseResponse();
 
+
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to verify OTP');
       }
 
       final data = response.data;
-      final token = data?['token'];
-      final coreToken = data?['coreToken'];
-      final kpToken = data?['kpToken'];
-      final merchantType =
+      final String token = data['token'];
+      final coreToken = data['coreToken'];
+      final String kpToken = data?['kpToken'];
+      String? merchantType =
           await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
 
-      if (merchantType == 'shopify') {
+      if (merchantType! == 'shopify') {
         final res = await _handleShopifyVerifyResponse(
           response.data,
           phoneNumber,
@@ -589,21 +597,19 @@ abstract class ApiService {
           coreToken,
           kpToken,
         );
-
         return res;
       }
 
-      if (token != null) {
-        await cacheInstance.setValue(KeyConfig.gkAccessTokenKey, token);
-      }
+      await cacheInstance.setValue(KeyConfig.gkAccessTokenKey, token);
+      
       if (coreToken != null) {
         await cacheInstance.setValue(
             KeyConfig.checkoutAccessTokenKey, coreToken);
       }
 
       // final responseForAffluence = await customerIntelligence();
-
       await validateUserToken();
+
       final loginResponse = await loginKpUser();
 
       final responseData = loginResponse.getDataOrThrow();

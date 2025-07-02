@@ -44,6 +44,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   // final List<TextEditingController> _controllers = [];
   final _formKey = GlobalKey<FormState>();
   String? _errorText;
+  bool _isVerifying = false; // Add flag to prevent duplicate API calls
 
   final scaffoldKey = GlobalKey();
   late OTPTextEditController controller;
@@ -167,7 +168,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     controller = OTPTextEditController(
       codeLength: 4,
       //ignore: avoid_print
-      onCodeReceive: (code) => print('Your Application receive code - $code'),
+      onCodeReceive: (code) => debugPrint('Your Application receive code - $code'),
       otpInteractor: _otpInteractor,
     )..startListenUserConsent(
         (code) {
@@ -191,6 +192,12 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     if (widget.error != oldWidget.error) {
       setState(() {
         _errorText = widget.error;
+      });
+    }
+    // Reset verification flag when loading state changes (for retry scenarios)
+    if (widget.isLoading != oldWidget.isLoading && !widget.isLoading) {
+      setState(() {
+        _isVerifying = false;
       });
     }
   }
@@ -248,10 +255,13 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
 
     // final code = _defaultValidator(otp);
 
-    if (otp.length == _cellCount) {
+    if (otp.length == _cellCount && !_isVerifying) {
       final error = widget.validator?.call(otp) ?? _defaultValidator(otp);
       setState(() => _errorText = error);
       if (error == null) {
+        setState(() => _isVerifying = true);
+        // Stop listening for OTP to prevent late detections
+        controller.stopListen();
         widget.onVerify(otp);
       }
     } else {
@@ -421,12 +431,14 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-              onPressed: () {
+              onPressed: _isVerifying ? null : () {
+                if (_isVerifying) return; // Prevent duplicate calls
                 final otp = pinputController.text;
                 final error =
                     widget.validator?.call(otp) ?? _defaultValidator(otp);
-                _errorText = error;
+                setState(() => _errorText = error);
                 if (error == null) {
+                  setState(() => _isVerifying = true);
                   widget.onVerify(otp);
                 }
               },

@@ -138,34 +138,42 @@ class RootCubit extends Cubit<RootState> {
     String otp,
   ) async {
     if (!formKey.currentState!.validate()) return;
-    if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
     try {
-      dynamic responses =
+      final responses =
           ((await ApiService.verifyCode(phoneController.text, otp))
               .getDataOrThrow());
 
-      if (state.merchantType == MerchantType.shopify) {
-        if (responses.containsKey('email')) {
-          responses['data']?.remove('state');
-          responses['data']?.remove('accountActivationUrl');
+      // Convert to Map for consistent handling
+      final responseMap = responses is Map ? Map<String, dynamic>.from(responses) : responses.toJson();
 
-          if (responses['data']?['phone'] == "null") {
-            responses['data']?['phone'] = phoneController.text;
+      // Handle Shopify merchant type
+      if (state.merchantType == MerchantType.shopify) {
+        if (responseMap.containsKey('email')) {
+          if (responseMap['data'] != null) {
+            responseMap['data'].remove('state');
+            responseMap['data'].remove('accountActivationUrl');
+
+            if (responseMap['data']['phone'] == "null") {
+              responseMap['data']['phone'] = phoneController.text;
+            }
           }
         }
 
         emit(state.copyWith(isSuccess: true, isLoading: false));
         onSuccessData?.call(
-          FlowResult(flowType: FlowType.otpVerify, data: responses['data']),
+          FlowResult(flowType: FlowType.otpVerify, data: responseMap['data']),
         );
+        otpController.clear();
+        return; // Early return for Shopify flow
       }
 
-
-      if (responses.containsKey('multiple_emails') &&
-          responses['multiple_emails'] != "null") {
+      // Handle multiple emails
+      if (responseMap.containsKey('multiple_emails') &&
+          responseMap['multiple_emails'] != null &&
+          responseMap['multiple_emails'] != "null") {
         emit(state.copyWith(
-          multipleEmails: (responses['multiple_emails'] as String?)
+          multipleEmails: (responseMap['multiple_emails'] as String?)
               ?.split(',')
               .map((item) {
             return MultipleEmail(label: item.trim(), value: item.trim());
@@ -173,24 +181,26 @@ class RootCubit extends Cubit<RootState> {
         ));
       }
 
-      final responseMap = responses.toJson();
-
-
+      // Handle email required case
       if (responseMap['emailRequired'] == true &&
           responseMap['email'] == "null") {
         emit(state.copyWith(
           isNewUser: true,
           isLoading: false,
         ));
+        otpController.clear();
         return;
       }
 
-
+      // Handle merchant response
       if (responseMap.containsKey('merchantResponse') &&
+          responseMap['merchantResponse'] is Map &&
           responseMap['merchantResponse'].containsKey('email') &&
           responseMap['merchantResponse']['email'] != "null") {
-        if (responseMap.containsKey('merchantResponse')) {
-          responseMap['merchantResponse']['phone'] ??= phoneController.text;
+        
+        // Set phone if not present
+        if (responseMap['merchantResponse']['phone'] == null) {
+          responseMap['merchantResponse']['phone'] = phoneController.text;
         }
 
         onSuccessData?.call(
@@ -202,6 +212,7 @@ class RootCubit extends Cubit<RootState> {
 
         emit(state.copyWith(isSuccess: true, isLoading: false));
       }
+      
       otpController.clear();
       // _listenUserStateUpdated();
     } catch (err) {
@@ -262,7 +273,7 @@ class RootCubit extends Cubit<RootState> {
       
       if (!isValidEmail) {
         emit(state.copyWith(isLoading: false));
-        final errorMessage = 'Entered email is not valid';
+        const errorMessage = 'Entered email is not valid';
         emit(state.copyWith(
             error: SingleUseData(errorMessage),
             isLoading: false,

@@ -103,7 +103,6 @@ window.addEventListener('load', function() {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) async {
-            debugPrint('Page started loading: $url');
             final canGoBack = await _webViewController.canGoBack();
             // final canGoForward = await _webViewController.canGoForward();
 
@@ -114,7 +113,6 @@ window.addEventListener('load', function() {
             });
           },
           onPageFinished: (url) async {
-            debugPrint('Page finished loading: $url');
             await _webViewController.runJavaScript(injectedJavaScript);
             final canGoBack = await _webViewController.canGoBack();
             final canGoForward = await _webViewController.canGoForward();
@@ -127,7 +125,7 @@ window.addEventListener('load', function() {
             });
           },
           onWebResourceError: (error) {
-            debugPrint('Web resource error: $error');
+            // debugPrint('Web resource error: $error');
           },
           onNavigationRequest: (NavigationRequest request) async {
             final uri = Uri.tryParse(request.url);
@@ -146,7 +144,6 @@ window.addEventListener('load', function() {
               );
 
               if (!launched) {
-                debugPrint('Launch error ');
                 // _showAppMissingSnackbar(
                 //     context, uri); // Show snackbar instead of dialog
               } else {
@@ -159,7 +156,6 @@ window.addEventListener('load', function() {
 
               return NavigationDecision.prevent;
             } catch (e) {
-              debugPrint('Launch error: $e');
               // _showAppMissingSnackbar(context, uri);
               return NavigationDecision.prevent;
             }
@@ -251,8 +247,6 @@ window.addEventListener('load', function() {
           utf8.encode(jsonEncode({'coreToken': merchantInfo['token']})));
       url += '&gk_token=$tokenPayload';
     }
-
-    debugPrint('Final WebView URL: $url');
 
     setState(() {
       webUrl = url;
