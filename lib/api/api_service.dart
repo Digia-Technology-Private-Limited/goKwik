@@ -6,6 +6,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:gokwik/analytics/analytics.dart';
 import 'package:gokwik/api/base_response.dart';
 import 'package:gokwik/api/httpClient.dart';
 import 'package:gokwik/api/snowplow_client.dart';
@@ -404,6 +405,8 @@ abstract class ApiService {
         gokwik.options.headers[KeyConfig.kpRequestIdKey] = requestId;
         gokwik.options.headers[KeyConfig.gkRequestIdKey] = requestId;
       }
+
+      initializeAnalytics("MOE_ID", webengageAutoRegister: true);
 
       return {'message': 'Initialization Successful'};
     } catch (error) {
