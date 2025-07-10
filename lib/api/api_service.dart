@@ -765,7 +765,7 @@ abstract class ApiService {
     return Success(responseData);
   }
 
-  static Future<bool> checkout() async {
+  static Future<bool> clearKwikpassSession() async {
     try {
       final userJson =
           await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);

@@ -25,6 +25,6 @@ class GoKwikClient {
   }
 
   Future<bool> logout() async {
-    return await ApiService.checkout();
+    return await ApiService.clearKwikpassSession();
   }
 }
