@@ -188,6 +188,16 @@ window.addEventListener('load', function() {
         await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
     final sdkConfig = SdkConfig.fromEnvironment(environment!);
 
+    // GET LOGGED IN USER EMAIL HERE
+    final verifiedUserData = await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
+
+    String? userEmail;
+    
+    if (verifiedUserData != null) {
+      final user = jsonDecode(verifiedUserData);
+      userEmail = user?['email'];
+    }
+
     if (merchantType == 'custom') {
       final merchantId =
           await cacheInstance.getValue(KeyConfig.gkMerchantIdKey);
@@ -199,6 +209,10 @@ window.addEventListener('load', function() {
 
       String webviewUrl =
           '${sdkConfig.checkoutUrl['custom']}?m_id=$merchantId&checkout_id=${widget.checkoutId}&gokwik_token=$token&appplatform=$appplatform&appversion=$appversion&appsource=$appsource';
+
+      if (userEmail != null && userEmail.isNotEmpty) {
+        webviewUrl += '&kp_email=$userEmail';
+      }
 
       setState(() {
         webUrl = webviewUrl;
@@ -246,6 +260,11 @@ window.addEventListener('load', function() {
       final tokenPayload = base64Encode(
           utf8.encode(jsonEncode({'coreToken': merchantInfo['token']})));
       url += '&gk_token=$tokenPayload';
+    }
+
+    if (userEmail != null && userEmail.isNotEmpty) {
+      final encodedEmail = base64Encode(utf8.encode(userEmail));
+      url += '&kp_email=$encodedEmail';
     }
 
     setState(() {
@@ -334,7 +353,7 @@ window.addEventListener('load', function() {
 
   @override
   void dispose() {
-    _resetWebView();
+    // _resetWebView();
     super.dispose();
   }
 
