@@ -358,6 +358,12 @@ window.addEventListener('load', function() {
 
   @override
   Widget build(BuildContext context) {
+    bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    if (isIOS) {
+      return webUrl.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : WebViewWidget(controller: _webViewController);
+    }
     return PopScope(
       canPop: false, // Always handle back button manually
       onPopInvokedWithResult: (didPop, result) async {
@@ -370,9 +376,7 @@ window.addEventListener('load', function() {
       },
       child: webUrl.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : Scaffold(
-              body: WebViewWidget(controller: _webViewController),
-            ),
+          : WebViewWidget(controller: _webViewController),
     );
   }
 }
