@@ -189,10 +189,11 @@ window.addEventListener('load', function() {
     final sdkConfig = SdkConfig.fromEnvironment(environment!);
 
     // GET LOGGED IN USER EMAIL HERE
-    final verifiedUserData = await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
+    final verifiedUserData =
+        await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
 
     String? userEmail;
-    
+
     if (verifiedUserData != null) {
       final user = jsonDecode(verifiedUserData);
       userEmail = user?['email'];
@@ -289,11 +290,9 @@ window.addEventListener('load', function() {
       // Send the navigation event through the onMessage callback
       widget.onMessage?.call(navigationEvent);
 
-      if (kDebugMode) {
-      }
+      if (kDebugMode) {}
     } catch (error) {
-      if (kDebugMode) {
-      }
+      if (kDebugMode) {}
     }
   }
 
@@ -364,23 +363,35 @@ window.addEventListener('load', function() {
     await _cookieManager.clearCookies();
   }
 
+  Future<bool> _handleBack() async {
+    final canGoBack = await _webViewController.canGoBack();
+    if (canGoBack) {
+      await _webViewController.goBack();
+      return false;
+    }
+
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final webview = webUrl.isEmpty
+        ? const Center(child: CircularProgressIndicator())
+        : WebViewWidget(controller: _webViewController);
+
+    bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    if (isIOS) {
+      return webview;
+    }
     return PopScope(
-      onPopInvokedWithResult: (didPop, result) async {
-        if (await _webViewController.canGoBack()) {
-          await _webViewController.goBack();
-        } else {
-          if (context.mounted) {
-            Navigator.pop(context);
-          }
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        if (await _handleBack() && context.mounted) {
+          Navigator.pop(context);
         }
       },
-      child: webUrl.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : Scaffold(
-              body: WebViewWidget(controller: _webViewController),
-            ),
+      child: webview,
     );
   }
 }
