@@ -282,6 +282,7 @@ window.addEventListener('load', function() {
     try {
       final navigationEvent = {
         'eventname': 'navigation',
+        'type': 'navigation',
         'data': {
           'type': navigationType,
           'timestamp': DateTime.now().millisecondsSinceEpoch,
