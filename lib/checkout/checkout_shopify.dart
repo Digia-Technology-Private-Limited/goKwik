@@ -97,6 +97,9 @@ window.addEventListener('load', function() {
       ..addJavaScriptChannel(
         'Flutter',
         onMessageReceived: (JavaScriptMessage message) {
+          debugPrint("MESSAGE RECEIVED $message");
+          debugPrint("MESSAGE RECEIVED ${message.message}");
+
           handleMessage(message.message);
         },
       )
@@ -264,7 +267,7 @@ window.addEventListener('load', function() {
 
     if (userEmail != null && userEmail.isNotEmpty) {
       final encodedEmail = base64Encode(utf8.encode(userEmail));
-      url += '&kp_email=$encodedEmail';
+       url += '&kp_email=$encodedEmail';
     }
 
     setState(() {
@@ -300,47 +303,12 @@ window.addEventListener('load', function() {
   void handleMessage(String message) {
     try {
       final decoded = jsonDecode(message);
-      final event = decoded['type'];
-      final data = decoded['data'];
+      // final event = decoded['type'];
+      // final data = decoded['data'];
+      // debugPrint("EVENT RECEIVED $event");
+      // debugPrint("DATA RECEIVED $data");
 
-      switch (event) {
-        case 'orderSuccess':
-          widget.onSuccess?.call(
-            FlowResult(
-              flowType: FlowType.checkoutSuccess,
-              data: data,
-              extra: decoded,
-            ),
-          );
-          break;
-        case 'modal_closed':
-          widget.onError?.call(
-            FlowResult(
-              flowType: FlowType.modalClosed,
-              error: 'User closed modal',
-              extra: decoded,
-            ),
-          );
-          break;
-        case 'openInBrowserTab':
-          widget.onSuccess?.call(
-            FlowResult(
-              flowType: FlowType.openInBrowserTab,
-              data: data,
-              extra: decoded,
-            ),
-          );
-          break;
-        default:
-          widget.onError?.call(
-            FlowResult(
-              flowType: FlowType.checkoutFailed,
-              error: 'Some error Occured',
-              extra: decoded,
-            ),
-          );
-          break;
-      }
+      widget.onMessage?.call(decoded);
     } catch (e) {
       widget.onError?.call(
         FlowResult(
@@ -353,7 +321,7 @@ window.addEventListener('load', function() {
 
   @override
   void dispose() {
-    // _resetWebView();
+    _resetWebView();
     super.dispose();
   }
 
@@ -364,15 +332,38 @@ window.addEventListener('load', function() {
     await _cookieManager.clearCookies();
   }
 
+  Future<bool> _handleBackButton() async {
+    try {
+      final canGoBack = await _webViewController.canGoBack();
+
+      if (canGoBack) {
+        // If WebView can go back, navigate back in WebView
+        await _webViewController.goBack();
+        return true; // Prevent default back action
+      } else {
+        // If WebView can't go back, send hardwareBackPress message to WebView
+        await _webViewController.runJavaScript('''
+          if (typeof Flutter !== 'undefined' && Flutter.postMessage) {
+            Flutter.postMessage(JSON.stringify({ action: 'hardwareBackPress' }));
+          }
+        ''');
+        return true; // Prevent default back action
+      }
+    } catch (e) {
+      debugPrint('Error handling back button: $e');
+      return false; // Allow default back action on error
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
+      canPop: false, // Always handle back button manually
       onPopInvokedWithResult: (didPop, result) async {
-        if (await _webViewController.canGoBack()) {
-          await _webViewController.goBack();
-        } else {
-          if (context.mounted) {
-            Navigator.pop(context);
+        if (!didPop) {
+          final shouldPop = await _handleBackButton();
+          if (!shouldPop) {
+            Navigator.of(context).pop();
           }
         }
       },
