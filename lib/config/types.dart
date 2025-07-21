@@ -8,6 +8,16 @@ enum MerchantType {
   custom,
 }
 
+class Settings {
+  final bool enableKwikPass;
+  final bool enableCheckout;
+
+  Settings({
+    this.enableKwikPass = true,
+    this.enableCheckout = true,
+  });
+}
+
 class InitializeSdkProps {
   final String mid;
   final Environment environment; // 'sandbox' or 'production'
@@ -17,6 +27,7 @@ class InitializeSdkProps {
   final String? kcMerchantId;
   final String? kcMerchantToken;
   final String? mode; // 'debug' or 'release'
+  final Settings? settings;
 
   InitializeSdkProps({
     required this.mid,
@@ -27,6 +38,7 @@ class InitializeSdkProps {
     this.kcMerchantId,
     this.kcMerchantToken,
     this.mode,
+    this.settings,
   });
 }
 
@@ -966,4 +978,44 @@ class ApiErrorResponse {
     this.result = false,
     this.response,
   });
+}
+
+class HealthCheckResponseData {
+  final bool isKwikpassHealthy;
+  final bool success;
+  final int statusCode;
+  final int timestamp;
+  final bool isSuccess;
+  final String error;
+
+  HealthCheckResponseData({
+    required this.isKwikpassHealthy,
+    required this.success,
+    required this.statusCode,
+    required this.timestamp,
+    required this.isSuccess,
+    required this.error,
+  });
+
+  factory HealthCheckResponseData.fromJson(Map<String, dynamic> json) {
+    return HealthCheckResponseData(
+      isKwikpassHealthy: json['is_kwikpass_healthy'] ?? false,
+      success: json['success'] ?? false,
+      statusCode: json['status_code'] ?? 200,
+      timestamp: json['timestamp'] ?? 0,
+      isSuccess: json['isSuccess'] ?? false,
+      error: json['error'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'is_kwikpass_healthy': isKwikpassHealthy,
+      'success': success,
+      'status_code': statusCode,
+      'timestamp': timestamp,
+      'isSuccess': isSuccess,
+      'error': error,
+    };
+  }
 }
