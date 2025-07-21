@@ -283,6 +283,7 @@ window.addEventListener('load', function() {
     try {
       final navigationEvent = {
         'eventname': 'navigation',
+        'type': 'navigation',
         'data': {
           'type': navigationType,
           'timestamp': DateTime.now().millisecondsSinceEpoch,
@@ -350,7 +351,11 @@ window.addEventListener('load', function() {
   Widget build(BuildContext context) {
     bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     if (isIOS) {
-      return WebViewWidget(controller: _webViewController);
+
+      return webUrl.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : WebViewWidget(controller: _webViewController);
+
     }
     return PopScope(
       canPop: false, // Always handle back button manually
