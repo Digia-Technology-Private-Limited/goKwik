@@ -22,6 +22,49 @@ import 'sdk_config.dart';
 import 'shopify_service.dart';
 
 abstract class ApiService {
+// add kp health api
+  static Future<Result<HealthCheckResponseData?>> checkKwikpassHealth() async {
+    try {
+      final gokwik = DioClient().getClient();
+
+      // Get cached values in parallel
+      final results = await Future.wait([
+        cacheInstance.getValue(KeyConfig.gkRequestIdKey),
+        cacheInstance.getValue(KeyConfig.gkAccessTokenKey),
+        cacheInstance.getValue(KeyConfig.gkMerchantIdKey),
+      ]);
+
+      final requestId = results[0];
+      final accessToken = results[1] ?? "";
+      final mid = results[2];
+
+      // Set all headers at once
+      final headers = <String, String>{
+        KeyConfig.kpMerchantIdKey: mid ?? '',
+        KeyConfig.kpRequestIdKey: requestId ?? '',
+      };
+
+      if (accessToken != null) {
+        headers[KeyConfig.gkAccessTokenKey] = accessToken;
+      }
+
+      gokwik.options.headers.addAll(headers);
+
+      final response = (await gokwik.get('health/merchant')).toBaseResponse(
+        fromJson: (json) => HealthCheckResponseData.fromJson(json),
+      );
+
+      if (response.isSuccess ?? false) {
+        return Success(response.data);
+      }
+
+      return Failure(response.errorMessage ?? 'Failed to check health');
+    } catch (error) {
+      debugPrint("ERRORRR $error");
+      return Failure(handleApiError(error).message);
+    }
+  }
+
   static Failure handleApiError(dynamic error) {
     String message = 'An unknown error occurred';
 
@@ -47,6 +90,14 @@ abstract class ApiService {
   }
 
   static Future<Result<dynamic>> customerIntelligence() async {
+    final result = await checkKwikpassHealth();
+    if(result.isSuccess) {
+      final healthData = result.getDataOrThrow();
+      if(healthData?.isKwikpassHealthy == false){
+        throw Exception('Kwikpass is unhealthy');
+      }
+    }
+
     final merchantJson =
         await cacheInstance.getValue(KeyConfig.gkMerchantConfig);
     if (merchantJson == null) {
@@ -96,6 +147,14 @@ abstract class ApiService {
 
   static Future<Result<dynamic>> activateUserAccount(
       String id, String url, String password, String token) async {
+    final result = await checkKwikpassHealth();
+    if(result.isSuccess) {
+      final healthData = result.getDataOrThrow();
+      if(healthData?.isKwikpassHealthy == false){
+        throw Exception('Kwikpass is unhealthy');
+      }
+    }
+
     final data = {
       'form_type': 'activate_customer_password',
       'utf8': '✓',
@@ -173,6 +232,14 @@ abstract class ApiService {
         jsonEncode(merchantRes),
       );
 
+      final requestId = merchantRes?.kpRequestId;
+      if (requestId != null) {
+        await cacheInstance.setValue(
+          KeyConfig.gkRequestIdKey,
+          requestId.toString(),
+        );
+      }
+
       return Success(merchantRes);
     } catch (error) {
       throw handleApiError(error);
@@ -188,26 +255,20 @@ abstract class ApiService {
       final kcMerchantToken = args.kcMerchantToken ?? '';
       final isSnowplowTrackingEnabled = args.isSnowplowTrackingEnabled ?? true;
       final mode = args.mode ?? (kDebugMode ? 'debug' : 'release');
-      await DioClient().initialize(args.environment.name);
-
-      final gokwik = DioClient().getClient();
-
-      // await Logger().log(
-      //   'SDK Initialized',
-      //   data: jsonEncode({
-      //     'mid': mid,
-      //     'environment': environment.name,
-      //   }),
-      // );
-
+      
+      // Create settings with defaults, then merge with provided settings
+      final settingsWithDefaults = Settings(
+        enableKwikPass: args.settings?.enableKwikPass ?? true,
+        enableCheckout: args.settings?.enableCheckout ?? true,
+      );
+      
+      final enableKwikPass = settingsWithDefaults.enableKwikPass;
+      final enableCheckout = settingsWithDefaults.enableCheckout;
+      
       await Future.wait([
         cacheInstance.setValue(
           KeyConfig.gkMode,
           mode.toString(),
-        ),
-        cacheInstance.setValue(
-          KeyConfig.isSnowplowTrackingEnabled,
-          isSnowplowTrackingEnabled.toString(),
         ),
         cacheInstance.setValue(KeyConfig.gkEnvironmentKey, environment.name),
         cacheInstance.setValue(KeyConfig.gkMerchantIdKey, mid),
@@ -217,9 +278,29 @@ abstract class ApiService {
           KeyConfig.kcNotificationEventUrl,
           SdkConfig.getNotifEventsUrl(environment.name),
         ),
+        cacheInstance.setValue(KeyConfig.enableKwikPass, enableKwikPass.toString()),
+        cacheInstance.setValue(KeyConfig.enableCheckout, enableCheckout.toString()),
       ]);
 
+      if (enableKwikPass == false) {
+        return {'message': 'Initialization Successful without kwikpass'};
+      }
+
+      cacheInstance.setValue(
+        KeyConfig.isSnowplowTrackingEnabled,
+        isSnowplowTrackingEnabled.toString(),
+      );
+      await DioClient().initialize(args.environment.name);
+      final gokwik = DioClient().getClient();
       gokwik.options.headers[KeyConfig.gkMerchantIdKey] = mid;
+
+      // await Logger().log(
+      //   'SDK Initialized',
+      //   data: jsonEncode({
+      //     'mid': mid,
+      //     'environment': environment.name,
+      //   }),
+      // );
 
       final results = await Future.wait([
         cacheInstance.getValue(KeyConfig.gkRequestIdKey),
@@ -240,6 +321,13 @@ abstract class ApiService {
 
       // await getBrowserToken();
       final merchantConfig = await initializeMerchant(mid, environment.name);
+      final result = await checkKwikpassHealth();
+      if(result.isSuccess) {
+        final healthData = result.getDataOrThrow();
+        if(healthData?.isKwikpassHealthy == false){
+          throw Exception('Kwikpass is unhealthy');
+        }
+      }
 
       if (merchantConfig.isSuccess) {
         final merchantConfigData = merchantConfig.getDataOrThrow();
@@ -317,7 +405,6 @@ abstract class ApiService {
         gokwik.options.headers[KeyConfig.gkRequestIdKey] = requestId;
       }
 
-
       return {'message': 'Initialization Successful'};
     } catch (error) {
       if (error is Failure) {
@@ -331,6 +418,14 @@ abstract class ApiService {
     String phoneNumber,
     bool notifications,
   ) async {
+    final result = await checkKwikpassHealth();
+    if(result.isSuccess) {
+      final healthData = result.getDataOrThrow();
+      if(healthData?.isKwikpassHealthy == false){
+        throw Exception('Kwikpass is unhealthy');
+      }
+    }
+
     try {
       await getBrowserToken();
       final gokwik = DioClient().getClient();
@@ -396,6 +491,14 @@ abstract class ApiService {
   }
 
   static Future<Result<LoginResponseData?>> loginKpUser() async {
+    final result = await checkKwikpassHealth();
+    if(result.isSuccess) {
+      final healthData = result.getDataOrThrow();
+      if(healthData?.isKwikpassHealthy == false){
+        throw Exception('Kwikpass is unhealthy');
+      }
+    }
+
     try {
       final gokwik = DioClient().getClient();
       // final response =
@@ -404,12 +507,10 @@ abstract class ApiService {
       // );
 
       final response =
-      (await gokwik.get('customer/custom/login')).toBaseResponse(
+          (await gokwik.get('customer/custom/login')).toBaseResponse(
         fromJson: (json) => LoginResponseData.fromJson(json),
       );
-      if(response.statusCode == 200){
-
-      }
+      if (response.statusCode == 200) {}
       // if (response.isSuccess == false) {
       //   return Failure(response.errorMessage ?? 'Failed to login');
       // }
@@ -428,6 +529,14 @@ abstract class ApiService {
     String? dob,
     String? gender,
   }) async {
+    final result = await checkKwikpassHealth();
+    if(result.isSuccess) {
+      final healthData = result.getDataOrThrow();
+      if(healthData?.isKwikpassHealthy == false){
+        throw Exception('Kwikpass is unhealthy');
+      }
+    }
+
     try {
       final gokwik = DioClient().getClient();
 
@@ -485,6 +594,14 @@ abstract class ApiService {
   }
 
   static Future<Result<String>> validateUserToken() async {
+    final result = await checkKwikpassHealth();
+    if(result.isSuccess) {
+      final healthData = result.getDataOrThrow();
+      if(healthData?.isKwikpassHealthy == false){
+        throw Exception('Kwikpass is unhealthy');
+      }
+    }
+
     try {
       final gokwik = DioClient().getClient();
 
@@ -540,6 +657,14 @@ abstract class ApiService {
   }
 
   static Future<Result> verifyCode(String phoneNumber, String code) async {
+    final result = await checkKwikpassHealth();
+    if(result.isSuccess) {
+      final healthData = result.getDataOrThrow();
+      if(healthData?.isKwikpassHealthy == false){
+        throw Exception('Kwikpass is unhealthy');
+      }
+    }
+
     try {
       final gokwik = DioClient().getClient();
 
@@ -577,7 +702,6 @@ abstract class ApiService {
       ))
           .toBaseResponse();
 
-
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to verify OTP');
       }
@@ -601,7 +725,7 @@ abstract class ApiService {
       }
 
       await cacheInstance.setValue(KeyConfig.gkAccessTokenKey, token);
-      
+
       if (coreToken != null) {
         await cacheInstance.setValue(
             KeyConfig.checkoutAccessTokenKey, coreToken);
@@ -786,6 +910,16 @@ abstract class ApiService {
           await cacheInstance.getValue(KeyConfig.isSnowplowTrackingEnabled) ==
               'true';
 
+      final isKpEnabled =
+          await cacheInstance.getValue(KeyConfig.enableKwikPass) ==
+              'true';
+              final isCheckoutEnabled =
+          await cacheInstance.getValue(KeyConfig.enableCheckout) ==
+              'true';
+
+              final mode =
+          await cacheInstance.getValue(KeyConfig.gkMode);
+
       final gokwik = DioClient().getClient();
 
       gokwik.options.headers.remove(KeyConfig.gkAccessTokenKey);
@@ -809,6 +943,11 @@ abstract class ApiService {
         environment: Environment.values.firstWhere((e) => e.name == env,
             orElse: () => Environment.sandbox),
         isSnowplowTrackingEnabled: isSnowplowTrackingEnabled,
+        mode: mode ?? "",
+        settings: Settings(
+          enableKwikPass: isKpEnabled,
+          enableCheckout: isCheckoutEnabled,
+        ),
       ));
 
       // Logger().clearLogs();

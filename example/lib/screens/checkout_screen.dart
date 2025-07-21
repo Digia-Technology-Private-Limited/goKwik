@@ -22,11 +22,13 @@ class CheckoutScreen extends StatelessWidget {
         checkoutData: KPCheckoutProps(
           checkoutData: CheckoutData(
             merchantParams: MerchantParams(
-              cartId: 'Z2NwLWFzaWEtc291dGhlYXN0MTowMUpXUjdIQlg3MjlFSEVCRDUzUE5NTVdFRQ?key=d77972c322e9e3b66596cb432d2b360b',
+              cartId: 'Z2NwLWFzaWEtc291dGhlYXN0MTowMUswOTM4WkNQQVoxOVpGNjRTODlXVDQzRw?key=45c58e4b1c2166ab125e708250555c9b',
             ),
           ),
           onEvent: (message) {
-            print('Checkout event: $message');
+            if(message['type'] == "modal_closed"){
+              Navigator.pop(context);
+            }
           },
           onError: (error) {
             print('Checkout error: $error');
