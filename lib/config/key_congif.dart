@@ -8,6 +8,7 @@ class KeyConfig {
   static const gkEnvironmentKey = 'gk-environment';
   static const gkVerifiedUserKey = 'gk-verified-user';
   static const gkMerchantIdKey = 'gk-merchant-id';
+  static const kpMerchantIdKey = 'kp-merchant-id';
   static const gkMerchantUrlKey = 'gk-merchant-url';
   static const gkMerchantTypeKey = 'gk-merchant-type';
   static const gkRequestIdKey = 'gk-request-id';
@@ -40,6 +41,9 @@ class KeyConfig {
   static const kcMerchantId = 'kc-merchant-id';
   static const kcMerchantToken = 'kc-merchant-token';
   static const kcNotificationEventUrl = 'kc-notif-event-url';
+  
+  static const enableKwikPass = 'enable-kwik-pass';
+  static const enableCheckout = 'enable-checkout';
 
   static const List<String> allKeys = [
     gkTokenKey,
@@ -78,6 +82,8 @@ class KeyConfig {
     kcMerchantId,
     kcMerchantToken,
     kcNotificationEventUrl,
+    enableKwikPass,
+    enableCheckout,
   ];
 
   /// 🔄 Function to get all keys (optional if you want a method instead of accessing `KeyConfig.allKeys`)
