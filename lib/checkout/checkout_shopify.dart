@@ -192,10 +192,11 @@ window.addEventListener('load', function() {
     final sdkConfig = SdkConfig.fromEnvironment(environment!);
 
     // GET LOGGED IN USER EMAIL HERE
-    final verifiedUserData = await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
+    final verifiedUserData =
+        await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
 
     String? userEmail;
-    
+
     if (verifiedUserData != null) {
       final user = jsonDecode(verifiedUserData);
       userEmail = user?['email'];
@@ -267,7 +268,7 @@ window.addEventListener('load', function() {
 
     if (userEmail != null && userEmail.isNotEmpty) {
       final encodedEmail = base64Encode(utf8.encode(userEmail));
-       url += '&kp_email=$encodedEmail';
+      url += '&kp_email=$encodedEmail';
     }
 
     setState(() {
@@ -293,11 +294,9 @@ window.addEventListener('load', function() {
       // Send the navigation event through the onMessage callback
       widget.onMessage?.call(navigationEvent);
 
-      if (kDebugMode) {
-      }
+      if (kDebugMode) {}
     } catch (error) {
-      if (kDebugMode) {
-      }
+      if (kDebugMode) {}
     }
   }
 
@@ -333,26 +332,18 @@ window.addEventListener('load', function() {
     await _cookieManager.clearCookies();
   }
 
-  Future<bool> _handleBackButton() async {
-    try {
-      final canGoBack = await _webViewController.canGoBack();
+  Future<void> _handleBackButton() async {
+    final canGoBack = await _webViewController.canGoBack();
 
-      if (canGoBack) {
-        // If WebView can go back, navigate back in WebView
-        await _webViewController.goBack();
-        return true; // Prevent default back action
-      } else {
-        // If WebView can't go back, send hardwareBackPress message to WebView
-        await _webViewController.runJavaScript('''
-          if (typeof Flutter !== 'undefined' && Flutter.postMessage) {
-            Flutter.postMessage(JSON.stringify({ action: 'hardwareBackPress' }));
-          }
-        ''');
-        return true; // Prevent default back action
-      }
-    } catch (e) {
-      debugPrint('Error handling back button: $e');
-      return false; // Allow default back action on error
+    if (canGoBack) {
+      // If WebView can go back, navigate back in WebView
+      await _webViewController.goBack();
+    } else {
+      await _webViewController.runJavaScript('''
+        document.dispatchEvent(new MessageEvent('message', {
+          data: JSON.stringify({ action: 'hardwareBackPress' })
+        }));
+      ''');
     }
   }
 
@@ -360,18 +351,17 @@ window.addEventListener('load', function() {
   Widget build(BuildContext context) {
     bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     if (isIOS) {
+
       return webUrl.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : WebViewWidget(controller: _webViewController);
+
     }
     return PopScope(
       canPop: false, // Always handle back button manually
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop) {
-          final shouldPop = await _handleBackButton();
-          if (!shouldPop) {
-            Navigator.of(context).pop();
-          }
+          await _handleBackButton();
         }
       },
       child: webUrl.isEmpty
