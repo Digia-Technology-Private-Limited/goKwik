@@ -1,5 +1,6 @@
 import 'package:webengage_flutter/webengage_flutter.dart';
 import 'package:flutter/foundation.dart';
+import 'config.dart';
 
 /// Type definition for event properties
 typedef EventProperties = Map<String, dynamic>;
@@ -215,12 +216,37 @@ void webengageUserLogout() {
 }
 
 /// Sends event to WebEngage with user identification and attribute handling
-/// Equivalent to the web sendEventToWebEngage function but simplified for Flutter
+/// Equivalent to the React Native sendEventToWebEngage function
 /// [eventName] - The name of the event to track
 /// [properties] - Event properties containing user data and other attributes
+/// [identifier] - WebEngage identifier
+/// [format] - Phone format rules (optional)
 /// Returns void
-void sendEventToWebEngage(String eventName, [EventProperties properties = const {}]) {
+void sendEventToWebEngage(String eventName, [EventProperties properties = const {}, String identifier = "", String? format]) {
   try {
+    if (kDebugMode) {
+      print("FORMAT AVAILABLE $format");
+    }
+    
+    String phoneFormat = '';
+    if (identifier == "phone") {
+      phoneFormat = format ?? "";
+    }
+    // Handle login and identified user events
+    if ([AnalyticsEvents.appIdentifiedUser, AnalyticsEvents.appLoginSuccess].contains(eventName)) {
+      final userIdentity = properties[identifier]?.toString();
+      if (identifier == "phone" && userIdentity != null) {
+        setWebengageUserLogin('${phoneFormat}$userIdentity');
+      } else if (userIdentity != null) {
+        setWebengageUserLogin(userIdentity);
+      }
+    }
+
+    // Handle logout event
+    if (eventName == AnalyticsEvents.appLogout) {
+      webengageUserLogout();
+    }
+
     // Filter out null/undefined values from properties
     final Map<String, dynamic> payload = Map<String, dynamic>.fromEntries(
       properties.entries.where((entry) => entry.value != null)
@@ -231,10 +257,8 @@ void sendEventToWebEngage(String eventName, [EventProperties properties = const 
 
     // Handle phone-based user identification and attributes
     if (phone != null && phone is String && phone.isNotEmpty) {
-      final String formattedPhone = '$_countryCodeIndia$phone';
-      
-      // Set user login with formatted phone
-      setWebengageUserLogin(formattedPhone);
+      final String formattedPhone = '${phoneFormat.isNotEmpty ? phoneFormat : _countryCodeIndia}$phone';
+      payload['phone'] = formattedPhone;
       
       // Set phone attribute
       setWebengageUserAttributes({'we_phone': formattedPhone});
