@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:gokwik/analytics/analytics.dart';
 import 'package:gokwik/api/api_service.dart';
 import 'package:gokwik/api/base_response.dart';
 import 'package:gokwik/api/httpClient.dart';
@@ -172,6 +173,12 @@ class ShopifyService {
         ...response.data?['data'],
         'phone': phone,
       };
+
+      await trackAnalyticsEvent(AnalyticsEvents.appLoginShopifySuccess, {
+        'email': userData['email']?.toString() ?? "",
+        'phone': phone,
+        'customer_id': userData['shopifyCustomerId']?.toString() ?? "",
+      });
 
       await cacheInstance.setValue(
         KeyConfig.gkVerifiedUserKey,
