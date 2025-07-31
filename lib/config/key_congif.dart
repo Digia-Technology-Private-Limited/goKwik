@@ -1,4 +1,5 @@
 class KeyConfig {
+  static const moEngageId = 'moEngageId';
   static const gkMode = 'gk-mode';
   static const gkTokenKey = 'gk-token';
   static const gkCoreTokenKey = 'gk-coreToken';

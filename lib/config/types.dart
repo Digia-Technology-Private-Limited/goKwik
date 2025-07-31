@@ -28,6 +28,7 @@ class InitializeSdkProps {
   final String? kcMerchantToken;
   final String? mode; // 'debug' or 'release'
   final Settings? settings;
+  final String? moEngageId;
 
   InitializeSdkProps({
     required this.mid,
@@ -39,6 +40,7 @@ class InitializeSdkProps {
     this.kcMerchantToken,
     this.mode,
     this.settings,
+    this.moEngageId,
   });
 }
 
