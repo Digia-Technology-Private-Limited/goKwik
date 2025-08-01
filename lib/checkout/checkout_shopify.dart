@@ -334,7 +334,17 @@ window.addEventListener('load', function() {
 
   Future<void> _handleBackButton() async {
     final canGoBack = await _webViewController.canGoBack();
+final url=await _webViewController.currentUrl();
+    final isHandled = widget.onMessage?.call({
+      'type': 'hardwareBackPress',
+      'data': {
+        'canGoBack': canGoBack,
+        'url': url,
+      }
+    });
 
+    if (isHandled == true) return;
+    
     if (canGoBack) {
       // If WebView can go back, navigate back in WebView
       await _webViewController.goBack();
