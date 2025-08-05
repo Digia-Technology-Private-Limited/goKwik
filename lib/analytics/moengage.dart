@@ -66,7 +66,7 @@ void trackMoEngageEvents(String eventName, [EventProperties properties = const {
       if (kDebugMode) {
         print('PHONE EVENT $phoneFormat');
       }
-      loginMoEngage('${phoneFormat}$userIdentity');
+      loginMoEngage('$phoneFormat$userIdentity');
     } else if (userIdentity != null) {
       if (kDebugMode) {
         print('OTHER EVENT $userIdentity');

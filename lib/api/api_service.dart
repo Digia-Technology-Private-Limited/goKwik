@@ -45,7 +45,7 @@ abstract class ApiService {
         KeyConfig.kpRequestIdKey: requestId ?? '',
       };
 
-      if (accessToken != null) {
+      if (accessToken.isNotEmpty) {
         headers[KeyConfig.gkAccessTokenKey] = accessToken;
       }
 

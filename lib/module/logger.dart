@@ -87,6 +87,7 @@ class Logger {
           await _logFile?.writeAsString(logEntry, mode: FileMode.append);
         });
       }
+    // ignore: empty_catches
     } catch (e) {
     }
   }

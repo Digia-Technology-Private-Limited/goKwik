@@ -1,3 +1,7 @@
+## [1.0.3]
+- Add/ Handle Kwikpass/ checkout config
+- Add Analytics tracking with moengage & webengage
+
 ## [1.0.2]
 - Fix login issue and edge cases
 

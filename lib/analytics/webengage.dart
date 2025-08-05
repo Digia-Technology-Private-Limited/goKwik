@@ -37,7 +37,7 @@ void initializeKpWebengage([bool autoRegister = true]) {
 /// Returns void
 void trackWebengageEvents(String eventName, [EventProperties properties = const {}]) {
   // Input validation
-  if (eventName.isEmpty || eventName.trim().length == 0) {
+  if (eventName.isEmpty || eventName.trim().isEmpty) {
     if (kDebugMode) {
       print('[WebEngage] Invalid event name provided. Event name must be a non-empty string.');
     }

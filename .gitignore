@@ -43,7 +43,7 @@ app.*.map.json
 /android/app/release
 
 # # ignore example folder
-example/android/app/*.cxx/
+# example/android/app/*.cxx/
 
 # ignore .vscode folder
 .vscode/
