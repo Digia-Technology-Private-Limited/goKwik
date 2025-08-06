@@ -79,7 +79,12 @@ document.addEventListener("gk-checkout-disable", function(event) {
 window.addEventListener('load', function() {
   checkGoKwikSdk();
 });
-
+window.addEventListener("gokwikLoaded", () => {
+    setTimeout(() => {
+         console.log("Gokwik SDK Loaded");
+        triggerGokwikCustomCheckout();
+    }, 1000); // 1 second delay
+});
   ''';
 
   @override
@@ -270,12 +275,10 @@ window.addEventListener('load', function() {
       final encodedEmail = base64Encode(utf8.encode(userEmail));
       url += '&kp_email=$encodedEmail';
     }
-
+    await _webViewController.loadRequest(Uri.parse(url));
     setState(() {
       webUrl = url;
     });
-
-    _webViewController.loadRequest(Uri.parse(url));
   }
 
   void _sendNavigationEvent(
@@ -334,7 +337,7 @@ window.addEventListener('load', function() {
 
   Future<void> _handleBackButton() async {
     final canGoBack = await _webViewController.canGoBack();
-final url=await _webViewController.currentUrl();
+    final url = await _webViewController.currentUrl();
     final isHandled = widget.onMessage?.call({
       'type': 'hardwareBackPress',
       'data': {
@@ -344,7 +347,6 @@ final url=await _webViewController.currentUrl();
     });
 
     if (isHandled == true) return;
-    
     if (canGoBack) {
       // If WebView can go back, navigate back in WebView
       await _webViewController.goBack();
