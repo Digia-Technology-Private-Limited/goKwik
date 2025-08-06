@@ -60,7 +60,7 @@ dependencies:
   pinput: ^5.0.0
   # flutter_local_notifications: ^13.0.0
   pin_code_fields: ^8.0.1
-  otp_autofill_plus: ^1.0.5
+  sms_autofill: ^2.4.1
 
 
 dev_dependencies:
