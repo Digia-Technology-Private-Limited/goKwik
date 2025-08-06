@@ -50,7 +50,7 @@ class _CheckoutShopifyState extends State<CheckoutShopify> {
   String webUrl = '';
   late final WebViewController _webViewController;
   late final WebViewCookieManager _cookieManager;
-
+  bool checkoutLoaded = false;
   final String injectedJavaScript = '''
   (function checkGoKwikSdk() {
   if (typeof gokwikSdk !== 'undefined' && typeof gokwikSdk.on === 'function') {
@@ -80,6 +80,7 @@ window.addEventListener('load', function() {
   checkGoKwikSdk();
 });
 window.addEventListener("gokwikLoaded", () => {
+  Flutter.postMessage(JSON.stringify({ type: 'gokwikLoaded', data: event.detail }));
     setTimeout(() => {
          console.log("Gokwik SDK Loaded");
         triggerGokwikCustomCheckout();
@@ -310,7 +311,12 @@ window.addEventListener("gokwikLoaded", () => {
       // final data = decoded['data'];
       // debugPrint("EVENT RECEIVED $event");
       // debugPrint("DATA RECEIVED $data");
-
+      if (decoded['type'] == 'gokwikLoaded') {
+        if (!checkoutLoaded) {
+          checkoutLoaded = true;
+        }
+        setState(() {});
+      }
       widget.onMessage?.call(decoded);
     } catch (e) {
       widget.onError?.call(
@@ -338,7 +344,7 @@ window.addEventListener("gokwikLoaded", () => {
   Future<void> _handleBackButton() async {
     final canGoBack = await _webViewController.canGoBack();
     final url = await _webViewController.currentUrl();
-    final isHandled = widget.onMessage?.call({
+    final isHandled = await widget.onMessage?.call({
       'type': 'hardwareBackPress',
       'data': {
         'canGoBack': canGoBack,
@@ -363,9 +369,15 @@ window.addEventListener("gokwikLoaded", () => {
   Widget build(BuildContext context) {
     bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     if (isIOS) {
-      return webUrl.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : Scaffold(body: WebViewWidget(controller: _webViewController));
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: !checkoutLoaded
+            ? const Center(
+                child: CircularProgressIndicator(
+                color: Colors.black,
+              ))
+            : WebViewWidget(controller: _webViewController),
+      );
     }
     return PopScope(
       canPop: false, // Always handle back button manually
@@ -374,9 +386,15 @@ window.addEventListener("gokwikLoaded", () => {
           await _handleBackButton();
         }
       },
-      child: webUrl.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : Scaffold(body: WebViewWidget(controller: _webViewController)),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: !checkoutLoaded
+            ? const Center(
+                child: CircularProgressIndicator(
+                color: Colors.black,
+              ))
+            : WebViewWidget(controller: _webViewController),
+      ),
     );
   }
 }
