@@ -68,6 +68,15 @@ PODS:
   - SnowplowTracker (6.0.9)
   - url_launcher_ios (0.0.1):
     - Flutter
+  - WebEngage (6.16.1):
+    - WebEngage/Core (= 6.16.1)
+    - WebEngage/Location (= 6.16.1)
+  - WebEngage/Core (6.16.1)
+  - WebEngage/Location (6.16.1):
+    - WebEngage/Core
+  - webengage_flutter (1.6.0):
+    - Flutter
+    - WebEngage (>= 6.10.0)
   - webview_flutter_wkwebview (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -85,6 +94,7 @@ DEPENDENCIES:
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - snowplow_tracker (from `.symlinks/plugins/snowplow_tracker/ios`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
+  - webengage_flutter (from `.symlinks/plugins/webengage_flutter/ios`)
   - webview_flutter_wkwebview (from `.symlinks/plugins/webview_flutter_wkwebview/darwin`)
 
 SPEC REPOS:
@@ -100,6 +110,7 @@ SPEC REPOS:
     - MoEngageSecurity
     - MoEngageTriggerEvaluator
     - SnowplowTracker
+    - WebEngage
 
 EXTERNAL SOURCES:
   advertising_id:
@@ -126,6 +137,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/snowplow_tracker/ios"
   url_launcher_ios:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
+  webengage_flutter:
+    :path: ".symlinks/plugins/webengage_flutter/ios"
   webview_flutter_wkwebview:
     :path: ".symlinks/plugins/webview_flutter_wkwebview/darwin"
 
@@ -153,6 +166,8 @@ SPEC CHECKSUMS:
   snowplow_tracker: 5f1a3afc72edb75ff3ddc48d7452f36c543c0224
   SnowplowTracker: b9831c59e7798affbd92c35ccd9c417e0736a589
   url_launcher_ios: 694010445543906933d732453a59da0a173ae33d
+  WebEngage: 3b102c786b26b12e613b5d24462af8a5d359e98d
+  webengage_flutter: 00f3267b18b401a6d77bff6eba08f5f60b8c69cc
   webview_flutter_wkwebview: 1821ceac936eba6f7984d89a9f3bcb4dea99ebb2
 
 PODFILE CHECKSUM: 4305caec6b40dde0ae97be1573c53de1882a07e5

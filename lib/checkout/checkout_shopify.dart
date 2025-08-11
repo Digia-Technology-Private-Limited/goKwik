@@ -241,6 +241,7 @@ window.addEventListener("gokwikLoaded", () => {
     final storeInfo = {
       'type': 'merchantInfo',
       'source': 'app',
+      'platform': Platform.operatingSystem.toLowerCase(),
       'appFlow': 'true',
       'blockExternalEvents': true,
       'mid': merchantInfo['mid'],
