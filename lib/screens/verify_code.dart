@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
 import 'package:smart_auth/smart_auth.dart';
-
 class VerifyCodeForm extends StatefulWidget {
   final String otpLabel;
   final VoidCallback onResend;
@@ -44,7 +43,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   bool _isVerifying = false;
 
   final pinputController = TextEditingController();
-  final smartAuth = SmartAuth.instance;
+  final smartAuth = SmartAuth();
 
   @override
   void initState() {
@@ -55,15 +54,11 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
 
   Future<void> _startUserConsent() async {
     try {
-      final res = await smartAuth.getSmsWithUserConsentApi();
+      final res = await smartAuth.getSmsCode(useUserConsentApi: true); // ← consent
       if (!mounted) return;
 
-      if (res.hasData) {
-        final otp = res.requireData.code ??
-            RegExp(r'\b(\d{4})\b')
-                .firstMatch(res.requireData.sms ?? '')
-                ?.group(1);
-
+      if (res.codeFound) {
+        final otp = res.code ?? RegExp(r'\b(\d{4})\b').firstMatch(res.sms ?? '')?.group(1);
         if (otp != null && otp.isNotEmpty) {
           pinputController.text = otp;
           pinputController.selection = TextSelection.fromPosition(
@@ -73,18 +68,18 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
         }
       }
     } catch (_) {
-      // Ignore errors, allow manual entry
+      // allow manual entry
     }
   }
 
   void _restartListening() {
-    smartAuth.removeUserConsentApiListener();
+    smartAuth.removeSmsListener();
     _startUserConsent();
   }
 
   @override
   void dispose() {
-    smartAuth.removeUserConsentApiListener();
+    smartAuth.removeSmsListener();
     pinputController.dispose();
     super.dispose();
   }
@@ -125,7 +120,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
       setState(() => _errorText = error);
       if (error == null) {
         setState(() => _isVerifying = true);
-        smartAuth.removeUserConsentApiListener();
+        smartAuth.removeSmsListener();
         widget.onVerify(otp);
       }
     } else {

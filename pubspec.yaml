@@ -60,7 +60,7 @@ dependencies:
   pinput: ^5.0.0
   # flutter_local_notifications: ^13.0.0
   pin_code_fields: ^8.0.1
-  smart_auth: ^3.2.0
+  smart_auth: ^2.0.0
   moengage_flutter: ^9.2.1
   webengage_flutter: ^1.4.8
 
