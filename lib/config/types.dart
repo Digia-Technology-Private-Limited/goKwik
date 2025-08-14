@@ -771,7 +771,7 @@ class MerchantConfig {
       integrationType: json['integrationType'],
       isLogoutBtnDisabled: json['isLogoutBtnDisabled'],
       popupBreakpoint: json['popupBreakpoint'],
-      apiKey: json['apiKey'],
+      apiKey: json['apiKey'] ?? "",
       isPublicAppInstalled: json['isPublicAppInstalled'],
       thirdPartyServiceProviders: (json['thirdPartyServiceProviders'] as List)
           .map((e) => ThirdPartyServiceProvider.fromJson(e))

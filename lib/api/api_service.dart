@@ -754,6 +754,8 @@ abstract class ApiService {
       ))
           .toBaseResponse();
 
+      
+
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to verify OTP');
       }
@@ -762,8 +764,7 @@ abstract class ApiService {
       final String token = data['token'];
       final coreToken = data['coreToken'];
       final String kpToken = data?['kpToken'];
-      String? merchantType =
-          await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
+      String? merchantType = await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
 
       if (merchantType! == 'shopify') {
         final res = await _handleShopifyVerifyResponse(
@@ -773,11 +774,15 @@ abstract class ApiService {
           coreToken,
           kpToken,
         );
-        await trackAnalyticsEvent(AnalyticsEvents.appLoginSuccess, {
-          'email': response.data?['email']?.toString() ?? "",
-          'phone': phoneNumber,
-          'customer_id': response.data?['shopifyCustomerId']?.toString() ?? "",
-        });
+
+        if (response.data?['email']) {
+          await trackAnalyticsEvent(AnalyticsEvents.appLoginSuccess, {
+            'email': response.data?['email']?.toString() ?? "",
+            'phone': phoneNumber,
+            'customer_id':
+                response.data?['shopifyCustomerId']?.toString() ?? "",
+          });
+        }
         return res;
       }
 

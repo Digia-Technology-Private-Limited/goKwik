@@ -29,12 +29,12 @@ class BaseResponse<T> {
   ) {
     return BaseResponse(
       data: fromJsonT != null ? fromJsonT(json['data']) : json['data'],
-      error: json['error'],
+      error: json['error'] ?? "",
       isSuccess: json['isSuccess'],
-      statusCode: json['status_code'],
+      statusCode: json['status_code'] ?? "",
       success: json['success'],
       timestamp: _handleTimestamp(json['timestamp']),
-      errorMessage: json['error_msg'],
+      errorMessage: json['error_msg'] ?? '',
     );
   }
 

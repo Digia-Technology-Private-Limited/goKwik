@@ -160,12 +160,22 @@ class RootCubit extends Cubit<RootState> {
           }
         }
 
+        // Handle email required case
+        if (responseMap['emailRequired'] == true) {
+          emit(state.copyWith(
+            isNewUser: true,
+            isLoading: false,
+          ));
+          otpController.clear();
+          return;
+        }
+
         emit(state.copyWith(isSuccess: true, isLoading: false));
         onSuccessData?.call(
           FlowResult(flowType: FlowType.otpVerify, data: responseMap['data']),
         );
         otpController.clear();
-        return; // Early return for Shopify flow
+        return;
       }
 
       // Handle multiple emails
