@@ -775,12 +775,13 @@ abstract class ApiService {
           kpToken,
         );
 
-        if (response.data?['email']) {
+        final data = response.data as Map<String, dynamic>?;
+        if (data?['email'] != null) {
           await trackAnalyticsEvent(AnalyticsEvents.appLoginSuccess, {
-            'email': response.data?['email']?.toString() ?? "",
+            'email': data?['email']?.toString() ?? "",
             'phone': phoneNumber,
             'customer_id':
-                response.data?['shopifyCustomerId']?.toString() ?? "",
+            response.data?['shopifyCustomerId']?.toString() ?? "",
           });
         }
         return res;
