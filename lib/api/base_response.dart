@@ -31,7 +31,7 @@ class BaseResponse<T> {
       data: fromJsonT != null ? fromJsonT(json['data']) : json['data'],
       error: json['error'] ?? "",
       isSuccess: json['isSuccess'],
-      statusCode: json['status_code'] ?? "",
+      statusCode: json['status_code'] ?? 0,
       success: json['success'],
       timestamp: _handleTimestamp(json['timestamp']),
       errorMessage: json['error_msg'] ?? '',
