@@ -210,7 +210,7 @@ class _ShopifyEmailFormState extends State<ShopifyEmailForm> {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       height: 55,
       child: DropdownButtonFormField<String>(
-        value: _selectedEmail,
+        value: _selectedEmail != null && _selectedEmail != "" ? _selectedEmail : null,
         items: widget.multipleEmail.map((email) {
           return DropdownMenuItem<String>(
             value: email.value,
@@ -228,7 +228,7 @@ class _ShopifyEmailFormState extends State<ShopifyEmailForm> {
         },
         decoration: InputDecoration(
           border: InputBorder.none,
-          hintText: _selectedEmail ?? widget.config?.dropdownPlaceholder,
+          hintText: _selectedEmail != null && _selectedEmail != "" ? _selectedEmail : widget.config?.dropdownPlaceholder,
           hintStyle: widget.config?.dropdownPlaceholderStyle ??
               const TextStyle(fontSize: 16),
         ),

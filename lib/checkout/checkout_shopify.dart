@@ -103,9 +103,6 @@ window.addEventListener("gokwikLoaded", () => {
       ..addJavaScriptChannel(
         'Flutter',
         onMessageReceived: (JavaScriptMessage message) {
-          debugPrint("MESSAGE RECEIVED $message");
-          debugPrint("MESSAGE RECEIVED ${message.message}");
-
           handleMessage(message.message);
         },
       )

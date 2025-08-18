@@ -160,6 +160,37 @@ class RootCubit extends Cubit<RootState> {
           }
         }
 
+        // Handle multiple emails
+        if (responseMap.containsKey('multipleEmail') &&
+            responseMap['multipleEmail'] != null &&
+            responseMap['multipleEmail'] != "null") {
+          emit(state.copyWith(
+            multipleEmails: (responseMap['multipleEmail'] as String?)
+                ?.split(',')
+                .map((item) {
+              return MultipleEmail(label: item.trim(), value: item.trim());
+            }).toList(),
+          ));
+          emit(state.copyWith(
+            isNewUser: true,
+            isLoading: false,
+          ));
+          return;
+        }
+
+        // Handle multiple emails
+        if (responseMap.containsKey('multipleEmail') &&
+            responseMap['multipleEmail'] != null &&
+            responseMap['multipleEmail'] != "null") {
+          emit(state.copyWith(
+            multipleEmails: (responseMap['multipleEmail'] as String?)
+                ?.split(',')
+                .map((item) {
+              return MultipleEmail(label: item.trim(), value: item.trim());
+            }).toList(),
+          ));
+        }
+
         // Handle email required case
         if (responseMap['emailRequired'] == true) {
           emit(state.copyWith(
@@ -176,19 +207,6 @@ class RootCubit extends Cubit<RootState> {
         );
         otpController.clear();
         return;
-      }
-
-      // Handle multiple emails
-      if (responseMap.containsKey('multiple_emails') &&
-          responseMap['multiple_emails'] != null &&
-          responseMap['multiple_emails'] != "null") {
-        emit(state.copyWith(
-          multipleEmails: (responseMap['multiple_emails'] as String?)
-              ?.split(',')
-              .map((item) {
-            return MultipleEmail(label: item.trim(), value: item.trim());
-          }).toList(),
-        ));
       }
 
       // Handle email required case

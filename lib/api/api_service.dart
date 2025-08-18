@@ -754,7 +754,6 @@ abstract class ApiService {
       ))
           .toBaseResponse();
 
-      
 
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to verify OTP');
@@ -776,14 +775,16 @@ abstract class ApiService {
         );
 
         final data = response.data as Map<String, dynamic>?;
-        if (data?['email'] != null) {
+
+        if (data!.containsKey('email')) {
           await trackAnalyticsEvent(AnalyticsEvents.appLoginSuccess, {
-            'email': data?['email']?.toString() ?? "",
+            'email': data['email']?.toString() ?? "",
             'phone': phoneNumber,
             'customer_id':
             response.data?['shopifyCustomerId']?.toString() ?? "",
           });
         }
+
         return res;
       }
 
@@ -864,8 +865,10 @@ abstract class ApiService {
 
     final responseForAffluence = await customerIntelligence();
 
-    if (responseData?['state'] == 'DISABLED' ||
-        responseData?['state'] == 'ENABLED') {
+    if ((responseData?['state'] == 'DISABLED' ||
+        responseData?['state'] == 'ENABLED') &&
+        responseData!['email'] != null &&
+        (responseData!['email'] as String).isNotEmpty) {
       final multipassResponse = await ShopifyService.getShopifyMultipassToken(
         phone: phoneNumber,
         email: responseData?['email'],
@@ -931,16 +934,19 @@ abstract class ApiService {
     final userData = {
       ...responseData,
       'phone': phoneNumber,
+      'affluence': ""
     };
+
+    if (responseForAffluence is Success &&
+        responseForAffluence.data != null) {
+      userData['affluence'] = responseForAffluence.data;
+    }
 
     await cacheInstance.setValue(
       KeyConfig.gkVerifiedUserKey,
       jsonEncode(userData),
     );
 
-    if (responseForAffluence is Success && responseForAffluence.data != null) {
-      responseData['data']['affluence'] = responseForAffluence;
-    }
     await SnowplowTrackerService.sendCustomEventToSnowPlow({
       'category': 'login_modal',
       'label': 'phone_Number_logged_in',
@@ -949,7 +955,7 @@ abstract class ApiService {
       'value': int.tryParse(phoneNumber) ?? 0,
     });
 
-    return Success(responseData);
+    return Success(userData);
   }
 
   static Future<bool> clearKwikpassSession() async {
