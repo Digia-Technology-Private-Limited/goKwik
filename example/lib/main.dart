@@ -56,6 +56,11 @@ class _MainScreenState extends State<MainScreen> {
         environment: Environment.production,
         isSnowplowTrackingEnabled: false,
         mode: 'debug',
+
+        onAnalytics: (eventname, properties) {
+          debugPrint("eventName::: $eventname");
+          debugPrint("event properties::: $properties");
+        },
       ));
     } catch (e) {
     }

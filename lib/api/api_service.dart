@@ -6,7 +6,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:gokwik/analytics/analytics.dart';
+import 'package:gokwik/analytics/config.dart';
 import 'package:gokwik/api/base_response.dart';
 import 'package:gokwik/api/httpClient.dart';
 import 'package:gokwik/api/snowplow_client.dart';
@@ -257,6 +257,9 @@ abstract class ApiService {
       final isSnowplowTrackingEnabled = args.isSnowplowTrackingEnabled ?? true;
       final mode = args.mode ?? (kDebugMode ? 'debug' : 'release');
       
+      // callback function for analytics
+      final Function analyticsCallback = args.onAnalytics ?? () {};
+
       // Create settings with defaults, then merge with provided settings
       final settingsWithDefaults = Settings(
         enableKwikPass: args.settings?.enableKwikPass ?? true,
@@ -265,8 +268,6 @@ abstract class ApiService {
       
       final enableKwikPass = settingsWithDefaults.enableKwikPass;
       final enableCheckout = settingsWithDefaults.enableCheckout;
-      final moEngageId = args.moEngageId ?? '';
-
       // await Logger().log(
       //   'SDK Initialized',
       //   data: jsonEncode({
@@ -284,7 +285,6 @@ abstract class ApiService {
         cacheInstance.setValue(KeyConfig.gkMerchantIdKey, mid),
         cacheInstance.setValue(KeyConfig.kcMerchantId, kcMerchantId),
         cacheInstance.setValue(KeyConfig.kcMerchantToken, kcMerchantToken),
-        cacheInstance.setValue(KeyConfig.moEngageId, moEngageId),
         cacheInstance.setValue(
           KeyConfig.kcNotificationEventUrl,
           SdkConfig.getNotifEventsUrl(environment.name),
@@ -418,25 +418,16 @@ abstract class ApiService {
 
 
       // Check for MoEngage tracking configuration
-      final isMoEngageTracking = merchantConfig.isSuccess &&
-          merchantConfig.getDataOrThrow()?.thirdPartyServiceProviders
-              .where((item) => item.name == 'mo_engage' && item.type == 'analytics')
-              .length == 1;
+      // final isMoEngageTracking = merchantConfig.isSuccess &&
+      //     merchantConfig.getDataOrThrow()?.thirdPartyServiceProviders
+      //         .where((item) => item.name == 'mo_engage' && item.type == 'analytics')
+      //         .length == 1;
 
-      // Check for WebEngage tracking configuration
-      final isWebEngageTracking = merchantConfig.isSuccess &&
-          merchantConfig.getDataOrThrow()?.thirdPartyServiceProviders
-              .where((item) => item.name == 'web_engage' && item.type == 'analytics')
-              .length == 1;
-
-      // Initialize analytics based on configuration
-      if (moEngageId.isNotEmpty && isMoEngageTracking) {
-        initializeAnalytics(moEngageId, webengageAutoRegister: isWebEngageTracking);
-      }
-
-      if (isWebEngageTracking) {
-        initializeAnalytics("", webengageAutoRegister: isWebEngageTracking);
-      }
+      // // Check for WebEngage tracking configuration
+      // final isWebEngageTracking = merchantConfig.isSuccess &&
+      //     merchantConfig.getDataOrThrow()?.thirdPartyServiceProviders
+      //         .where((item) => item.name == 'web_engage' && item.type == 'analytics')
+      //         .length == 1;
 
       // Get verified user data and track identified user event
       final verifiedUserJson =
@@ -445,7 +436,7 @@ abstract class ApiService {
         final verifiedUser = jsonDecode(verifiedUserJson);
 
         if (verifiedUser['email'] != null && verifiedUser['phone'] != null) {
-          await trackAnalyticsEvent(AnalyticsEvents.appIdentifiedUser, {
+          analyticsCallback(AnalyticsEvents.appIdentifiedUser, {
             'phone': verifiedUser['phone']?.toString() ?? "",
             'email': verifiedUser['email']?.toString() ?? "",
             'customer_id': verifiedUser['shopifyCustomerId']?.toString() ?? "",
@@ -478,9 +469,9 @@ abstract class ApiService {
       await getBrowserToken();
       final gokwik = DioClient().getClient();
 
-      await trackAnalyticsEvent(AnalyticsEvents.appLoginPhone, {
-        'phone': phoneNumber.toString(),
-      });
+      // await trackAnalyticsEvent(AnalyticsEvents.appLoginPhone, {
+      //   'phone': phoneNumber.toString(),
+      // });
 
       await Future.wait([
         cacheInstance.setValue(
@@ -774,16 +765,16 @@ abstract class ApiService {
           kpToken,
         );
 
-        final data = response.data as Map<String, dynamic>?;
+        // final data = response.data as Map<String, dynamic>?;
 
-        if (data!.containsKey('email')) {
-          await trackAnalyticsEvent(AnalyticsEvents.appLoginSuccess, {
-            'email': data['email']?.toString() ?? "",
-            'phone': phoneNumber,
-            'customer_id':
-            response.data?['shopifyCustomerId']?.toString() ?? "",
-          });
-        }
+        // if (data!.containsKey('email')) {
+        //   await trackAnalyticsEvent(AnalyticsEvents.appLoginSuccess, {
+        //     'email': data['email']?.toString() ?? "",
+        //     'phone': phoneNumber,
+        //     'customer_id':
+        //     response.data?['shopifyCustomerId']?.toString() ?? "",
+        //   });
+        // }
 
         return res;
       }
@@ -974,14 +965,13 @@ abstract class ApiService {
         'value': int.tryParse(phone) ?? 0,
       });
 
-      await trackAnalyticsEvent(AnalyticsEvents.appLogout, {
-        'email': parsedUser['email']?.toString() ?? "",
-        'phone': phone,
-        'customer_id': parsedUser['shopifyCustomerId']?.toString() ?? "",
-      });
+      // await trackAnalyticsEvent(AnalyticsEvents.appLogout, {
+      //   'email': parsedUser['email']?.toString() ?? "",
+      //   'phone': phone,
+      //   'customer_id': parsedUser['shopifyCustomerId']?.toString() ?? "",
+      // });
 
       final env = await cacheInstance.getValue(KeyConfig.gkEnvironmentKey);
-      final moEngageId = await cacheInstance.getValue(KeyConfig.moEngageId);
       final mid = await cacheInstance.getValue(KeyConfig.gkMerchantIdKey) ?? '';
       final isSnowplowTrackingEnabled =
           await cacheInstance.getValue(KeyConfig.isSnowplowTrackingEnabled) ==
@@ -1025,7 +1015,6 @@ abstract class ApiService {
           enableKwikPass: isKpEnabled,
           enableCheckout: isCheckoutEnabled,
         ),
-        moEngageId: moEngageId,
       ));
 
       // Logger().clearLogs();

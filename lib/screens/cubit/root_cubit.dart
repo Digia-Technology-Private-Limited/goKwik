@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:gokwik/analytics/config.dart';
 import 'package:gokwik/api/api_service.dart';
 import 'package:gokwik/api/base_response.dart';
 import 'package:gokwik/api/shopify_service.dart';
@@ -31,8 +32,9 @@ class RootCubit extends Cubit<RootState> {
 
   final Function(FlowResult)? onSuccessData;
   final Function(FlowResult)? onErrorData;
+  final void Function(String eventName, Map<String, dynamic> properties)? onAnalytics;
   final MerchantType merchantType = MerchantType.shopify;
-  RootCubit({this.onSuccessData, this.onErrorData})
+  RootCubit({this.onSuccessData, this.onErrorData, this.onAnalytics})
       : super(const RootState(merchantType: MerchantType.shopify)) {
     _listenMerchantType();
     _listenUserStateUpdated();
@@ -91,6 +93,10 @@ class RootCubit extends Cubit<RootState> {
             isLoading: false));
         return;
       }
+
+      onAnalytics!(AnalyticsEvents.appLoginPhone, {
+        'phone': phoneController.text.toString(),
+      });
       emit(state.copyWith(otpSent: true, isLoading: false));
     } catch (err) {
       onErrorData?.call(FlowResult(
@@ -115,6 +121,11 @@ class RootCubit extends Cubit<RootState> {
         response['data']['phone'] = phoneController.text;
       }
 
+      onAnalytics!(AnalyticsEvents.appLoginSuccess, {
+        'phone': phoneController.text.toString(),
+        'email': shopifyEmailController.text,
+        'customer_id': response['data']['shopifyCustomerId']?.toString() ?? ""
+      });
       onSuccessData?.call(FlowResult(
         flowType: FlowType.emailOtpVerify,
         data: response['data'],
@@ -202,6 +213,12 @@ class RootCubit extends Cubit<RootState> {
         }
 
         emit(state.copyWith(isSuccess: true, isLoading: false));
+        onAnalytics!(AnalyticsEvents.appLoginSuccess, {
+          'phone': phoneController.text.toString(),
+          'email': responseMap['data']['email'],
+          'customer_id':
+              responseMap['data']['shopifyCustomerId']?.toString() ?? ""
+        });
         onSuccessData?.call(
           FlowResult(flowType: FlowType.otpVerify, data: responseMap['data']),
         );
@@ -230,6 +247,12 @@ class RootCubit extends Cubit<RootState> {
         if (responseMap['merchantResponse']['phone'] == null) {
           responseMap['merchantResponse']['phone'] = phoneController.text;
         }
+
+        onAnalytics!(AnalyticsEvents.appLoginSuccess, {
+          'phone': phoneController.text.toString(),
+          'email': responseMap['merchantResponse']['email'],
+          'customer_id': responseMap['data']['id']?.toString() ?? ""
+        });
 
         onSuccessData?.call(
           FlowResult(
@@ -279,6 +302,13 @@ class RootCubit extends Cubit<RootState> {
         gender: genderController.value,
       );
 
+      // final responseMap = response.getDataOrThrow()
+
+      // onAnalytics!(AnalyticsEvents.appLoginSuccess, {
+      //   'phone': phoneController.text.toString(),
+      //   'email': responseMap?['data']['merchantResponse']['email'],
+      //   'customer_id': responseMap?['data']['merchantResponse']['id']?.toString() ?? ""
+      // });
       onSuccessData?.call(
           FlowResult(flowType: FlowType.createUser, data: response.getDataOrThrow()));
       emit(state.copyWith(
@@ -411,9 +441,17 @@ class RootCubit extends Cubit<RootState> {
               responseData['email'] != null &&
               // responseData['multipassToken'] != null &&
               responseData['password'] != null)) {
+
+        debugPrint("DEBUG PRINT FOR LOGIN $responseData");
+
         onSuccessData?.call(
             FlowResult(flowType: FlowType.alreadyLoggedIn, data: responseData));
         emit(state.copyWith(isUserLoggedIn: true));
+        onAnalytics!(AnalyticsEvents.appIdentifiedUser, {
+          'phone': responseData['phone'],
+          'email': responseData['email'],
+          'customer_id': responseData['shopifyCustomerId'] ?? (responseData['id'] ?? ""),
+        });
         return;
       }
     }

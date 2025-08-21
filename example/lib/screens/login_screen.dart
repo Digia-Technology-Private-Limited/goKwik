@@ -42,6 +42,10 @@ class _LoginScreenState extends State<LoginScreen> {
               SnackBar(content: Text(error.error)),
             );
           },
+          onAnalytics: (eventname, properties) {
+            debugPrint("eventName::: $eventname");
+            debugPrint("event properties::: $properties");
+          },
           enableGuestLogin: true,
           guestLoginButtonLabel: 'Skip',
           onGuestLoginPress: () {

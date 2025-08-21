@@ -29,6 +29,7 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
   // Callbacks
   final Function(FlowResult)? onSuccess;
   final Function(FlowResult)? onError;
+  final void Function(String eventName, Map<String, dynamic> properties)? onAnalytics;
 
   // For new user
   final CreateUserConfig? createUserConfig;
@@ -61,6 +62,7 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
     this.footerHyperlinkStyle,
     this.onSuccess,
     this.onError,
+    this.onAnalytics,
     this.createUserConfig,
     this.enableGuestLogin = false,
     this.guestLoginButtonLabel = 'Skip',
@@ -77,6 +79,7 @@ class GoKwikLoginAndSignUpFlow extends StatelessWidget {
       create: (context) => RootCubit(
         onSuccessData: onSuccess,
         onErrorData: onError,
+        onAnalytics: onAnalytics,
       ),
       child: RootScreen(
         bannerImage: bannerImage,

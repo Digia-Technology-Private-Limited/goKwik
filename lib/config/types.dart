@@ -21,14 +21,15 @@ class Settings {
 class InitializeSdkProps {
   final String mid;
   final Environment environment; // 'sandbox' or 'production'
-  final String? shopDomain;
-  final bool? isSnowplowTrackingEnabled;
-  final MerchantType? merchantType; // 'shopify' or 'custom'
-  final String? kcMerchantId;
-  final String? kcMerchantToken;
-  final String? mode; // 'debug' or 'release'
-  final Settings? settings;
-  final String? moEngageId;
+  String? shopDomain;
+  bool? isSnowplowTrackingEnabled;
+  MerchantType? merchantType; // 'shopify' or 'custom'
+  String? kcMerchantId;
+  String? kcMerchantToken;
+  String? mode; // 'debug' or 'release'
+  Settings? settings;
+  String? moEngageId;
+  Function? onAnalytics;
 
   InitializeSdkProps({
     required this.mid,
@@ -41,6 +42,7 @@ class InitializeSdkProps {
     this.mode,
     this.settings,
     this.moEngageId,
+    this.onAnalytics,
   });
 }
 

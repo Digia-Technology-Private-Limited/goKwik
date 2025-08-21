@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gokwik/screens/root.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
-import 'package:otp_autofill_plus/otp_autofill_plus.dart';
+// import 'package:sms_consent_for_otp_autofill/sms_consent_for_otp_autofill.dart';
+import 'package:smart_auth/smart_auth.dart';
 
 class VerifyCodeForm extends StatefulWidget {
   final String otpLabel;
@@ -48,10 +49,11 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   bool _isVerifying = false; // Add flag to prevent duplicate API calls
 
   final scaffoldKey = GlobalKey();
-  late OTPTextEditController controller;
-  late OTPInteractor _otpInteractor;
+  // late OTPTextEditController controller;
+  // late OTPInteractor _otpInteractor;
 
   final pinputController = TextEditingController();
+  final smartAuth = SmartAuth.instance;
 
   // Helper methods to safely access config properties
   String get configTitle {
@@ -167,32 +169,73 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     return null;
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _startTimer();
+  Future<void> _startUserConsent() async {
+    try {
+      final res =
+          await smartAuth.getSmsWithUserConsentApi(); // ← consent
+      if (!mounted) return;
 
-    _initInteractor();
-    controller = OTPTextEditController(
-      codeLength: 4,
-      //ignore: avoid_print
-      onCodeReceive: (code) =>
-          debugPrint('Your Application receive code - $code'),
-      otpInteractor: _otpInteractor,
-    )..startListenUserConsent(
-        (code) {
-          final exp = RegExp(r'(\d{4})');
-
-          final otp = exp.stringMatch(code ?? '') ?? '';
+      if (res.hasData) {
+        final code = res.requireData.code;
+        final otp = code ??
+            RegExp(r'\b(\d{4})\b').firstMatch(code ?? '')?.group(1);
+        if (otp != null && otp.isNotEmpty) {
           pinputController.text = otp;
           pinputController.selection = TextSelection.fromPosition(
             TextPosition(offset: pinputController.text.length),
           );
+          _validateOtp();
+        }
+      }
+    } catch (_) {
+      // allow manual entry
+    }
+  }
 
-          return otp;
-        },
-        strategies: [],
-      );
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+    _startUserConsent();
+    // controller = OTPTextEditController(
+    //   codeLength: 4,
+    //   //ignore: avoid_print
+    //   onCodeReceive: (code) =>
+    //       debugPrint('Your Application receive code - $code'),
+    //   otpInteractor: _otpInteractor,
+    // )..startListenUserConsent(
+    //     (code) {
+    //       final exp = RegExp(r'(\d{4})');
+
+    //       final otp = exp.stringMatch(code ?? '') ?? '';
+    //       pinputController.text = otp;
+    //       pinputController.selection = TextSelection.fromPosition(
+    //         TextPosition(offset: pinputController.text.length),
+    //       );
+
+    //       return otp;
+    //     },
+    //     strategies: [],
+    //   );
+
+    // smsConsentForOtpAutoFill = SmsConsentForOtpAutofill(phoneNumberListener: (number) {
+    //   phoneNumber = number;
+    //   debugPrint("number...................${number}");
+    // }, smsListener: (code) {
+    //   debugPrint("otp...................${code}");
+
+    //   final exp = RegExp(r'(\d{4})');
+
+    //   final otp = exp.stringMatch(code ?? '') ?? '';
+    //   pinputController.text = otp;
+    //   pinputController.selection = TextSelection.fromPosition(
+    //     TextPosition(offset: pinputController.text.length),
+    //   );
+
+    //   return otp;
+    // });
+
+    // _initInteractor();
   }
 
   @override
@@ -212,8 +255,10 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   }
 
   Future<void> _initInteractor() async {
-    _otpInteractor = OTPInteractor();
-    await _otpInteractor.getAppSignature();
+    // _otpInteractor = OTPInteractor();
+    // await _otpInteractor.getAppSignature();
+    debugPrint("CALLLING>>>......");
+    // smsConsentForOtpAutoFill.requestSms();
   }
 
   @override
@@ -221,7 +266,9 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     for (var node in _focusNodes) {
       node.dispose();
     }
-    controller.stopListen();
+    // controller.stopListen();
+    smartAuth.removeUserConsentApiListener();
+    pinputController.dispose();
     super.dispose();
   }
 
@@ -246,8 +293,14 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
         _isResendDisabled = true;
       });
       _startTimer();
+      _restartListening();
       widget.onResend();
     }
+  }
+
+  void _restartListening() {
+    smartAuth.removeUserConsentApiListener();
+    _startUserConsent();
   }
 
   void _onChanged(String value) {
@@ -270,7 +323,9 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
       if (error == null) {
         setState(() => _isVerifying = true);
         // Stop listening for OTP to prevent late detections
-        controller.stopListen();
+        // controller.stopListen();
+        // smsConsentForOtpAutoFill.dispose();
+        smartAuth.removeUserConsentApiListener();
         widget.onVerify(otp);
       }
     } else {
