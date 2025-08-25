@@ -888,7 +888,7 @@ abstract class ApiService {
 
       if (responseForAffluence is Success &&
           responseForAffluence.data != null) {
-        multipassResponse['data']['affluence'] = responseForAffluence.data;
+        multipassResponse['data']['customer_insights'] = responseForAffluence.data;
       }
       await SnowplowTrackerService.sendCustomEventToSnowPlow({
         'category': 'login_modal',
@@ -917,7 +917,7 @@ abstract class ApiService {
 
       if (responseForAffluence is Success &&
           responseForAffluence.data != null) {
-        multipassResponse['data']['affluence'] = responseForAffluence.data;
+        multipassResponse['data']['customer_insights'] = responseForAffluence.data;
       }
       return Success(multipassResponse['data']);
     }
@@ -930,7 +930,7 @@ abstract class ApiService {
 
     if (responseForAffluence is Success &&
         responseForAffluence.data != null) {
-      userData['affluence'] = responseForAffluence.data;
+      userData['customer_insights'] = responseForAffluence.data;
     }
 
     await cacheInstance.setValue(

@@ -28,6 +28,7 @@ class RootState {
   final RootScreenStep currentStep;
   final bool isDevBuild;
   final String reqId;
+  final String? shopifyCustomerId;
 
   const RootState({
     this.isUserLoggedIn = false,
@@ -44,6 +45,7 @@ class RootState {
     this.currentStep = RootScreenStep.phoneInput,
     this.isDevBuild = false,
     this.reqId = '',
+    this.shopifyCustomerId,
   });
 
   RootState copyWith({
@@ -61,6 +63,7 @@ class RootState {
     RootScreenStep? currentStep,
     bool? isDevBuild,
     String? reqId,
+    String? shopifyCustomerId,
   }) {
     return RootState(
       isUserLoggedIn: isUserLoggedIn ?? this.isUserLoggedIn,
@@ -77,6 +80,7 @@ class RootState {
       currentStep: currentStep ?? this.currentStep,
       isDevBuild: isDevBuild ?? this.isDevBuild,
       reqId: reqId ?? this.reqId,
+      shopifyCustomerId: shopifyCustomerId ?? this.shopifyCustomerId,
     );
   }
 }

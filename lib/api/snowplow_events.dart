@@ -13,11 +13,12 @@ import 'sdk_config.dart';
 
 class SnowplowTrackerService {
   String? eventId = Uuid().v4();
+  static const String version = "1.0.3";
 
   // Helper to fetch environment
   static Future<String> _getEnvironment() async {
     return (await cacheInstance.getValue(KeyConfig.gkEnvironmentKey)) ??
-        'sandbox';
+        'production';
   }
 
   // Helper to initialize Snowplow client
@@ -97,6 +98,22 @@ class SnowplowTrackerService {
     final deviceInfoJson = await cacheInstance.getValue(KeyConfig.gkDeviceInfo);
     final deviceInfo = deviceInfoJson != null ? jsonDecode(deviceInfoJson) : {};
 
+    // ADD META TO THE USER DEVICE SCHEMA
+    final metaItems = <Map<String, dynamic>>[];
+    
+    final isVersionAddedInMeta = metaItems.any((item) => item['property'] == 'sdk_version');
+
+    if (!isVersionAddedInMeta) {
+      metaItems.add({
+        'property': 'sdk_version',
+        'value': version,
+      });
+      metaItems.add({
+        'property': 'platform',
+        'value': 'flutter',
+      });
+    }
+
     return _createContext(
       'user_device/jsonschema/1-0-0',
       {
@@ -108,6 +125,7 @@ class SnowplowTrackerService {
         'app_domain': deviceInfo[KeyConfig.gkAppDomain],
         'device_type': Platform.operatingSystem.toLowerCase(),
         'app_version': deviceInfo[KeyConfig.gkAppVersion],
+        'meta': metaItems,
       },
     );
   }

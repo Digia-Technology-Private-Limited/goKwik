@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names
+
 enum Environment {
   sandbox,
   production,
@@ -559,7 +561,7 @@ class LoginResponseData {
   final MerchantResponse merchantResponse;
   final bool isSuccess;
   final String? message;
-  final dynamic affluence;
+  final dynamic customer_insights;
 
   LoginResponseData({
     required this.phone,
@@ -568,7 +570,7 @@ class LoginResponseData {
     required this.merchantResponse,
     required this.isSuccess,
     this.message,
-    this.affluence,
+    this.customer_insights,
   });
 
   factory LoginResponseData.fromJson(Map<String, dynamic> json) {
@@ -585,7 +587,7 @@ class LoginResponseData {
         ),
         isSuccess: json['isSuccess'],
         message: json['message'].toString(),
-        affluence: json['affluence']);
+        customer_insights: json['customer_insights']);
   }
 
   Map<String, dynamic> toJson() {
@@ -602,7 +604,7 @@ class LoginResponseData {
       },
       'isSuccess': isSuccess,
       'message': message,
-      'affluence': affluence,
+      'customer_insights': customer_insights,
     };
   }
 }

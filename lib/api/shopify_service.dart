@@ -210,4 +210,37 @@ class ShopifyService {
       throw ApiService.handleApiError(error);
     }
   }
+
+  static Future<Map<String, dynamic>> customerShopifySession({
+    required String email,
+    required String shopifyCustomerId,
+    required bool isMarketingEventSubscribed,
+  }) async {
+    try {
+      final gokwik = DioClient().getClient();
+      
+      // Set the integration type header
+      gokwik.options.headers['kp-integration-type'] = 'APP_MAKER';
+
+      final Map<String, dynamic> body = {
+        'email': email,
+        'redirectUrl': '/',
+        'isMarketingEventSubscribed': isMarketingEventSubscribed,
+      };
+
+      // Add id field if shopifyCustomerId is provided
+      if (shopifyCustomerId.isNotEmpty) {
+        body['id'] = shopifyCustomerId;
+      }
+
+      final response = await gokwik.post(
+        'customer/shopify-session',
+        data: body,
+      );
+
+      return response.data;
+    } catch (error) {
+      throw ApiService.handleApiError(error);
+    }
+  }
 }

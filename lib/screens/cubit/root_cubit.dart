@@ -164,6 +164,14 @@ class RootCubit extends Cubit<RootState> {
           ? Map<String, dynamic>.from(responses)
           : responses.toJson();
 
+      // Save shopifyCustomerId if received
+      if (responseMap['data']['shopifyCustomerId'] != null) {
+        emit(state.copyWith(
+          shopifyCustomerId:
+              responseMap['data']['shopifyCustomerId']?.toString(),
+        ));
+      }
+
       // Handle Shopify merchant type
       if (state.merchantType == MerchantType.shopify) {
         if (responseMap.containsKey('email')) {
@@ -347,6 +355,42 @@ class RootCubit extends Cubit<RootState> {
             emailOtpSent: false));
         onErrorData?.call(
             FlowResult(flowType: FlowType.emailOtpSend, error: errorMessage));
+        return;
+      }
+
+      // Check if user is new by calling customerShopifySession
+      Map<String, dynamic>? responseToCheckIfUserIsNew;
+      if (email.isNotEmpty && (state.multipleEmails?.isEmpty ?? true)) {
+        try {
+          responseToCheckIfUserIsNew =
+              await ShopifyService.customerShopifySession(
+            email: email,
+            shopifyCustomerId: state.shopifyCustomerId ??
+                "", // Use saved shopifyCustomerId if available
+            isMarketingEventSubscribed: state.notifications,
+          );
+        } catch (err) {
+          // If customerShopifySession fails, continue with normal flow
+          debugPrint("customerShopifySession failed: $err");
+        }
+      }
+
+      if (responseToCheckIfUserIsNew?['data']?['isNewUser'] == true) {
+        if (onAnalytics != null) {
+          onAnalytics!(AnalyticsEvents.appLoginSuccess, {
+            'email': email,
+            'phone': phoneController.text.toString(),
+            'customer_id': responseToCheckIfUserIsNew?['data']
+                        ?['shopifyCustomerId']
+                    ?.toString() ??
+                "",
+          });
+        }
+        onSuccessData?.call(FlowResult(
+          flowType: FlowType.emailOtpSend,
+          data: responseToCheckIfUserIsNew?['data'],
+        ));
+        emit(state.copyWith(isSuccess: true, isLoading: false));
         return;
       }
 

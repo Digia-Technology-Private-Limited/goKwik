@@ -54,7 +54,7 @@ class _MainScreenState extends State<MainScreen> {
         mid: '12wyqc2guqmkrw6406j',
         // mid: '12wyqc2h4ylkse6ovce',
         environment: Environment.production,
-        isSnowplowTrackingEnabled: false,
+        isSnowplowTrackingEnabled: true,
         mode: 'debug',
 
         onAnalytics: (eventname, properties) {

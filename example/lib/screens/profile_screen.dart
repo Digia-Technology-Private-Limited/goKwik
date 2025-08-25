@@ -25,6 +25,7 @@ class ProfileScreen extends StatelessWidget {
     );
 
     // TODO: Call your event tracking service here
+    print("SNOWPLOW CALLING");
     await SnowplowTrackerService.trackProductEvent(productEvent);
   }
 
