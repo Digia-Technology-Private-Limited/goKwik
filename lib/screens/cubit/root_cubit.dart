@@ -32,7 +32,8 @@ class RootCubit extends Cubit<RootState> {
 
   final Function(FlowResult)? onSuccessData;
   final Function(FlowResult)? onErrorData;
-  final void Function(String eventName, Map<String, dynamic> properties)? onAnalytics;
+  final void Function(String eventName, Map<String, dynamic> properties)?
+      onAnalytics;
   final MerchantType merchantType = MerchantType.shopify;
   RootCubit({this.onSuccessData, this.onErrorData, this.onAnalytics})
       : super(const RootState(merchantType: MerchantType.shopify)) {
@@ -94,9 +95,11 @@ class RootCubit extends Cubit<RootState> {
         return;
       }
 
-      onAnalytics!(AnalyticsEvents.appLoginPhone, {
-        'phone': phoneController.text.toString(),
-      });
+      if (onAnalytics != null) {
+        onAnalytics!(AnalyticsEvents.appLoginPhone, {
+          'phone': phoneController.text.toString(),
+        });
+      }
       emit(state.copyWith(otpSent: true, isLoading: false));
     } catch (err) {
       onErrorData?.call(FlowResult(
@@ -116,16 +119,17 @@ class RootCubit extends Cubit<RootState> {
       final response = await ShopifyService.shopifyVerifyEmail(
           shopifyEmailController.text, otpController.text);
 
-
       if (response['data']['phone'] == null) {
         response['data']['phone'] = phoneController.text;
       }
 
-      onAnalytics!(AnalyticsEvents.appLoginSuccess, {
-        'phone': phoneController.text.toString(),
-        'email': shopifyEmailController.text,
-        'customer_id': response['data']['shopifyCustomerId']?.toString() ?? ""
-      });
+      if (onAnalytics != null) {
+        onAnalytics!(AnalyticsEvents.appLoginSuccess, {
+          'phone': phoneController.text.toString(),
+          'email': shopifyEmailController.text,
+          'customer_id': response['data']['shopifyCustomerId']?.toString() ?? ""
+        });
+      }
       onSuccessData?.call(FlowResult(
         flowType: FlowType.emailOtpVerify,
         data: response['data'],
@@ -156,7 +160,9 @@ class RootCubit extends Cubit<RootState> {
               .getDataOrThrow());
 
       // Convert to Map for consistent handling
-      final responseMap = responses is Map ? Map<String, dynamic>.from(responses) : responses.toJson();
+      final responseMap = responses is Map
+          ? Map<String, dynamic>.from(responses)
+          : responses.toJson();
 
       // Handle Shopify merchant type
       if (state.merchantType == MerchantType.shopify) {
@@ -213,12 +219,14 @@ class RootCubit extends Cubit<RootState> {
         }
 
         emit(state.copyWith(isSuccess: true, isLoading: false));
-        onAnalytics!(AnalyticsEvents.appLoginSuccess, {
-          'phone': phoneController.text.toString(),
-          'email': responseMap['data']['email'],
-          'customer_id':
-              responseMap['data']['shopifyCustomerId']?.toString() ?? ""
-        });
+        if (onAnalytics != null) {
+          onAnalytics!(AnalyticsEvents.appLoginSuccess, {
+            'phone': phoneController.text.toString(),
+            'email': responseMap['data']['email'],
+            'customer_id':
+                responseMap['data']['shopifyCustomerId']?.toString() ?? ""
+          });
+        }
         onSuccessData?.call(
           FlowResult(flowType: FlowType.otpVerify, data: responseMap['data']),
         );
@@ -242,17 +250,18 @@ class RootCubit extends Cubit<RootState> {
           responseMap['merchantResponse'] is Map &&
           responseMap['merchantResponse'].containsKey('email') &&
           responseMap['merchantResponse']['email'] != "null") {
-        
         // Set phone if not present
         if (responseMap['merchantResponse']['phone'] == null) {
           responseMap['merchantResponse']['phone'] = phoneController.text;
         }
 
-        onAnalytics!(AnalyticsEvents.appLoginSuccess, {
-          'phone': phoneController.text.toString(),
-          'email': responseMap['merchantResponse']['email'],
-          'customer_id': responseMap['data']['id']?.toString() ?? ""
-        });
+        if (onAnalytics != null) {
+          onAnalytics!(AnalyticsEvents.appLoginSuccess, {
+            'phone': phoneController.text.toString(),
+            'email': responseMap['merchantResponse']['email'],
+            'customer_id': responseMap['data']['id']?.toString() ?? ""
+          });
+        }
 
         onSuccessData?.call(
           FlowResult(
@@ -263,7 +272,7 @@ class RootCubit extends Cubit<RootState> {
 
         emit(state.copyWith(isSuccess: true, isLoading: false));
       }
-      
+
       otpController.clear();
       // _listenUserStateUpdated();
     } catch (err) {
@@ -309,8 +318,8 @@ class RootCubit extends Cubit<RootState> {
       //   'email': responseMap?['data']['merchantResponse']['email'],
       //   'customer_id': responseMap?['data']['merchantResponse']['id']?.toString() ?? ""
       // });
-      onSuccessData?.call(
-          FlowResult(flowType: FlowType.createUser, data: response.getDataOrThrow()));
+      onSuccessData?.call(FlowResult(
+          flowType: FlowType.createUser, data: response.getDataOrThrow()));
       emit(state.copyWith(
           isSuccess: true, isUserLoggedIn: true, isLoading: false));
     } catch (err) {
@@ -328,7 +337,7 @@ class RootCubit extends Cubit<RootState> {
     try {
       // Validate disposable email
       final isValidEmail = await ShopifyService.validateDisposableEmail(email);
-      
+
       if (!isValidEmail) {
         emit(state.copyWith(isLoading: false));
         const errorMessage = 'Entered email is not valid';
@@ -336,9 +345,8 @@ class RootCubit extends Cubit<RootState> {
             error: SingleUseData(errorMessage),
             isLoading: false,
             emailOtpSent: false));
-        onErrorData?.call(FlowResult(
-            flowType: FlowType.emailOtpSend,
-            error: errorMessage));
+        onErrorData?.call(
+            FlowResult(flowType: FlowType.emailOtpSend, error: errorMessage));
         return;
       }
 
@@ -441,17 +449,19 @@ class RootCubit extends Cubit<RootState> {
               responseData['email'] != null &&
               // responseData['multipassToken'] != null &&
               responseData['password'] != null)) {
-
         debugPrint("DEBUG PRINT FOR LOGIN $responseData");
 
         onSuccessData?.call(
             FlowResult(flowType: FlowType.alreadyLoggedIn, data: responseData));
         emit(state.copyWith(isUserLoggedIn: true));
-        onAnalytics!(AnalyticsEvents.appIdentifiedUser, {
-          'phone': responseData['phone'],
-          'email': responseData['email'],
-          'customer_id': responseData['shopifyCustomerId'] ?? (responseData['id'] ?? ""),
-        });
+        if (onAnalytics != null) {
+          onAnalytics!(AnalyticsEvents.appIdentifiedUser, {
+            'phone': responseData['phone'],
+            'email': responseData['email'],
+            'customer_id':
+                responseData['shopifyCustomerId'] ?? (responseData['id'] ?? ""),
+          });
+        }
         return;
       }
     }
@@ -474,9 +484,10 @@ class RootCubit extends Cubit<RootState> {
     try {
       final mode = await cacheInstance.getValue(KeyConfig.gkMode);
       final isDev = mode == 'debug';
-      
+
       if (isDev) {
-        final requestId = await cacheInstance.getValue(KeyConfig.gkRequestIdKey);
+        final requestId =
+            await cacheInstance.getValue(KeyConfig.gkRequestIdKey);
         emit(state.copyWith(
           isDevBuild: true,
           reqId: requestId ?? '',
