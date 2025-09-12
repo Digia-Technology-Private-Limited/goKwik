@@ -45,6 +45,9 @@ class KeyConfig {
   
   static const enableKwikPass = 'enable-kwik-pass';
   static const enableCheckout = 'enable-checkout';
+  
+  static const kpSdkVersion = 'sdk-version';
+  static const kpSdkPlatform = 'sdk-platform';
 
   static const List<String> allKeys = [
     gkTokenKey,
@@ -85,6 +88,8 @@ class KeyConfig {
     kcNotificationEventUrl,
     enableKwikPass,
     enableCheckout,
+    kpSdkVersion,
+    kpSdkPlatform,
   ];
 
   /// 🔄 Function to get all keys (optional if you want a method instead of accessing `KeyConfig.allKeys`)

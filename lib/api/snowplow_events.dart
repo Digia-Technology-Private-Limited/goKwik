@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:gokwik/api/snowplow_client.dart';
 import 'package:gokwik/api/http_snowplow_tracker.dart';
 import 'package:gokwik/config/key_congif.dart';
+import 'package:gokwik/version.dart';
 import 'package:snowplow_tracker/snowplow_tracker.dart';
 import 'package:uuid/uuid.dart';
 
@@ -13,7 +14,6 @@ import 'sdk_config.dart';
 
 class SnowplowTrackerService {
   String? eventId = Uuid().v4();
-  static const String version = "1.0.3";
 
   // Helper to fetch environment
   static Future<String> _getEnvironment() async {
@@ -106,7 +106,7 @@ class SnowplowTrackerService {
     if (!isVersionAddedInMeta) {
       metaItems.add({
         'property': 'sdk_version',
-        'value': version,
+        'value': KPSdkVersion.version,
       });
       metaItems.add({
         'property': 'platform',

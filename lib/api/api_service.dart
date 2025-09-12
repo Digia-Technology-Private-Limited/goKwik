@@ -15,6 +15,7 @@ import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/config/storege.dart';
 import 'package:gokwik/module/advertise.dart';
+import 'package:gokwik/version.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -304,6 +305,8 @@ abstract class ApiService {
       await DioClient().initialize(args.environment.name);
       final gokwik = DioClient().getClient();
       gokwik.options.headers[KeyConfig.gkMerchantIdKey] = mid;
+      gokwik.options.headers[KeyConfig.kpSdkPlatform] = 'flutter';
+      gokwik.options.headers[KeyConfig.kpSdkVersion] = KPSdkVersion.version;
 
       // await Logger().log(
       //   'SDK Initialized',
