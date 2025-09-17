@@ -82,8 +82,15 @@ class RootCubit extends Cubit<RootState> {
     if (!formKey.currentState!.validate()) return;
     emit(state.copyWith(isLoading: true));
     try {
+      if (state.lastSubmittedPhone != null &&
+          state.lastSubmittedPhone == phoneController.text.trim()) {
+        emit(state.copyWith(otpSent: true, isLoading: false));
+        return;
+      }
+      
       final response = await ApiService.sendVerificationCode(
           phoneController.text, state.notifications);
+
       if (response.isFailure) {
         onErrorData?.call(FlowResult(
           flowType: FlowType.otpSend,
@@ -100,7 +107,11 @@ class RootCubit extends Cubit<RootState> {
           'phone': phoneController.text.toString(),
         });
       }
-      emit(state.copyWith(otpSent: true, isLoading: false));
+      emit(state.copyWith(
+        otpSent: true,
+        isLoading: false,
+        lastSubmittedPhone: phoneController.text.trim(),
+      ));
     } catch (err) {
       onErrorData?.call(FlowResult(
         flowType: FlowType.resendOtp,
@@ -164,23 +175,54 @@ class RootCubit extends Cubit<RootState> {
           ? Map<String, dynamic>.from(responses)
           : responses.toJson();
 
-      // Save shopifyCustomerId if received
-      if (responseMap['data']['shopifyCustomerId'] != null) {
-        emit(state.copyWith(
-          shopifyCustomerId:
-              responseMap['data']['shopifyCustomerId']?.toString(),
-        ));
-      }
+      debugPrint("DEBUG PRINT FOR OTP RESPONSE::: $responseMap");
 
       // Handle Shopify merchant type
       if (state.merchantType == MerchantType.shopify) {
-        if (responseMap.containsKey('email')) {
-          if (responseMap['data'] != null) {
-            responseMap['data'].remove('state');
-            responseMap['data'].remove('accountActivationUrl');
+        // shopify customer id
+        if (responseMap.containsKey('data')) {
+          if (responseMap['data'].containsKey('shopifyCustomerId')) {
+            debugPrint(
+                "SHOPIFY CUSTOMER ID FOUND:: ${responseMap['data']['shopifyCustomerId']}");
+            emit(state.copyWith(
+              shopifyCustomerId:
+                  responseMap['data']['shopifyCustomerId']?.toString(),
+            ));
+          }
+        }
+        // Handle auth required condition
+        if (responseMap['authRequired'] == true &&
+            responseMap['email'] != null) {
+          shopifyEmailController.text = responseMap['email'];
+          otpController.clear();
+          shopifyOtpController.clear();
 
-            if (responseMap['data']['phone'] == "null") {
-              responseMap['data']['phone'] = phoneController.text;
+          try {
+            await ShopifyService.shopifySendEmailVerificationCode(
+                responseMap['email']);
+
+            emit(state.copyWith(
+              emailOtpSent: true,
+              isNewUser: false,
+              isLoading: false,
+            ));
+            return;
+          } catch (err) {
+            emit(state.copyWith(
+              error: SingleUseData((err as Failure).message),
+              isLoading: false,
+            ));
+            return;
+          }
+        }
+
+        if (responseMap.containsKey('email')) {
+          if (responseMap != null) {
+            responseMap.remove('state');
+            responseMap.remove('accountActivationUrl');
+
+            if (responseMap['phone'] == "null") {
+              responseMap['phone'] = phoneController.text;
             }
           }
         }
@@ -293,11 +335,21 @@ class RootCubit extends Cubit<RootState> {
   }
 
   void handlePhoneChange() {
-    emit(state.copyWith(otpSent: false, isNewUser: false, error: null));
+    emit(state.copyWith(
+      otpSent: false,
+      isNewUser: false,
+      error: null,
+      lastSubmittedPhone: null,
+    ));
   }
 
   void handleEmailChange() {
-    emit(state.copyWith(emailOtpSent: false, isNewUser: true, error: null));
+    emit(state.copyWith(
+      emailOtpSent: false,
+      isNewUser: true,
+      error: null,
+      lastSubmittedEmail: null,
+    ));
   }
 
   Future<void> linkOpenHandler(String url) async {
@@ -343,6 +395,12 @@ class RootCubit extends Cubit<RootState> {
     emit(state.copyWith(isLoading: true));
     shopifyEmailController.text = email;
     try {
+      // Check if the submitted email matches the previous submitted email
+      if (state.lastSubmittedEmail != null &&
+          state.lastSubmittedEmail == email.trim()) {
+        emit(state.copyWith(emailOtpSent: true, isLoading: false));
+        return;
+      }
       // Validate disposable email
       final isValidEmail = await ShopifyService.validateDisposableEmail(email);
 
@@ -397,7 +455,10 @@ class RootCubit extends Cubit<RootState> {
       await ShopifyService.shopifySendEmailVerificationCode(email);
 
       emit(state.copyWith(
-          emailOtpSent: true, isNewUser: false, isLoading: false));
+          emailOtpSent: true,
+          isNewUser: false,
+          isLoading: false,
+          lastSubmittedEmail: email.trim()));
     } catch (err) {
       emit(state.copyWith(
           error: SingleUseData((err is Failure) ? err.message : err.toString()),

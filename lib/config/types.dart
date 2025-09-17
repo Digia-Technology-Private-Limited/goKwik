@@ -3,6 +3,8 @@
 enum Environment {
   sandbox,
   production,
+  qa,
+  dev,
 }
 
 enum MerchantType {

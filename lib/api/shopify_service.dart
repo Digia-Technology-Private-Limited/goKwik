@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:gokwik/api/api_service.dart';
 import 'package:gokwik/api/base_response.dart';
+import 'package:gokwik/api/constant/api_config.dart';
 import 'package:gokwik/api/httpClient.dart';
 import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/key_congif.dart';
@@ -39,7 +40,7 @@ class ShopifyService {
       }
 
       final response = await gokwik.post(
-        'customer/shopify/multipass',
+        APIConfig.shopifyMultipass,
         data: {
           'id': id ?? '',
           'email': email,
@@ -82,7 +83,7 @@ class ShopifyService {
       });
 
       final response = (await gokwik.post(
-        'auth/email-otp/send',
+        APIConfig.sendEmailVerificationCode,
         data: {'email': email},
       ))
           .toBaseResponse();
@@ -108,7 +109,7 @@ class ShopifyService {
       );
 
       final response = await gokwik.post(
-        'auth/email-otp/verify',
+        APIConfig.verifyEmailCode,
         data: {
           'email': email,
           'otp': otp,
@@ -158,7 +159,7 @@ class ShopifyService {
       gokwik.options.headers[KeyConfig.gkAccessTokenKey] = gkAccessToken;
 
       final response = await gokwik.post(
-        'customer/shopify/multipass',
+        APIConfig.shopifyMultipass,
         data: {
           'id': id ?? '',
           'email': email,
@@ -202,7 +203,7 @@ class ShopifyService {
     try {
       final gokwik = DioClient().getClient();
 
-      final response = await gokwik.get('disposable-email/validate/$email');
+      final response = await gokwik.get('${APIConfig.disposableEmailCheck}$email');
 
       return response.data?['data'] != null &&
              response.data?['success'] == true;
@@ -234,7 +235,7 @@ class ShopifyService {
       }
 
       final response = await gokwik.post(
-        'customer/shopify-session',
+        APIConfig.customerShopifySession,
         data: body,
       );
 

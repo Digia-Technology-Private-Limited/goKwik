@@ -92,11 +92,17 @@ class SnowplowTrackerService {
     return _createContext('product/jsonschema/1-1-0', contextData.toJson());
   }
 
-  static Future<SelfDescribing> getDeviceInfoContext() async {
+  static Future<SelfDescribing?> getDeviceInfoContext() async {
     final deviceFCM =
         await cacheInstance.getValue(KeyConfig.gkNotificationToken);
     final deviceInfoJson = await cacheInstance.getValue(KeyConfig.gkDeviceInfo);
     final deviceInfo = deviceInfoJson != null ? jsonDecode(deviceInfoJson) : {};
+
+    // If no device id then dont pass the deviceInfoSchema
+    final deviceId = deviceInfo[KeyConfig.gkDeviceUniqueId];
+    if (deviceId == null || deviceId.toString().isEmpty) {
+      return null;
+    }
 
     // ADD META TO THE USER DEVICE SCHEMA
     final metaItems = <Map<String, dynamic>>[];
@@ -117,7 +123,7 @@ class SnowplowTrackerService {
     return _createContext(
       'user_device/jsonschema/1-0-0',
       {
-        'device_id': deviceInfo[KeyConfig.gkDeviceUniqueId],
+        'device_id': deviceId,
         'android_ad_id':
             Platform.isAndroid ? deviceInfo[KeyConfig.gkGoogleAdId] : '',
         'ios_ad_id': Platform.isIOS ? deviceInfo[KeyConfig.gkGoogleAdId] : '',
@@ -242,14 +248,14 @@ class SnowplowTrackerService {
       type: 'product',
     );
 
-    final contexts = await Future.wait([
+    final contexts = (await Future.wait([
       getProductContext(contextDetails),
       getCartContext(cartId),
       getUserContext(),
       getDeviceInfoContext(),
-    ]);
+    ])).where((context) => context != null).cast<SelfDescribing>().toList();
 
-    await _trackEvent(params, contexts.whereType<SelfDescribing>().toList());
+    await _trackEvent(params, contexts);
   }
 
   static String _trimCartId(String cartId) {
@@ -274,14 +280,14 @@ class SnowplowTrackerService {
 
     final params = {'pageUrl': pageUrl, 'cart_id': cartId};
 
-    final contexts = await Future.wait([
+    final contexts = (await Future.wait([
       getOtherEventsContext(),
       getCartContext(cartId),
       getUserContext(),
       getDeviceInfoContext(),
-    ]);
+    ])).where((context) => context != null).cast<SelfDescribing>().toList();
 
-    await _trackEvent(params, contexts.whereType<SelfDescribing>().toList());
+    await _trackEvent(params, contexts);
   }
 
   static Future<void> trackCollectionsEvent(
@@ -316,14 +322,14 @@ class SnowplowTrackerService {
       type: 'collection',
     );
 
-    final contexts = await Future.wait([
+    final contexts = (await Future.wait([
       getCollectionsContext(contextDetails),
       getUserContext(),
       getCartContext(cartId),
       getDeviceInfoContext(),
-    ]);
+    ])).where((context) => context != null).cast<SelfDescribing>().toList();
 
-    await _trackEvent(params, contexts.whereType<SelfDescribing>().toList());
+    await _trackEvent(params, contexts);
   }
 
   // Custom Event Tracker
@@ -349,10 +355,10 @@ class SnowplowTrackerService {
 
     final filteredData = _filterEventValuesAsPerStructSchema(eventObject);
 
-    final contexts = await Future.wait([
+    final contexts = (await Future.wait([
       getUserContext(),
       getDeviceInfoContext(),
-    ]);
+    ])).where((context) => context != null).cast<SelfDescribing>().toList();
 
     await snowplow?.track(
       SelfDescribing(
@@ -360,7 +366,7 @@ class SnowplowTrackerService {
             'iglu:${SdkConfig.getSchemaVendor(environment)}/structured/jsonschema/1-0-0',
         data: filteredData,
       ),
-      contexts: contexts.whereType<SelfDescribing>().toList(),
+      contexts: contexts,
     );
   }
 
@@ -451,13 +457,13 @@ class SnowplowTrackerService {
       'pageUrl': url,
     };
 
-    final contexts = await Future.wait([
+    final contexts = (await Future.wait([
       getOtherEventsContext(),
       getCartContext(cartId),
       getUserContext(),
       getDeviceInfoContext(),
-    ]);
+    ])).where((context) => context != null).cast<SelfDescribing>().toList();
 
-    await _trackEvent(params, contexts.whereType<SelfDescribing>().toList());
+    await _trackEvent(params, contexts);
   }
 }

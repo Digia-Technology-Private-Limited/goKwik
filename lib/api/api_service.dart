@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gokwik/analytics/config.dart';
 import 'package:gokwik/api/base_response.dart';
+import 'package:gokwik/api/constant/api_config.dart';
 import 'package:gokwik/api/httpClient.dart';
 import 'package:gokwik/api/snowplow_client.dart';
 import 'package:gokwik/api/snowplow_events.dart';
@@ -22,6 +23,35 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../config/types.dart';
 import 'sdk_config.dart';
 import 'shopify_service.dart';
+
+// Custom exception for Kwikpass health errors
+class KwikpassHealthException implements Exception {
+  final int status;
+  final String error;
+  final String message;
+  final String timestamp;
+
+  KwikpassHealthException({
+    this.status = 503,
+    this.error = "ServiceUnavailable",
+    this.message = "Kwikpass is unhealthy to make the API calls",
+    String? timestamp,
+  }) : timestamp = timestamp ?? DateTime.now().toIso8601String();
+
+  @override
+  String toString() {
+    return 'KwikpassHealthException: $message (Status: $status, Error: $error, Timestamp: $timestamp)';
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'status': status,
+      'error': error,
+      'message': message,
+      'timestamp': timestamp,
+    };
+  }
+}
 
 abstract class ApiService {
 // add kp health api
@@ -43,43 +73,73 @@ abstract class ApiService {
       // Set all headers at once
       final headers = <String, String>{
         KeyConfig.kpMerchantIdKey: mid ?? '',
-        KeyConfig.kpRequestIdKey: requestId ?? '',
       };
 
+      if(requestId != null && requestId.isNotEmpty){
+        headers[KeyConfig.kpRequestIdKey] = requestId;
+      }
+      
       if (accessToken.isNotEmpty) {
         headers[KeyConfig.gkAccessTokenKey] = accessToken;
       }
 
       gokwik.options.headers.addAll(headers);
 
-      final response = (await gokwik.get('health/merchant')).toBaseResponse(
+      final response = (await gokwik.get(APIConfig.kpHealthCheck)).toBaseResponse(
         fromJson: (json) => HealthCheckResponseData.fromJson(json),
       );
 
       if (response.isSuccess ?? false) {
+        final healthData = response.data;
+        // Check if kwikpass is healthy
+        if (healthData?.isKwikpassHealthy == false) {
+          throw KwikpassHealthException();
+        }
         return Success(response.data);
       }
 
-      return Failure(response.errorMessage ?? 'Failed to check health');
+      // Throw custom exception when API call fails
+      throw KwikpassHealthException();
     } catch (error) {
       debugPrint("ERRORRR $error");
+      if (error is KwikpassHealthException) {
+        rethrow; // Re-throw the custom exception
+      }
       return Failure(handleApiError(error).message);
     }
   }
 
   static Failure handleApiError(dynamic error) {
     String message = 'An unknown error occurred';
+    String? requestId;
 
     if (error is DioException) {
       final response = error.response?.toBaseResponse();
       if (response != null) {
-        // final data = response.error;
+        final data = response.data;
         final status = response.statusCode;
-        // final requestId = response.requestId ?? 'N/A';
-        message = response.error?.toString() ??
-            response.errorMessage?.toString() ??
-            response.error_msg?.toString() ??
-            'Unexpected error with status: $status';
+        requestId = response.requestId ?? 'N/A';
+        
+        // Handle nested error.message pattern similar to JavaScript
+        if (data != null && data is Map<String, dynamic>) {
+          final errorData = data['error'];
+          if (errorData != null && errorData is Map<String, dynamic> && errorData['message'] != null) {
+            message = errorData['message'].toString();
+          } else if (errorData != null) {
+            message = errorData.toString();
+          } else if (data['error_msg'] != null) {
+            message = data['error_msg'].toString();
+          } else {
+            message = 'Unexpected error with status: $status';
+          }
+        } else {
+          // Fallback to existing logic for non-map data
+          message = response.error?.toString() ??
+              response.errorMessage?.toString() ??
+              response.error_msg?.toString() ??
+              'Unexpected error with status: $status';
+        }
+        
         return Failure(message);
       }
     }
@@ -130,7 +190,7 @@ abstract class ApiService {
 
     try {
       final response = (await gokwik.get(
-        'customer-intelligence',
+        APIConfig.customerIntelligence,
         queryParameters: {'cstmr-mtrcs': trueKeys.join(',')},
       ))
           .toBaseResponse();
@@ -194,7 +254,7 @@ abstract class ApiService {
   static Future<Result<dynamic>> getBrowserToken() async {
     try {
       final goKwik = DioClient().getClient();
-      final response = (await goKwik.get('auth/browser')).toBaseResponse();
+      final response = (await goKwik.get(APIConfig.getBrowserToken)).toBaseResponse();
       final data = response.data ?? {};
       final requestId = data['requestId'];
       final token = data['token'];
@@ -224,7 +284,7 @@ abstract class ApiService {
     try {
       final gokwik = DioClient().getClient();
 
-      final response = (await gokwik.get('configurations/$mid')).toBaseResponse(
+      final response = (await gokwik.get('${APIConfig.merchantConfiguration}$mid')).toBaseResponse(
         fromJson: (json) => MerchantConfig.fromJson(json),
       );
 
@@ -333,9 +393,9 @@ abstract class ApiService {
             checkoutAccessToken;
       }
 
+      final result = await checkKwikpassHealth();
       // await getBrowserToken();
       final merchantConfig = await initializeMerchant(mid, environment.name);
-      final result = await checkKwikpassHealth();
       if(result.isSuccess) {
         final healthData = result.getDataOrThrow();
         if(healthData?.isKwikpassHealthy == false){
@@ -504,7 +564,7 @@ abstract class ApiService {
         }),
       ]);
       final response = (await gokwik.post(
-        'auth/otp/send',
+        APIConfig.sendVerificationCode,
         data: {'phone': phoneNumber},
       ))
           .toBaseResponse(
@@ -553,7 +613,7 @@ abstract class ApiService {
       // );
 
       final response =
-          (await gokwik.get('customer/custom/login')).toBaseResponse(
+          (await gokwik.get(APIConfig.customCustomerLogin)).toBaseResponse(
         fromJson: (json) => LoginResponseData.fromJson(json),
       );
       if (response.statusCode == 200) {}
@@ -587,7 +647,7 @@ abstract class ApiService {
       final gokwik = DioClient().getClient();
 
       final response = (await gokwik.post(
-        'customer/custom/create-user',
+        APIConfig.customCreateUser,
         data: {
           'email': email,
           'name': name,
@@ -667,7 +727,7 @@ abstract class ApiService {
             checkoutAccessToken;
       }
 
-      final response = (await gokwik.get('auth/validate-token'))
+      final response = (await gokwik.get(APIConfig.validateUserToken))
           .toBaseResponse<ValidateUserTokenResponseData>(
         fromJson: (json) {
           // if (json == null) {
@@ -739,7 +799,7 @@ abstract class ApiService {
       }
 
       final response = (await gokwik.post(
-        'auth/otp/verify',
+        APIConfig.verifyCode,
         data: {
           'phone': phoneNumber,
           'otp': int.tryParse(code),

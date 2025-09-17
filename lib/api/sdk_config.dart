@@ -17,7 +17,7 @@ class SdkConfig {
     switch (env) {
       case 'production':
         return SdkConfig(
-          baseUrl: 'https://gkx.gokwik.co/kp/api/v1/',
+          baseUrl: 'https://gkx.gokwik.co/',
           snowplowUrl: 'https://sp-kf-collector-prod.gokwik.io',
           schemaVendor: 'co.gokwik',
           checkoutUrl: {
@@ -29,7 +29,7 @@ class SdkConfig {
         );
       case 'sandbox':
         return SdkConfig(
-          baseUrl: 'https://api-gw-v4.dev.gokwik.io/sandbox/kp/api/v1/',
+          baseUrl: 'https://api-gw-v4.dev.gokwik.io/sandbox/',
           snowplowUrl: 'https://sp-kf-collector.dev.gokwik.io/',
           schemaVendor: 'in.gokwik.kwikpass',
           checkoutUrl: {
@@ -42,7 +42,20 @@ class SdkConfig {
         );
       case 'qa':
         return SdkConfig(
-          baseUrl: 'https://api-gw-v4.dev.gokwik.io/qa/kp/api/v1/',
+          baseUrl: 'https://api-gw-v4.dev.gokwik.io/qa/',
+          snowplowUrl: 'https://sp-kf-collector.dev.gokwik.io/',
+          schemaVendor: 'in.gokwik.kwikpass',
+          checkoutUrl: {
+            'shopify':
+                'https://sandbox.pdp.gokwik.co/app/kwik-checkout.html?storeInfo=',
+            'custom': 'https://sandbox.pdp.gokwik.co/v4/auto.html',
+          },
+          notifEventsUrl:
+              'https://api-gw.kwikchatdev.qoowk.com/webhook/push-notification',
+        );
+      case 'dev':
+        return SdkConfig(
+          baseUrl: 'https://api-gw-v4.dev.gokwik.io/dev/',
           snowplowUrl: 'https://sp-kf-collector.dev.gokwik.io/',
           schemaVendor: 'in.gokwik.kwikpass',
           checkoutUrl: {

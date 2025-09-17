@@ -29,6 +29,8 @@ class RootState {
   final bool isDevBuild;
   final String reqId;
   final String? shopifyCustomerId;
+  final String? lastSubmittedPhone;
+  final String? lastSubmittedEmail;
 
   const RootState({
     this.isUserLoggedIn = false,
@@ -46,6 +48,8 @@ class RootState {
     this.isDevBuild = false,
     this.reqId = '',
     this.shopifyCustomerId,
+    this.lastSubmittedPhone,
+    this.lastSubmittedEmail,
   });
 
   RootState copyWith({
@@ -64,6 +68,8 @@ class RootState {
     bool? isDevBuild,
     String? reqId,
     String? shopifyCustomerId,
+    String? lastSubmittedPhone,
+    String? lastSubmittedEmail,
   }) {
     return RootState(
       isUserLoggedIn: isUserLoggedIn ?? this.isUserLoggedIn,
@@ -81,6 +87,8 @@ class RootState {
       isDevBuild: isDevBuild ?? this.isDevBuild,
       reqId: reqId ?? this.reqId,
       shopifyCustomerId: shopifyCustomerId ?? this.shopifyCustomerId,
+      lastSubmittedPhone: lastSubmittedPhone ?? this.lastSubmittedPhone,
+      lastSubmittedEmail: lastSubmittedEmail ?? this.lastSubmittedEmail,
     );
   }
 }
