@@ -11,7 +11,7 @@ class VerifyCodeForm extends StatefulWidget {
   final VoidCallback onEdit;
   final ValueChanged<String> onVerify;
   final String? Function(String?)? validator;
-  final String? initialValue;
+  final TextEditingController initialValue;
   final dynamic
       config; // Can be OtpVerificationScreenConfig or EmailOtpVerificationScreenConfig
   final bool isLoading;
@@ -26,7 +26,7 @@ class VerifyCodeForm extends StatefulWidget {
     required this.onVerify,
     this.config,
     this.validator,
-    this.initialValue,
+    required this.initialValue,
     this.isLoading = false,
     this.isSuccess = false,
     this.error,
@@ -52,7 +52,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   // late OTPTextEditController controller;
   // late OTPInteractor _otpInteractor;
 
-  final pinputController = TextEditingController();
+  // final pinputController = TextEditingController();
   final smartAuth = SmartAuth.instance;
 
   // Helper methods to safely access config properties
@@ -180,9 +180,9 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
         final otp = code ??
             RegExp(r'\b(\d{4})\b').firstMatch(code ?? '')?.group(1);
         if (otp != null && otp.isNotEmpty) {
-          pinputController.text = otp;
-          pinputController.selection = TextSelection.fromPosition(
-            TextPosition(offset: pinputController.text.length),
+          widget.initialValue?.text = otp;
+          widget.initialValue?.selection = TextSelection.fromPosition(
+            TextPosition(offset: widget.initialValue!.text.length),
           );
           _validateOtp();
         }
@@ -195,6 +195,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   @override
   void initState() {
     super.initState();
+    // Set initial value if provided
     _startTimer();
     _startUserConsent();
     // controller = OTPTextEditController(
@@ -208,9 +209,9 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     //       final exp = RegExp(r'(\d{4})');
 
     //       final otp = exp.stringMatch(code ?? '') ?? '';
-    //       pinputController.text = otp;
-    //       pinputController.selection = TextSelection.fromPosition(
-    //         TextPosition(offset: pinputController.text.length),
+    //       widget.initialValue?.text = otp;
+    //       widget.initialValue?.selection = TextSelection.fromPosition(
+    //         TextPosition(offset: widget.initialValue?.text.length),
     //       );
 
     //       return otp;
@@ -227,9 +228,9 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     //   final exp = RegExp(r'(\d{4})');
 
     //   final otp = exp.stringMatch(code ?? '') ?? '';
-    //   pinputController.text = otp;
-    //   pinputController.selection = TextSelection.fromPosition(
-    //     TextPosition(offset: pinputController.text.length),
+    //   widget.initialValue?.text = otp;
+    //   widget.initialValue?.selection = TextSelection.fromPosition(
+    //     TextPosition(offset: widget.initialValue?.text.length),
     //   );
 
     //   return otp;
@@ -252,6 +253,19 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
         _isVerifying = false;
       });
     }
+    // Update widget.initialValue? text when initialValue changes
+    if (widget.initialValue != oldWidget.initialValue) {
+      if (widget.initialValue != null && widget.initialValue.text.isNotEmpty) {
+    widget.initialValue?.text = widget.initialValue.text;
+        widget.initialValue?.selection = TextSelection.fromPosition(
+          TextPosition(offset: widget.initialValue!.text.length),
+        );
+      } else {
+        widget.initialValue.clear();
+      }
+      // Validate the new OTP value
+      _validateOtp();
+    }
   }
 
   Future<void> _initInteractor() async {
@@ -268,7 +282,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     }
     // controller.stopListen();
     smartAuth.removeUserConsentApiListener();
-    pinputController.dispose();
+    widget.initialValue.dispose();
     super.dispose();
   }
 
@@ -304,7 +318,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   }
 
   void _onChanged(String value) {
-    pinputController.text = value;
+    widget.initialValue.text = value;
     _validateOtp();
   }
 
@@ -313,7 +327,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   // }
 
   void _validateOtp() {
-    final otp = pinputController.text;
+    final otp = widget.initialValue.text;
 
     // final code = _defaultValidator(otp);
 
@@ -401,7 +415,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
             appContext: context,
             validator: widget.validator,
             onChanged: _onChanged,
-            controller: pinputController,
+            controller: widget.initialValue,
             cursorColor: Colors.black,
             enableActiveFill: true,
             keyboardType: TextInputType.number,
@@ -499,7 +513,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
                   ? null
                   : () {
                       if (_isVerifying) return; // Prevent duplicate calls
-                      final otp = pinputController.text;
+                      final otp = widget.initialValue.text;
                       final error =
                           widget.validator?.call(otp) ?? _defaultValidator(otp);
                       setState(() => _errorText = error);

@@ -191,28 +191,33 @@ class RootCubit extends Cubit<RootState> {
           }
         }
         // Handle auth required condition
-        if (responseMap['authRequired'] == true &&
-            responseMap['email'] != null) {
-          shopifyEmailController.text = responseMap['email'];
-          otpController.clear();
-          shopifyOtpController.clear();
+        if (responseMap.containsKey('authRequired')) {
+          if (responseMap['authRequired'] == true &&
+              responseMap['email'] != null) {
+            shopifyEmailController.text = responseMap['email'];
+            otpController.clear();
+            otpController.text = "";
+            shopifyOtpController.clear();
+            shopifyOtpController.text = "";
 
-          try {
-            await ShopifyService.shopifySendEmailVerificationCode(
-                responseMap['email']);
+            try {
+              await ShopifyService.shopifySendEmailVerificationCode(
+                  responseMap['email']);
 
-            emit(state.copyWith(
-              emailOtpSent: true,
-              isNewUser: false,
-              isLoading: false,
-            ));
-            return;
-          } catch (err) {
-            emit(state.copyWith(
-              error: SingleUseData((err as Failure).message),
-              isLoading: false,
-            ));
-            return;
+              emit(state.copyWith(
+                lastSubmittedEmail: responseMap['email'],
+                emailOtpSent: true,
+                isNewUser: false,
+                isLoading: false,
+              ));
+              return;
+            } catch (err) {
+              emit(state.copyWith(
+                error: SingleUseData((err as Failure).message),
+                isLoading: false,
+              ));
+              return;
+            }
           }
         }
 

@@ -249,13 +249,14 @@ class _RootScreenState extends State<RootScreen> {
                                                 },
                                                 isLoading: isLoading,
                                                 isSuccess: state.isSuccess,
-                                                onVerify: (value) => cubit
+                                                onVerify: (value) { cubit
                                                     .handleEmailOtpVerification(
-                                                        value),
+                                                        value);
+                                                },
                                                 onResend: () => cubit
                                                     .resendShopifyEmailOtp(),
                                                 initialValue: cubit
-                                                    .shopifyOtpController.text,
+                                                    .shopifyOtpController,
                                                 config: widget.inputProps
                                                     ?.emailOtpVerificationScreen,
                                               )
@@ -269,14 +270,18 @@ class _RootScreenState extends State<RootScreen> {
                                                         ?.otpVerificationScreen,
                                                     isLoading: isLoading,
                                                     isSuccess: state.isSuccess,
-                                                    onVerify: (value) => cubit
-                                                        .handleOtpVerification(
-                                                      value,
-                                                    ),
+                                                    onVerify: (value) {
+                                                      cubit
+                                                          .handleOtpVerification(
+                                                        value,
+                                                      );
+                                                      cubit
+                                                          .shopifyOtpController.clear();
+                                                    },
                                                     onResend: () =>
                                                         cubit.resendPhoneOtp(),
                                                     initialValue: cubit
-                                                        .otpController.text,
+                                                        .otpController,
                                                   )
                                                 : Login(
                                                     onSubmit: () =>

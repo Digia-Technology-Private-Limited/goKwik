@@ -917,6 +917,13 @@ abstract class ApiService {
       await cacheInstance.setValue(KeyConfig.checkoutAccessTokenKey, coreToken);
     }
 
+    if(responseData.containsKey('authRequired')){
+      if (responseData?['authRequired'] && (responseData!['email'] as String).isNotEmpty) {
+        return Success(responseData);
+      }
+    }
+
+
     final responseForAffluence = await customerIntelligence();
 
     if ((responseData?['state'] == 'DISABLED' ||
