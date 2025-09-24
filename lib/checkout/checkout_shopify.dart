@@ -263,7 +263,6 @@ window.addEventListener("gokwikLoaded", () => {
 
     final installedUpiApps = await detectInstalledUpiApps();
     String? encodedUpiApps;
-    debugPrint("INSTALLED UPI APPS: $installedUpiApps");
     if (installedUpiApps.isNotEmpty) {
       encodedUpiApps = base64Encode(utf8.encode(jsonEncode(installedUpiApps)));
     }
@@ -281,6 +280,9 @@ window.addEventListener("gokwikLoaded", () => {
 
       if (userEmail != null && userEmail.isNotEmpty) {
         webviewUrl += '&kp_email=$userEmail';
+      }
+      if (token != null && token.isNotEmpty) {
+        webviewUrl += '&gk_token=$token';
       }
       if (encodedUpiApps != null) {
         webviewUrl += '&upi_apps=$encodedUpiApps';
