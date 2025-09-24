@@ -1,18 +1,27 @@
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
+plugins {
+    id "com.android.library"
+    id "kotlin-android"
+}
+
+android {
+    namespace = "com.example.gokwik"
+    compileSdk = 34
+
+    defaultConfig {
+        minSdk = 21
+        targetSdk = 34
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
 }
 
-rootProject.buildDir = "../build"
-subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
-    project.evaluationDependsOn(":app")
-}
-
-tasks.register("clean", Delete) {
-    delete rootProject.buildDir
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.0"
 }

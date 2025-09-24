@@ -87,12 +87,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # plugin:
-  #  platforms:
-  #     # android:
-  #     #   package: com.example.logger
-  #     #   pluginClass: com.example.logger.GokwikLoggerPlugin  # Full class path
-  #     #   androidPackage: com.example.logger 
+  plugin:
+   platforms:
+      android:
+        package: com.example.gokwik
+        pluginClass: UpiAppCheckerPlugin  
   #     ios: 
   #       pluginClass: LoggerPlugin  #
 

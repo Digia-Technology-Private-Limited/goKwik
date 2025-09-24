@@ -11,7 +11,58 @@ import 'package:gokwik/flow_result.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:gokwik/services/upi_app_checker.dart';
 
+const Map<String, Map<String, String>> UPI_APP_PACKAGES = {
+  'googlepay': {
+    'android': 'com.google.android.apps.nbu.paisa.user',
+    'ios': 'tez://',
+  },
+  'phonepe': {
+    'android': 'com.phonepe.app',
+    'ios': 'phonepe://',
+  },
+  'bhim': {
+    'android': 'in.org.npci.upiapp',
+    'ios': 'bhim://',
+  },
+  'paytm': {
+    'android': 'net.one97.paytm',
+    'ios': 'paytmmp://',
+  },
+  'cred': {
+    'android': 'com.dreamplug.androidapp',
+    'ios': 'credpay://',
+  },
+};
+
+Future<List<String>> detectInstalledUpiApps() async {
+  List<String> installedApps = [];
+
+  for (final app in UPI_APP_PACKAGES.keys) {
+    if (Platform.isAndroid) {
+      debugPrint('Using package: ${UPI_APP_PACKAGES[app]!['android']}');
+      try {
+        final isInstalled = await UpiAppChecker.isAppInstalled(
+          UPI_APP_PACKAGES[app]!['android']!,
+        );
+        debugPrint('UPI App $app installed: $isInstalled');
+        if (isInstalled) installedApps.add(app);
+      } catch (e) {
+        // Ignore error
+      }
+    } else if (Platform.isIOS) {
+      try {
+        final uri = Uri.parse(UPI_APP_PACKAGES[app]!['ios']!);
+        final isInstalled = await canLaunchUrl(uri);
+        if (isInstalled) installedApps.add(app);
+      } catch (e) {
+        // Ignore error
+      }
+    }
+  }
+  return installedApps;
+}
 class CheckoutShopify extends StatefulWidget {
   final Function(FlowResult)? onSuccess;
   final Function(FlowResult)? onError;
@@ -210,6 +261,12 @@ window.addEventListener("gokwikLoaded", () => {
 
     debugPrint("MERCHANT TYPE:: $merchantType");
 
+    final installedUpiApps = await detectInstalledUpiApps();
+    String? encodedUpiApps;
+    debugPrint("INSTALLED UPI APPS: $installedUpiApps");
+    if (installedUpiApps.isNotEmpty) {
+      encodedUpiApps = base64Encode(utf8.encode(jsonEncode(installedUpiApps)));
+    }
     if (merchantType == 'custom') {
       final merchantId =
           await cacheInstance.getValue(KeyConfig.gkMerchantIdKey);
@@ -224,6 +281,9 @@ window.addEventListener("gokwikLoaded", () => {
 
       if (userEmail != null && userEmail.isNotEmpty) {
         webviewUrl += '&kp_email=$userEmail';
+      }
+      if (encodedUpiApps != null) {
+        webviewUrl += '&upi_apps=$encodedUpiApps';
       }
 
       if (token != null && token.isNotEmpty) {
@@ -282,6 +342,9 @@ window.addEventListener("gokwikLoaded", () => {
     if (userEmail != null && userEmail.isNotEmpty) {
       final encodedEmail = base64Encode(utf8.encode(userEmail));
       url += '&kp_email=$encodedEmail';
+    }
+    if (encodedUpiApps != null) {
+      url += '&upi_apps=$encodedUpiApps';
     }
     await _webViewController.loadRequest(Uri.parse(url));
     setState(() {
