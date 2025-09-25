@@ -97,6 +97,8 @@
 //   }
 // }
 
+// ignore_for_file: empty_catches
+
 import 'package:gokwik/config/storege.dart';
 import 'package:intl/intl.dart';
 

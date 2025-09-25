@@ -423,7 +423,7 @@ class RootCubit extends Cubit<RootState> {
 
       // Check if user is new by calling customerShopifySession
       Map<String, dynamic>? responseToCheckIfUserIsNew;
-      if (email.isNotEmpty && (state.multipleEmails?.isEmpty ?? true)) {
+      if (email.isNotEmpty && state.multipleEmails.isEmpty) {
         try {
           responseToCheckIfUserIsNew =
               await ShopifyService.customerShopifySession(

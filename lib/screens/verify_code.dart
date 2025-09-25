@@ -180,9 +180,9 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
         final otp = code ??
             RegExp(r'\b(\d{4})\b').firstMatch(code ?? '')?.group(1);
         if (otp != null && otp.isNotEmpty) {
-          widget.initialValue?.text = otp;
-          widget.initialValue?.selection = TextSelection.fromPosition(
-            TextPosition(offset: widget.initialValue!.text.length),
+          widget.initialValue.text = otp;
+          widget.initialValue.selection = TextSelection.fromPosition(
+            TextPosition(offset: widget.initialValue.text.length),
           );
           _validateOtp();
         }
@@ -255,10 +255,10 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     }
     // Update widget.initialValue? text when initialValue changes
     if (widget.initialValue != oldWidget.initialValue) {
-      if (widget.initialValue != null && widget.initialValue.text.isNotEmpty) {
-    widget.initialValue?.text = widget.initialValue.text;
-        widget.initialValue?.selection = TextSelection.fromPosition(
-          TextPosition(offset: widget.initialValue!.text.length),
+      if (widget.initialValue.text.isNotEmpty) {
+    widget.initialValue.text = widget.initialValue.text;
+        widget.initialValue.selection = TextSelection.fromPosition(
+          TextPosition(offset: widget.initialValue.text.length),
         );
       } else {
         widget.initialValue.clear();
@@ -268,12 +268,12 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     }
   }
 
-  Future<void> _initInteractor() async {
-    // _otpInteractor = OTPInteractor();
-    // await _otpInteractor.getAppSignature();
-    debugPrint("CALLLING>>>......");
-    // smsConsentForOtpAutoFill.requestSms();
-  }
+  // Future<void> _initInteractor() async {
+  //   // _otpInteractor = OTPInteractor();
+  //   // await _otpInteractor.getAppSignature();
+  //   debugPrint("CALLLING>>>......");
+  //   // smsConsentForOtpAutoFill.requestSms();
+  // }
 
   @override
   void dispose() {

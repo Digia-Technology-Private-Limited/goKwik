@@ -111,14 +111,14 @@ abstract class ApiService {
 
   static Failure handleApiError(dynamic error) {
     String message = 'An unknown error occurred';
-    String? requestId;
+    // String? requestId;
 
     if (error is DioException) {
       final response = error.response?.toBaseResponse();
       if (response != null) {
         final data = response.data;
         final status = response.statusCode;
-        requestId = response.requestId ?? 'N/A';
+        // requestId = response.requestId ?? 'N/A';
         
         // Handle nested error.message pattern similar to JavaScript
         if (data != null && data is Map<String, dynamic>) {
