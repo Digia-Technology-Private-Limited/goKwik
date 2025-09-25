@@ -103,7 +103,8 @@ window.addEventListener("gokwikLoaded", () => {
       ..addJavaScriptChannel(
         'Flutter',
         onMessageReceived: (JavaScriptMessage message) {
-          handleMessage(message.message);
+          debugPrint("MESSAGE RECEIVED $message");
+          handleMessageAsync(message.message);
         },
       )
       ..setNavigationDelegate(
@@ -205,6 +206,8 @@ window.addEventListener("gokwikLoaded", () => {
       userEmail = user?['email'];
     }
 
+    debugPrint("MERCHANT TYPE:: $merchantType");
+
     if (merchantType == 'custom') {
       final merchantId =
           await cacheInstance.getValue(KeyConfig.gkMerchantIdKey);
@@ -215,10 +218,14 @@ window.addEventListener("gokwikLoaded", () => {
       String appsource = '${Platform.operatingSystem.toLowerCase()}-app';
 
       String webviewUrl =
-          '${sdkConfig.checkoutUrl['custom']}?m_id=$merchantId&checkout_id=${widget.checkoutId}&gokwik_token=$token&appplatform=$appplatform&appversion=$appversion&appsource=$appsource';
+          '${sdkConfig.checkoutUrl['custom']}?m_id=$merchantId&checkout_id=${widget.checkoutId}&appplatform=$appplatform&appversion=$appversion&appsource=$appsource';
 
       if (userEmail != null && userEmail.isNotEmpty) {
         webviewUrl += '&kp_email=$userEmail';
+      }
+
+      if (token != null && token.isNotEmpty) {
+        webviewUrl += '&gk_token=$token';
       }
 
       setState(() {
@@ -302,20 +309,32 @@ window.addEventListener("gokwikLoaded", () => {
     }
   }
 
-  void handleMessage(String message) {
+  Future<void> handleMessageAsync(String message) async {
     try {
-      final decoded = jsonDecode(message);
-      // final event = decoded['type'];
-      // final data = decoded['data'];
-      // debugPrint("EVENT RECEIVED $event");
-      // debugPrint("DATA RECEIVED $data");
-      if (decoded['type'] == 'gokwikLoaded') {
-        if (!checkoutLoaded) {
-          checkoutLoaded = true;
+      final decoded = jsonDecode(message.toString());
+      final merchantType =
+          await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
+      if (merchantType == 'custom') {
+        if (decoded['eventname'] == 'checkout-ready') {
+          if (!checkoutLoaded) {
+            checkoutLoaded = true;
+          }
+          setState(() {});
         }
-        setState(() {});
+        widget.onMessage?.call(decoded);
+      } else {
+        // final event = decoded['type'];
+        // final data = decoded['data'];
+        // debugPrint("EVENT RECEIVED $event");
+        // debugPrint("DATA RECEIVED $data");
+        if (decoded['type'] == 'gokwikLoaded') {
+          if (!checkoutLoaded) {
+            checkoutLoaded = true;
+          }
+          setState(() {});
+        }
+        widget.onMessage?.call(decoded);
       }
-      widget.onMessage?.call(decoded);
     } catch (e) {
       widget.onError?.call(
         FlowResult(

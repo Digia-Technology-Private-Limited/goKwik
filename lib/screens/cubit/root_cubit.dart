@@ -285,7 +285,7 @@ class RootCubit extends Cubit<RootState> {
         onSuccessData?.call(
           FlowResult(flowType: FlowType.otpVerify, data: responseMap['data']),
         );
-        otpController.clear();
+        // otpController.clear();
         return;
       }
 

@@ -275,8 +275,6 @@ class _RootScreenState extends State<RootScreen> {
                                                           .handleOtpVerification(
                                                         value,
                                                       );
-                                                      cubit
-                                                          .shopifyOtpController.clear();
                                                     },
                                                     onResend: () =>
                                                         cubit.resendPhoneOtp(),
