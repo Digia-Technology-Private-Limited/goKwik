@@ -105,7 +105,7 @@ window.addEventListener("gokwikLoaded", () => {
       ..addJavaScriptChannel(
         'Flutter',
         onMessageReceived: (JavaScriptMessage message) {
-          debugPrint("MESSAGE RECEIVED $message");
+          debugPrint("MESSAGE RECEIVED ${message.message}");
           handleMessageAsync(message.message);
         },
       )
@@ -114,7 +114,7 @@ window.addEventListener("gokwikLoaded", () => {
           onPageStarted: (url) async {
             final canGoBack = await _webViewController.canGoBack();
             // final canGoForward = await _webViewController.canGoForward();
-
+            await _webViewController.runJavaScript(injectedJavaScript);
             _sendNavigationEvent('pageStarted', {
               'url': url,
               'isLoading': true,
@@ -390,12 +390,7 @@ window.addEventListener("gokwikLoaded", () => {
     if (isIOS) {
       return Scaffold(
         backgroundColor: Colors.white,
-        body: !checkoutLoaded
-            ? const Center(
-                child: CircularProgressIndicator(
-                color: Colors.black,
-              ))
-            : WebViewWidget(controller: _webViewController),
+        body: WebViewWidget(controller: _webViewController),
       );
     }
     return PopScope(
