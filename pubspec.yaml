@@ -56,7 +56,6 @@ dependencies:
   path_provider: ^2.1.5 # For file system access
   synchronized: ^3.0.0 
   advertising_id: ^2.2.0
-  app_tracking_transparency: ^2.0.6+1
   pinput: ^5.0.0
   # flutter_local_notifications: ^13.0.0
   pin_code_fields: ^8.0.1
