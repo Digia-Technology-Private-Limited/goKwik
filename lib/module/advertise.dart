@@ -97,7 +97,7 @@ abstract class AdvertisingInfo {
 
       // Here, you can use the `check` parameter if you want extra logic.
       // Example: if check == true && isLimitAdTrackingEnabled == true, maybe treat as no ID.
-      final advertisingId = await AdvertisingId.id(true);
+      final advertisingId = await AdvertisingId.id(false);
 
       if (check && (isLimitAdTrackingEnabled ?? false)) {
         // If tracking is limited and check is required, treat ID as empty
