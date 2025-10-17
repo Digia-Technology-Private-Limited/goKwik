@@ -114,35 +114,46 @@ abstract class ApiService {
     // String? requestId;
 
     if (error is DioException) {
-      final response = error.response?.toBaseResponse();
-      if (response != null) {
-        final data = response.data;
-        final status = response.statusCode;
-        // requestId = response.requestId ?? 'N/A';
-        
+      final responseData = error.response?.data;
+      final statusCode = error.response?.statusCode;
+
+      if (responseData != null) {
         // Handle nested error.message pattern similar to JavaScript
-        if (data != null && data is Map<String, dynamic>) {
-          final errorData = data['error'];
+        if (responseData is Map<String, dynamic>) {
+          final errorData = responseData['error'];
           if (errorData != null && errorData is Map<String, dynamic> && errorData['message'] != null) {
             message = errorData['message'].toString();
           } else if (errorData != null) {
             message = errorData.toString();
-          } else if (data['error_msg'] != null) {
-            message = data['error_msg'].toString();
+          } else if (responseData['error_msg'] != null) {
+            message = responseData['error_msg'].toString();
+          } else if (responseData['message'] != null) {
+            message = responseData['message'].toString();
           } else {
-            message = 'Unexpected error with status: $status';
+            message = 'Unexpected error with status: $statusCode';
           }
         } else {
-          // Fallback to existing logic for non-map data
-          message = response.error?.toString() ??
-              response.errorMessage?.toString() ??
-              response.error_msg?.toString() ??
-              'Unexpected error with status: $status';
+          // If responseData is not a Map, convert it to string
+          message = responseData.toString();
         }
-        
+        return Failure(message);
+      } else {
+        // Handle cases where there's no response data
+        message = error.message ?? 'Network error occurred';
+        if (statusCode != null) {
+          message += ' (Status: $statusCode)';
+        }
         return Failure(message);
       }
     }
+    
+    // Handle non-DioException errors
+    if (error is Exception) {
+      message = error.toString();
+    } else {
+      message = error?.toString() ?? 'An unknown error occurred';
+    }
+    
     return Failure(message);
   }
 

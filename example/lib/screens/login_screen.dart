@@ -38,9 +38,11 @@ class _LoginScreenState extends State<LoginScreen> {
             }
           },
           onError: (error) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(error.error)),
-            );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(error.error)),
+              );
+            });
           },
           onAnalytics: (eventname, properties) {
             debugPrint("eventName::: $eventname");

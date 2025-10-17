@@ -102,13 +102,13 @@ class _RootScreenState extends State<RootScreen> {
       backgroundColor: Colors.white,
       body: BlocConsumer<RootCubit, RootState>(
         listener: (context, state) {
-          if (state.error != null) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.error?.consume())),
-              );
-            });
-          }
+          // if (state.error != null) {
+          //   WidgetsBinding.instance.addPostFrameCallback((_) {
+          //     ScaffoldMessenger.of(context).showSnackBar(
+          //       SnackBar(content: Text(state.error?.consume())),
+          //     );
+          //   });
+          // }
         },
         builder: (context, state) {
           final cubit = context.read<RootCubit>();
