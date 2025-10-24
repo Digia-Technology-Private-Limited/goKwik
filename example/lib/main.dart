@@ -1,3 +1,5 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'package:flutter/material.dart';
 import 'package:gokwik/config/types.dart';
 import 'package:gokwik/go_kwik_client.dart';
@@ -51,9 +53,9 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _initializeData() async {
     try {
       await GoKwikClient.instance.initializeSDK(InitializeSdkProps(
-        mid: '19g6ilv2apdlm',
+        mid: '19g6jle2d5p3n',
         // mid: '12wyqc2h4ylkse6ovce',
-        environment: Environment.production,
+        environment: Environment.sandbox,
         isSnowplowTrackingEnabled: false,
         mode: 'debug',
 
