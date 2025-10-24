@@ -1,3 +1,9 @@
+## [1.0.5]
+- Error Handling fixes
+
+## [1.0.4]
+- security fixes
+
 ## [1.0.3]
 - Add/ Handle Kwikpass/ checkout config
 - Add Analytics tracking with moengage & webengage
