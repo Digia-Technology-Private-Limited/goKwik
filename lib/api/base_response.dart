@@ -98,4 +98,9 @@ class Failure<T> extends Result<T> {
   T getDataOrThrow() {
     throw Exception("Failure: $message");
   }
+
+  @override
+  String toString() {
+    return 'Failure: $message';
+  }
 }

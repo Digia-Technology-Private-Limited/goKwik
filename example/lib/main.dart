@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gokwik/config/types.dart';
 import 'package:gokwik/go_kwik_client.dart';
-
+import 'package:gokwik/api/base_response.dart';
 import 'screens/cart_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
@@ -51,9 +51,9 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _initializeData() async {
     try {
       await GoKwikClient.instance.initializeSDK(InitializeSdkProps(
-        mid: '19g6jle2d5p3n',
+        mid: '19g6ilv2apdlm',
         // mid: '12wyqc2h4ylkse6ovce',
-        environment: Environment.sandbox,
+        environment: Environment.production,
         isSnowplowTrackingEnabled: false,
         mode: 'debug',
 
@@ -63,7 +63,13 @@ class _MainScreenState extends State<MainScreen> {
         },
       ));
     } catch (e) {
-      debugPrint("ERROR ${e.toString()}");
+      // Now that Failure class has a proper toString() method, this should work
+      debugPrint("ERROR IN INIT: $e");
+      
+      // Also try to access the message property directly if it's a Failure
+      if (e is Failure) {
+        debugPrint("MESSAGE ${e.message}");
+      }
     }
   }
 

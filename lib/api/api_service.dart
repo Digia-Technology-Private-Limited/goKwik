@@ -406,13 +406,13 @@ abstract class ApiService {
 
       final result = await checkKwikpassHealth();
       // await getBrowserToken();
-      final merchantConfig = await initializeMerchant(mid, environment.name);
       if(result.isSuccess) {
         final healthData = result.getDataOrThrow();
         if(healthData?.isKwikpassHealthy == false){
           throw Exception('Kwikpass is unhealthy');
         }
       }
+      final merchantConfig = await initializeMerchant(mid, environment.name);
 
       if (merchantConfig.isSuccess) {
         final merchantConfigData = merchantConfig.getDataOrThrow();

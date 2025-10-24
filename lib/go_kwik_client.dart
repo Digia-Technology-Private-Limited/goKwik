@@ -20,7 +20,7 @@ class GoKwikClient {
       await SecureStorage.init();
       await ApiService.initializeSdk(props);
     } catch (err) {
-      throw ApiService.handleApiError(err);
+      rethrow;
     }
   }
 
