@@ -1,3 +1,9 @@
+## [1.0.8]
+- update the UI properties for login form
+
+## [1.0.7]
+- update phone in callback response
+
 ## [1.0.6]
 ## [1.0.5]
 - Error Handling fixes

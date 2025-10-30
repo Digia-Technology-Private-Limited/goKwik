@@ -69,6 +69,8 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   TextStyle? get configTitleStyle {
     if (widget.config is OtpVerificationScreenConfig) {
       return (widget.config as OtpVerificationScreenConfig).titleStyle;
+    } else if (widget.config is EmailOtpVerificationScreenConfig) {
+      return (widget.config as EmailOtpVerificationScreenConfig).titleTextStyle;
     }
     return null;
   }
@@ -85,6 +87,8 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   TextStyle? get configSubTitleStyle {
     if (widget.config is OtpVerificationScreenConfig) {
       return (widget.config as OtpVerificationScreenConfig).subTitleStyle;
+    } else if (widget.config is EmailOtpVerificationScreenConfig) {
+      return (widget.config as EmailOtpVerificationScreenConfig).subTitleTextStyle;
     }
     return null;
   }
@@ -92,6 +96,8 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   TextStyle? get configEditLabelStyle {
     if (widget.config is OtpVerificationScreenConfig) {
       return (widget.config as OtpVerificationScreenConfig).editLabelStyle;
+    } else if (widget.config is EmailOtpVerificationScreenConfig) {
+      return (widget.config as EmailOtpVerificationScreenConfig).editLabelStyle;
     }
     return null;
   }
@@ -108,6 +114,8 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   TextStyle? get configCellTextStyle {
     if (widget.config is OtpVerificationScreenConfig) {
       return (widget.config as OtpVerificationScreenConfig).cellTextStyle;
+    } else if (widget.config is EmailOtpVerificationScreenConfig) {
+      return (widget.config as EmailOtpVerificationScreenConfig).cellTextStyle;
     }
     return null;
   }
@@ -115,6 +123,8 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   TextStyle? get configResendTextStyle {
     if (widget.config is OtpVerificationScreenConfig) {
       return (widget.config as OtpVerificationScreenConfig).resendTextStyle;
+    } else if (widget.config is EmailOtpVerificationScreenConfig) {
+      return (widget.config as EmailOtpVerificationScreenConfig).resendTextStyle;
     }
     return null;
   }
@@ -122,6 +132,9 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   TextStyle? get configResendButtonTextStyle {
     if (widget.config is OtpVerificationScreenConfig) {
       return (widget.config as OtpVerificationScreenConfig)
+          .resendButtonTextStyle;
+    } else if (widget.config is EmailOtpVerificationScreenConfig) {
+      return (widget.config as EmailOtpVerificationScreenConfig)
           .resendButtonTextStyle;
     }
     return null;
@@ -131,6 +144,9 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     if (widget.config is OtpVerificationScreenConfig) {
       return (widget.config as OtpVerificationScreenConfig)
           .submitButtonStyleBox;
+    } else if (widget.config is EmailOtpVerificationScreenConfig) {
+      return (widget.config as EmailOtpVerificationScreenConfig)
+          .submitButtonStyle;
     }
     return null;
   }
@@ -139,6 +155,9 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
     if (widget.config is OtpVerificationScreenConfig) {
       return (widget.config as OtpVerificationScreenConfig).loadingText ??
           'Signing you in...';
+    } else if (widget.config is EmailOtpVerificationScreenConfig) {
+      return (widget.config as EmailOtpVerificationScreenConfig).loadingText ??
+          'Signing you in...';
     }
     return 'Signing you in...';
   }
@@ -146,6 +165,8 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   TextStyle? get configLoadingTextStyle {
     if (widget.config is OtpVerificationScreenConfig) {
       return (widget.config as OtpVerificationScreenConfig).loadingTextStyle;
+    } else if (widget.config is EmailOtpVerificationScreenConfig) {
+      return (widget.config as EmailOtpVerificationScreenConfig).loadingTextStyle;
     }
     return null;
   }
@@ -164,6 +185,9 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   TextStyle? get configSubmitButtonTextStyle {
     if (widget.config is OtpVerificationScreenConfig) {
       return (widget.config as OtpVerificationScreenConfig)
+          .submitButtonTextStyle;
+    } else if (widget.config is EmailOtpVerificationScreenConfig) {
+      return (widget.config as EmailOtpVerificationScreenConfig)
           .submitButtonTextStyle;
     }
     return null;

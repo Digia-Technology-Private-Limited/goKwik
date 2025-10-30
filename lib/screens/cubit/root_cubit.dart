@@ -175,7 +175,9 @@ class RootCubit extends Cubit<RootState> {
           ? Map<String, dynamic>.from(responses)
           : responses.toJson();
 
-      debugPrint("DEBUG PRINT FOR OTP RESPONSE::: $responseMap");
+      if (responseMap['data']['phone'] == null) {
+        responseMap['data']['phone'] = phoneController.text;
+      }
 
       // Handle Shopify merchant type
       if (state.merchantType == MerchantType.shopify) {
@@ -223,12 +225,8 @@ class RootCubit extends Cubit<RootState> {
 
         if (responseMap.containsKey('email')) {
           if (responseMap != null) {
-            responseMap.remove('state');
-            responseMap.remove('accountActivationUrl');
-
-            if (responseMap['phone'] == "null") {
-              responseMap['phone'] = phoneController.text;
-            }
+            responseMap['data'].remove('state');
+            responseMap['data'].remove('accountActivationUrl');
           }
         }
 

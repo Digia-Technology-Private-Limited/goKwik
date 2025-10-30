@@ -27,6 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: GoKwikLoginAndSignUpFlow(
           onSuccess: (data) {
+            debugPrint("DATA AFTER LOGIN:: ${data.data}");
 
            //GoKwikClient.instance.logout();
 
@@ -85,6 +86,10 @@ class _LoginScreenState extends State<LoginScreen> {
               title: "Enter your email",
               subTitle: "Enter your email",
               submitButtonText: "Submit",
+              submitButtonTextStyle: const TextStyle(
+                color: Colors.black,
+                fontSize: 16,
+              ),
             ),
           ),
           footerText: 'By continuing, you agree to our',

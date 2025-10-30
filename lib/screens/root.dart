@@ -579,6 +579,18 @@ class EmailOtpVerificationScreenConfig {
   final String? submitButtonText;
   final TextStyle? editStyle;
   final TextStyle? emailTextStyle;
+  
+  // NEW: Missing styling properties to match OtpVerificationScreenConfig
+  final ButtonStyle? submitButtonStyle;        // For submit button styling
+  final TextStyle? submitButtonTextStyle;      // For submit button text
+  final TextStyle? titleTextStyle;             // For title text styling
+  final TextStyle? subTitleTextStyle;          // For subtitle text styling
+  final TextStyle? resendButtonTextStyle;      // For resend button text
+  final TextStyle? resendTextStyle;            // For "OTP not received?" text
+  final TextStyle? cellTextStyle;              // For OTP input cell text
+  final TextStyle? loadingTextStyle;           // For loading state text
+  final String? loadingText;                   // For custom loading message
+  final TextStyle? editLabelStyle;             // For edit label styling
 
   const EmailOtpVerificationScreenConfig({
     this.title = 'Verify Email',
@@ -586,6 +598,17 @@ class EmailOtpVerificationScreenConfig {
     this.submitButtonText,
     this.editStyle,
     this.emailTextStyle,
+    // Add new styling parameters
+    this.submitButtonStyle,
+    this.submitButtonTextStyle,
+    this.titleTextStyle,
+    this.subTitleTextStyle,
+    this.resendButtonTextStyle,
+    this.resendTextStyle,
+    this.cellTextStyle,
+    this.loadingTextStyle,
+    this.loadingText,
+    this.editLabelStyle,
   });
 }
 
@@ -606,6 +629,7 @@ class ShopifyEmailScreenConfig {
   final TextStyle? titleStyle;
   final TextStyle? subTitleStyle;
   final FormFieldValidator<String>? validator;
+  final TextStyle? inputTextStyle;  // NEW: Missing input text styling
 
   const ShopifyEmailScreenConfig(
       {this.title,
@@ -623,7 +647,8 @@ class ShopifyEmailScreenConfig {
       this.submitButtonTextStyle,
       this.titleStyle,
       this.subTitleStyle,
-      this.validator});
+      this.validator,
+      this.inputTextStyle});  // Add new parameter
 }
 
 class CreateUserScreenConfig {
