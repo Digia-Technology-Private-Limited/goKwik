@@ -865,6 +865,7 @@ class CheckoutShopifyProps {
   final String? webEngageID;
   final String? moEngageID;
   final String? sessionId;
+  final String? orderTags;
   final Map<String, String>? utmParams;
 
   CheckoutShopifyProps({
@@ -877,6 +878,7 @@ class CheckoutShopifyProps {
     this.moEngageID,
     this.sessionId,
     this.utmParams,
+    this.orderTags,
   });
 }
 
@@ -894,6 +896,7 @@ class MerchantParams extends CheckoutShopifyProps {
     super.moEngageID,
     super.sessionId,
     super.utmParams,
+    super.orderTags,
   });
 }
 

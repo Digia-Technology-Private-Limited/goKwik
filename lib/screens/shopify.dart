@@ -106,7 +106,31 @@ class _ShopifyEmailFormState extends State<ShopifyEmailForm> {
                   widget.onSubmitEmail(_selectedEmail ?? '');
                 }
               },
-              child: widget.isLoading
+              child: widget.isSuccess
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          widget.loaderConfig?.loadingText ?? 'Signing you in...',
+                          style: widget.loaderConfig?.loadingTextStyle ??
+                              const TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                        )
+                      ],
+                    )
+                  : widget.isLoading
                   ? widget.loaderConfig != null
                       ? Text(
                           widget.loaderConfig?.loadingText ?? 'Loading...',

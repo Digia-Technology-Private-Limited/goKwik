@@ -130,10 +130,10 @@ class RootCubit extends Cubit<RootState> {
       final response = await ShopifyService.shopifyVerifyEmail(
           shopifyEmailController.text, otpController.text);
 
-      if (response['data']['phone'] == null) {
+      if (!response['data'].containsKey('phone')) {
         response['data']['phone'] = phoneController.text;
       }
-
+      emit(state.copyWith(isSuccess: true, isLoading: false));
       if (onAnalytics != null) {
         onAnalytics!(AnalyticsEvents.appLoginSuccess, {
           'phone': phoneController.text.toString(),
@@ -175,22 +175,22 @@ class RootCubit extends Cubit<RootState> {
           ? Map<String, dynamic>.from(responses)
           : responses.toJson();
 
-      if (responseMap['data']['phone'] == null) {
-        responseMap['data']['phone'] = phoneController.text;
-      }
-
       // Handle Shopify merchant type
       if (state.merchantType == MerchantType.shopify) {
         // shopify customer id
         if (responseMap.containsKey('data')) {
+          if (!responseMap['data'].containsKey('phone')) {
+            responseMap['data']['phone'] = phoneController.text;
+          }
           if (responseMap['data'].containsKey('shopifyCustomerId')) {
-            debugPrint(
-                "SHOPIFY CUSTOMER ID FOUND:: ${responseMap['data']['shopifyCustomerId']}");
             emit(state.copyWith(
               shopifyCustomerId:
                   responseMap['data']['shopifyCustomerId']?.toString(),
             ));
           }
+        }
+        if (!responseMap.containsKey('phone')) {
+          responseMap['phone'] = phoneController.text;
         }
         // Handle auth required condition
         if (responseMap.containsKey('authRequired')) {
@@ -225,9 +225,22 @@ class RootCubit extends Cubit<RootState> {
 
         if (responseMap.containsKey('email')) {
           if (responseMap != null) {
-            responseMap['data'].remove('state');
-            responseMap['data'].remove('accountActivationUrl');
+            responseMap!.remove('state');
+            responseMap!.remove('accountActivationUrl');
           }
+          emit(state.copyWith(isSuccess: true, isLoading: false));
+          if (onAnalytics != null) {
+            onAnalytics!(AnalyticsEvents.appLoginSuccess, {
+              'phone': phoneController.text.toString(),
+              'email': responseMap['email'],
+              'customer_id':
+              responseMap['shopifyCustomerId']?.toString() ?? ""
+            });
+          }
+          onSuccessData?.call(
+            FlowResult(flowType: FlowType.otpVerify, data: responseMap),
+          );
+          return;
         }
 
         // Handle multiple emails
@@ -262,13 +275,15 @@ class RootCubit extends Cubit<RootState> {
         }
 
         // Handle email required case
-        if (responseMap['emailRequired'] == true) {
-          emit(state.copyWith(
-            isNewUser: true,
-            isLoading: false,
-          ));
-          otpController.clear();
-          return;
+        if (responseMap.containsKey('emailRequired')) {
+          if(responseMap['emailRequired'] == true) {
+            emit(state.copyWith(
+              isNewUser: true,
+              isLoading: false,
+            ));
+            otpController.clear();
+            return;
+          }
         }
 
         emit(state.copyWith(isSuccess: true, isLoading: false));
@@ -447,6 +462,11 @@ class RootCubit extends Cubit<RootState> {
                 "",
           });
         }
+        if (responseToCheckIfUserIsNew!.containsKey('data')) {
+          if (!responseToCheckIfUserIsNew['data'].containsKey('phone')) {
+            responseToCheckIfUserIsNew['data']['phone'] = phoneController.text.toString();
+          }
+        }
         onSuccessData?.call(FlowResult(
           flowType: FlowType.emailOtpSend,
           data: responseToCheckIfUserIsNew?['data'],
@@ -557,7 +577,6 @@ class RootCubit extends Cubit<RootState> {
               responseData['email'] != null &&
               // responseData['multipassToken'] != null &&
               responseData['password'] != null)) {
-        debugPrint("DEBUG PRINT FOR LOGIN $responseData");
 
         onSuccessData?.call(
             FlowResult(flowType: FlowType.alreadyLoggedIn, data: responseData));

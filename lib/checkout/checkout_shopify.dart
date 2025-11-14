@@ -77,6 +77,7 @@ class CheckoutShopify extends StatefulWidget {
   final String? moEngageID;
   final String? sessionId;
   final Map<String, dynamic>? utmParams;
+  final String? orderTags;
 
   const CheckoutShopify({
     Key? key,
@@ -93,6 +94,7 @@ class CheckoutShopify extends StatefulWidget {
     this.moEngageID = '',
     this.sessionId = '',
     this.utmParams = const {},
+    this.orderTags,
   }) : super(key: key);
 
   @override
@@ -127,13 +129,18 @@ class _CheckoutShopifyState extends State<CheckoutShopify> {
 })();
 
 document.addEventListener("gk-checkout-disable", function(event) {
-  Flutter.postMessage(JSON.stringify({ type: 'gk-checkout-disable', data: event.detail }));
+  Flutter.postMessage(JSON.stringify({ type: 'gk-checkout-disable', data: event }));
 });
 window.addEventListener('load', function() {
   checkGoKwikSdk();
 });
+window.addEventListener('message', function(event) {
+  if (event.data && event.data.type === "gokwik_events") {
+    Flutter.postMessage(JSON.stringify({ type: 'gokwik_events', data: event }));
+  }
+});
 window.addEventListener("gokwikLoaded", () => {
-  Flutter.postMessage(JSON.stringify({ type: 'gokwikLoaded', data: event.detail }));
+  Flutter.postMessage(JSON.stringify({ type: 'gokwikLoaded', data: event }));
     setTimeout(() => {
          console.log("Gokwik SDK Loaded");
         triggerGokwikCustomCheckout();
@@ -259,8 +266,6 @@ window.addEventListener("gokwikLoaded", () => {
       userEmail = user?['email'];
     }
 
-    debugPrint("MERCHANT TYPE:: $merchantType");
-
     final installedUpiApps = await detectInstalledUpiApps();
     String? encodedUpiApps;
     if (installedUpiApps.isNotEmpty) {
@@ -306,11 +311,25 @@ window.addEventListener("gokwikLoaded", () => {
       'shopDomain': await cacheInstance.getValue(KeyConfig.gkMerchantUrlKey),
     };
 
+    // Determine order tags - use provided tags or default platform-specific tags
+    String orderTags;
+    if (widget.orderTags != null && widget.orderTags!.isNotEmpty) {
+      orderTags = widget.orderTags!;
+    } else {
+      // Default tags based on platform (similar to React Native implementation)
+      if (Platform.isIOS) {
+        orderTags = 'mobile_app_ios';
+      } else  {
+        orderTags = 'mobile_app_android';
+      }
+    }
+
     final storeInfo = {
       'type': 'merchantInfo',
       'source': 'app',
       'platform': Platform.operatingSystem.toLowerCase(),
       'appFlow': 'true',
+      'tag': orderTags,
       'blockExternalEvents': true,
       'mid': merchantInfo['mid'],
       'environment': merchantInfo['environment'],
@@ -319,7 +338,7 @@ window.addEventListener("gokwikLoaded", () => {
       'gaTrackingID': widget.gaTrackingID ?? '',
       'webEngageID': widget.webEngageID ?? '',
       'moEngageID': widget.moEngageID ?? '',
-      'sessionID': widget.sessionId ?? '',
+      'sessionId': widget.sessionId ?? '',
       'utmParams': widget.utmParams ?? {},
       'storeData': {
         'cartId': 'gid://shopify/Cart/${widget.cartId}',

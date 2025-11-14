@@ -301,12 +301,9 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
 
   @override
   void dispose() {
-    for (var node in _focusNodes) {
-      node.dispose();
-    }
     // controller.stopListen();
     smartAuth.removeUserConsentApiListener();
-    widget.initialValue.dispose();
+    // widget.initialValue.dispose();
     super.dispose();
   }
 
@@ -410,13 +407,17 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
             ),
           Row(
             children: [
-              Text(
-                widget.otpLabel,
-                style: configEditLabelStyle ??
-                    const TextStyle(
-                      fontSize: 20,
-                      color: Color(0x9E000000),
-                    ),
+              Expanded(
+                child: Text(
+                  widget.otpLabel,
+                  style: configEditLabelStyle ??
+                      const TextStyle(
+                        fontSize: 20,
+                        color: Color(0x9E000000),
+                      ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
               const SizedBox(width: 8),
               GestureDetector(

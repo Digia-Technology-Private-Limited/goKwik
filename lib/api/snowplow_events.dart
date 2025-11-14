@@ -441,7 +441,7 @@ class SnowplowTrackerService {
         ),
       );
     } catch (error) {
-      throw error;
+      rethrow;
     }
   }
 

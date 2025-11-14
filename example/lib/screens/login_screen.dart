@@ -27,8 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: GoKwikLoginAndSignUpFlow(
           onSuccess: (data) {
-            debugPrint("DATA AFTER LOGIN:: ${data.data}");
-
            //GoKwikClient.instance.logout();
 
             if (data.data['email'] != null) {

@@ -1,3 +1,9 @@
+## [1.0.10]
+- Fix TextEditingController issue of getting disposed before use
+
+## [1.0.9]
+- Add missing checkout events, fix issue in new user login flow
+
 ## [1.0.8]
 - update the UI properties for login form
 
@@ -5,6 +11,8 @@
 - update phone in callback response
 
 ## [1.0.6]
+- Error Handling fixes
+
 ## [1.0.5]
 - Error Handling fixes
 

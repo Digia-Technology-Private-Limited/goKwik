@@ -753,7 +753,7 @@ abstract class ApiService {
       }
 
       if (response.data == null) {
-        return Failure('No data received from validate token response');
+        return const Failure('No data received from validate token response');
       }
 
       try {
