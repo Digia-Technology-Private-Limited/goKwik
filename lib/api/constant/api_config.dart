@@ -13,6 +13,7 @@ class APIConfig {
   static const String sendEmailVerificationCode = 'kp/api/v1/auth/email-otp/send';
   static const String verifyEmailCode = 'kp/api/v1/auth/email-otp/verify';
   static const String shopifyMultipass = 'kp/api/v1/customer/shopify/multipass'; // !TODO : UPDATE TO V2 FOR SECURITY API CHANGES
+  static const String reverseKpAuthLogin = 'kp/api/v1/auth/core-token/login';
 }
 
 class TruecallerConfig {

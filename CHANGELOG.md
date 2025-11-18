@@ -1,3 +1,6 @@
+## [1.0.11]
+- Fixed issue for Email Verify flow, optimise error handling
+
 ## [1.0.10]
 - Fix TextEditingController issue of getting disposed before use
 

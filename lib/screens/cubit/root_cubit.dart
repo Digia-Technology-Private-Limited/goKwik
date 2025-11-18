@@ -153,6 +153,10 @@ class RootCubit extends Cubit<RootState> {
     } catch (err) {
       emit(state.copyWith(
           error: SingleUseData((err as Failure).message), isLoading: false));
+      onErrorData?.call(FlowResult(
+        flowType: FlowType.emailOtpVerify,
+        error: (err as Failure).message,
+      ));
     }
   }
 

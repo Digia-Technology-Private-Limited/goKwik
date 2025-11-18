@@ -42,7 +42,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
   int _seconds = 30;
   bool _isResendDisabled = true;
   int _attempts = 0;
-  final List<FocusNode> _focusNodes = [];
+  // final List<FocusNode> _focusNodes = [];
   // final List<TextEditingController> _controllers = [];
   final _formKey = GlobalKey<FormState>();
   String? _errorText;
@@ -407,7 +407,7 @@ class _VerifyCodeFormState extends State<VerifyCodeForm> {
             ),
           Row(
             children: [
-              Expanded(
+              Flexible(
                 child: Text(
                   widget.otpLabel,
                   style: configEditLabelStyle ??

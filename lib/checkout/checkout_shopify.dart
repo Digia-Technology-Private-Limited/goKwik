@@ -131,9 +131,6 @@ class _CheckoutShopifyState extends State<CheckoutShopify> {
 document.addEventListener("gk-checkout-disable", function(event) {
   Flutter.postMessage(JSON.stringify({ type: 'gk-checkout-disable', data: event }));
 });
-window.addEventListener('load', function() {
-  checkGoKwikSdk();
-});
 window.addEventListener('message', function(event) {
   if (event.data && event.data.type === "gokwik_events") {
     Flutter.postMessage(JSON.stringify({ type: 'gokwik_events', data: event }));
@@ -141,10 +138,6 @@ window.addEventListener('message', function(event) {
 });
 window.addEventListener("gokwikLoaded", () => {
   Flutter.postMessage(JSON.stringify({ type: 'gokwikLoaded', data: event }));
-    setTimeout(() => {
-         console.log("Gokwik SDK Loaded");
-        triggerGokwikCustomCheckout();
-    }, 1000); // 1 second delay
 });
   ''';
 

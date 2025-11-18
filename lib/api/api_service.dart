@@ -1030,6 +1030,114 @@ abstract class ApiService {
     return Success(userData);
   }
 
+  static Future<Result<Map<String, dynamic>>> kwikpassLoginWithToken({
+    required String token,
+    required String phone,
+    required String email,
+    required String shopifyCustomerId,
+  }) async {
+    try {
+      // Check if user is already authenticated
+      final verifiedUserJson =
+          await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
+      
+      if (verifiedUserJson != null) {
+        final responseData = jsonDecode(verifiedUserJson) as Map<String, dynamic>;
+        
+        // Check if user has all required data
+        if ((responseData['shopifyCustomerId'] != null &&
+            responseData['phone'] != null &&
+            responseData['email'] != null) ||
+            (responseData['phone'] != null && responseData['email'] != null)) {
+          return Success({
+            'result': true,
+            'message': 'User already authenticated',
+            'data': responseData,
+          });
+        }
+      }
+
+      // Validate token
+      if (token.isEmpty) {
+        return const Failure('Token is required for authentication');
+      }
+
+      // Check Kwikpass health
+      final kpHealthData = await checkKwikpassHealth();
+      if (kpHealthData.isSuccess) {
+        final healthData = kpHealthData.getDataOrThrow();
+        if (healthData?.isKwikpassHealthy == false) {
+          throw KwikpassHealthException();
+        }
+      }
+
+      final gokwik = DioClient().getClient();
+
+      // Get merchant ID and request ID from cache
+      final results = await Future.wait([
+        cacheInstance.getValue(KeyConfig.gkMerchantIdKey),
+        cacheInstance.getValue(KeyConfig.gkRequestIdKey),
+      ]);
+
+      final mid = results[0];
+      final requestId = results[1];
+
+      // Prepare headers
+      final headers = <String, String>{
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+        KeyConfig.kpMerchantIdKey: mid ?? '',
+        'token': token,
+      };
+
+      // Add request ID if available
+      if (requestId != null && requestId.isNotEmpty) {
+        headers[KeyConfig.gkRequestIdKey] = requestId;
+      }
+
+      final response = await gokwik.get(
+        APIConfig.reverseKpAuthLogin,
+        options: Options(headers: headers),
+      );
+
+      final data = response.data;
+
+      // Handle successful login response
+      if (data?['data']?['token'] != null) {
+        // Store access token
+        final accessToken = data['data']['token'] as String;
+        await cacheInstance.setValue(KeyConfig.gkAccessTokenKey, accessToken);
+        gokwik.options.headers[KeyConfig.gkAccessTokenKey] = accessToken;
+      }
+
+      if (data?['data']?['coreToken'] != null) {
+        // Store core token
+        await cacheInstance.setValue(KeyConfig.checkoutAccessTokenKey, token);
+        gokwik.options.headers[KeyConfig.checkoutAccessTokenKey] = token;
+      }
+
+      // Validate user token
+      await validateUserToken();
+
+      // Store user data
+      final userData = {
+        'phone': phone,
+        'email': email,
+        'shopifyCustomerId': shopifyCustomerId,
+        ...?data?['data'] as Map<String, dynamic>?,
+      };
+      
+      await cacheInstance.setValue(
+        KeyConfig.gkVerifiedUserKey,
+        jsonEncode(userData),
+      );
+
+      return Success(data);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
   static Future<bool> clearKwikpassSession() async {
     try {
       final userJson =
