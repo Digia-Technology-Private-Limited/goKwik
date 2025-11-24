@@ -1,3 +1,6 @@
+## [1.0.12]
+- handle gokwik_events event callback
+
 ## [1.0.11]
 - Fixed issue for Email Verify flow, optimise error handling
 

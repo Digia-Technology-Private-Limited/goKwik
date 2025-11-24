@@ -133,10 +133,10 @@ document.addEventListener("gk-checkout-disable", function(event) {
 });
 window.addEventListener('message', function(event) {
   if (event.data && event.data.type === "gokwik_events") {
-    Flutter.postMessage(JSON.stringify({ type: 'gokwik_events', data: event }));
+    Flutter.postMessage(JSON.stringify({ type: 'gokwik_events', data: event?.data?.data }));
   }
 });
-window.addEventListener("gokwikLoaded", () => {
+window.addEventListener("gokwikLoaded", (event) => {
   Flutter.postMessage(JSON.stringify({ type: 'gokwikLoaded', data: event }));
 });
   ''';

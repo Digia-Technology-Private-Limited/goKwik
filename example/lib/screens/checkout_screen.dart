@@ -22,7 +22,7 @@ class CheckoutScreen extends StatelessWidget {
         checkoutData: KPCheckoutProps(
           checkoutData: CheckoutData(
             merchantParams: MerchantParams(
-              cartId: 'Z2NwLWFzaWEtc291dGhlYXN0MTowMUswOTM4WkNQQVoxOVpGNjRTODlXVDQzRw?key=45c58e4b1c2166ab125e708250555c9b',
+              cartId: 'hWN11qIpsH360MZu1SS5t2QO?key=d9e7d5fb318b9c9d3fa45ca704a19d6e',
             ),
           ),
           onEvent: (message) {
