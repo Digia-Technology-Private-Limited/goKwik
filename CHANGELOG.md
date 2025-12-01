@@ -1,3 +1,6 @@
+## [1.0.13]
+- fix multiple events issue
+
 ## [1.0.12]
 - handle gokwik_events event callback
 

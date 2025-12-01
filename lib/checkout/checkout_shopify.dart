@@ -173,7 +173,7 @@ window.addEventListener("gokwikLoaded", (event) => {
             });
           },
           onPageFinished: (url) async {
-            await _webViewController.runJavaScript(injectedJavaScript);
+            // await _webViewController.runJavaScript(injectedJavaScript);
             final canGoBack = await _webViewController.canGoBack();
             final canGoForward = await _webViewController.canGoForward();
 
