@@ -3,7 +3,7 @@ class APIConfig {
   static const String merchantConfiguration = 'kp/api/v1/configurations/';
   static const String getBrowserToken = 'kp/api/v1/auth/browser';
   static const String sendVerificationCode = 'kp/api/v1/auth/otp/send';
-  static const String verifyCode = 'kp/api/v1/auth/otp/verify'; // !TODO : UPDATE TO V2 FOR SECURITY API CHANGES
+  static const String verifyCode = 'kp/api/v2/auth/otp/verify'; // !TODO : UPDATE TO V2 FOR SECURITY API CHANGES
   static const String customerIntelligence = 'kp/api/v1/customer-intelligence';
   static const String customCustomerLogin = 'kp/api/v1/customer/custom/login';
   static const String customCreateUser = 'kp/api/v1/customer/custom/create-user';
@@ -12,8 +12,25 @@ class APIConfig {
   static const String disposableEmailCheck = 'kp/api/v1/disposable-email/validate/';
   static const String sendEmailVerificationCode = 'kp/api/v1/auth/email-otp/send';
   static const String verifyEmailCode = 'kp/api/v1/auth/email-otp/verify';
-  static const String shopifyMultipass = 'kp/api/v1/customer/shopify/multipass'; // !TODO : UPDATE TO V2 FOR SECURITY API CHANGES
+  static const String shopifyMultipass = 'kp/api/v2/customer/shopify/multipass'; // !TODO : UPDATE TO V2 FOR SECURITY API CHANGES
   static const String reverseKpAuthLogin = 'kp/api/v1/auth/core-token/login';
+}
+
+class APIHeader {
+  static const String authorization = "Authorization";
+  static const String kpMerchantId = "kp-merchant-id";
+  static const String token = "token";
+  static const String gkRequestId = "gk-request-id";
+  static const String gkAccessToken = "gk-access-token";
+  static const String checkoutAccessToken = "checkout-access-token";
+  static const String gkMerchantId = "gk-merchant-id";
+  static const String kpRequestId = "kp-request-id";
+  static const String kpSdkVersion = "sdk-version";
+  static const String kpSdkPlatform = "sdk-platform";
+  static const String kpIntegrationType = "kp-integration-type";
+  static const String appplatform = "appplatform";
+  static const String appversion = "appversion";
+  static const String source = "source";
 }
 
 class TruecallerConfig {

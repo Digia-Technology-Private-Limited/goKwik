@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:gokwik/config/cdn_config.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/notification/data/notifiaction_data.dart';
 import 'package:gokwik/notification/strategy/andriod_push.dart';
@@ -48,7 +49,7 @@ class KwikChatNotification {
   static Future<void> saveFCMToken(String token) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(KeyConfig.gkNotificationToken, token);
+      await prefs.setString(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkNotificationToken), token);
     // ignore: empty_catches
     } catch (e) {
     }

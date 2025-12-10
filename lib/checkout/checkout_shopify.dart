@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gokwik/api/sdk_config.dart';
 import 'package:gokwik/config/cache_instance.dart';
+import 'package:gokwik/config/cdn_config.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/flow_result.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -13,38 +14,57 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:gokwik/services/upi_app_checker.dart';
 
-const Map<String, Map<String, String>> UPI_APP_PACKAGES = {
-  'googlepay': {
-    'android': 'com.google.android.apps.nbu.paisa.user',
-    'ios': 'tez://',
-  },
-  'phonepe': {
-    'android': 'com.phonepe.app',
-    'ios': 'phonepe://',
-  },
-  'bhim': {
-    'android': 'in.org.npci.upiapp',
-    'ios': 'bhim://',
-  },
-  'paytm': {
-    'android': 'net.one97.paytm',
-    'ios': 'paytmmp://',
-  },
-  'cred': {
-    'android': 'com.dreamplug.androidapp',
-    'ios': 'credpay://',
-  },
-};
+// Get UPI packages from CDN config with fallback to default
+Map<String, Map<String, String>> getUpiAppPackages() {
+  try {
+    final upiPackages = cdnConfigInstance.getCheckoutOrDefault('upi_packages');
+    if (upiPackages != null && upiPackages is Map) {
+      return Map<String, Map<String, String>>.from(
+        upiPackages.map((key, value) => MapEntry(
+          key.toString(),
+          Map<String, String>.from(value as Map),
+        )),
+      );
+    }
+  } catch (e) {
+    debugPrint('Error getting UPI packages from CDN config: $e');
+  }
+  
+  // Fallback to default packages
+  return {
+    'googlepay': {
+      'android': 'com.google.android.apps.nbu.paisa.user',
+      'ios': 'tez://',
+    },
+    'phonepe': {
+      'android': 'com.phonepe.app',
+      'ios': 'phonepe://',
+    },
+    'bhim': {
+      'android': 'in.org.npci.upiapp',
+      'ios': 'bhim://',
+    },
+    'paytm': {
+      'android': 'net.one97.paytm',
+      'ios': 'paytmmp://',
+    },
+    'cred': {
+      'android': 'com.dreamplug.androidapp',
+      'ios': 'credpay://',
+    },
+  };
+}
 
 Future<List<String>> detectInstalledUpiApps() async {
   List<String> installedApps = [];
+  final upiPackages = getUpiAppPackages();
 
-  for (final app in UPI_APP_PACKAGES.keys) {
+  for (final app in upiPackages.keys) {
     if (Platform.isAndroid) {
-      debugPrint('Using package: ${UPI_APP_PACKAGES[app]!['android']}');
+      debugPrint('Using package: ${upiPackages[app]!['android']}');
       try {
         final isInstalled = await UpiAppChecker.isAppInstalled(
-          UPI_APP_PACKAGES[app]!['android']!,
+          upiPackages[app]!['android']!,
         );
         debugPrint('UPI App $app installed: $isInstalled');
         if (isInstalled) installedApps.add(app);
@@ -53,7 +73,7 @@ Future<List<String>> detectInstalledUpiApps() async {
       }
     } else if (Platform.isIOS) {
       try {
-        final uri = Uri.parse(UPI_APP_PACKAGES[app]!['ios']!);
+        final uri = Uri.parse(upiPackages[app]!['ios']!);
         final isInstalled = await canLaunchUrl(uri);
         if (isInstalled) installedApps.add(app);
       } catch (e) {
@@ -242,15 +262,15 @@ window.addEventListener("gokwikLoaded", (event) => {
 
   Future<void> initiateCheckout() async {
     final environment =
-        await cacheInstance.getValue(KeyConfig.gkEnvironmentKey);
+        await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkEnvironmentKey));
 
     final merchantType =
-        await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
+        await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantTypeKey));
     final sdkConfig = SdkConfig.fromEnvironment(environment!);
 
     // GET LOGGED IN USER EMAIL HERE
     final verifiedUserData =
-        await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
+        await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey));
 
     String? userEmail;
 
@@ -266,8 +286,8 @@ window.addEventListener("gokwikLoaded", (event) => {
     }
     if (merchantType == 'custom') {
       final merchantId =
-          await cacheInstance.getValue(KeyConfig.gkMerchantIdKey);
-      final token = await cacheInstance.getValue(KeyConfig.gkAccessTokenKey);
+          await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantIdKey));
+      final token = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAccessTokenKey));
 
       String appplatform = Platform.operatingSystem.toLowerCase();
       String appversion = (await PackageInfo.fromPlatform()).version;
@@ -298,10 +318,10 @@ window.addEventListener("gokwikLoaded", (event) => {
     }
 
     final merchantInfo = {
-      'mid': await cacheInstance.getValue(KeyConfig.gkMerchantIdKey),
+      'mid': await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantIdKey)),
       'environment': environment,
-      'token': await cacheInstance.getValue(KeyConfig.checkoutAccessTokenKey),
-      'shopDomain': await cacheInstance.getValue(KeyConfig.gkMerchantUrlKey),
+      'token': await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.checkoutAccessTokenKey)),
+      'shopDomain': await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantUrlKey)),
     };
 
     // Determine order tags - use provided tags or default platform-specific tags
@@ -392,7 +412,7 @@ window.addEventListener("gokwikLoaded", (event) => {
     try {
       final decoded = jsonDecode(message.toString());
       final merchantType =
-          await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
+          await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantTypeKey));
       if (merchantType == 'custom') {
         if (decoded['eventname'] == 'checkout-ready') {
           if (!checkoutLoaded) {
