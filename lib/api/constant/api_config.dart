@@ -16,6 +16,23 @@ class APIConfig {
   static const String reverseKpAuthLogin = 'kp/api/v1/auth/core-token/login';
 }
 
+class APIHeader {
+  static const String authorization = "Authorization";
+  static const String kpMerchantId = "kp-merchant-id";
+  static const String token = "token";
+  static const String gkRequestId = "gk-request-id";
+  static const String gkAccessToken = "gk-access-token";
+  static const String checkoutAccessToken = "checkout-access-token";
+  static const String gkMerchantId = "gk-merchant-id";
+  static const String kpRequestId = "kp-request-id";
+  static const String kpSdkVersion = "sdk-version";
+  static const String kpSdkPlatform = "sdk-platform";
+  static const String kpIntegrationType = "kp-integration-type";
+  static const String appplatform = "appplatform";
+  static const String appversion = "appversion";
+  static const String source = "source";
+}
+
 class TruecallerConfig {
   static const String type = 'btmsheet';
   static const String partnerKey = '';

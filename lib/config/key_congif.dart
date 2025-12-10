@@ -43,8 +43,18 @@ class KeyConfig {
   static const kcMerchantToken = 'kc-merchant-token';
   static const kcNotificationEventUrl = 'kc-notif-event-url';
   
-  static const enableKwikPass = 'enable-kwik-pass';
-  static const enableCheckout = 'enable-checkout';
+  // Keys from JSON config (matching JSON key names)
+  static const gkKPEnabled = 'gk-kp-enabled';
+  static const gkCheckoutEnabled = 'gk-checkout-enabled';
+  static const integrationType = 'kp-integration-type';
+  static const kpOtpLocked = 'otp_resend_data';
+  static const kwikpassCurrentVersion = 'kwikpass_current_version';
+  static const kwikpassBundlePrefix = 'kwikpass_bundle_';
+  static const kwikpassManifestPrefix = 'kwikpass_manifest_';
+  
+  // Legacy keys (for backward compatibility - keeping old naming)
+  static const enableKwikPass = 'gk-kp-enabled';  // Updated value to match JSON
+  static const enableCheckout = 'gk-checkout-enabled';  // Updated value to match JSON
   
   static const kpSdkVersion = 'sdk-version';
   static const kpSdkPlatform = 'sdk-platform';
@@ -86,8 +96,13 @@ class KeyConfig {
     kcMerchantId,
     kcMerchantToken,
     kcNotificationEventUrl,
-    enableKwikPass,
-    enableCheckout,
+    gkKPEnabled,
+    gkCheckoutEnabled,
+    integrationType,
+    kpOtpLocked,
+    kwikpassCurrentVersion,
+    kwikpassBundlePrefix,
+    kwikpassManifestPrefix,
     kpSdkVersion,
     kpSdkPlatform,
   ];

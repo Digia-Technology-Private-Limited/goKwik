@@ -19,17 +19,17 @@ class MainApplication : FlutterApplication() {
 
 override fun onCreate() {
         super.onCreate()
-        val webEngageConfig = WebEngageConfig.Builder()
-            .setWebEngageKey("")
-            .setAutoGCMRegistrationFlag(false)
-            .setLocationTrackingStrategy(LocationTrackingStrategy.ACCURACY_BEST)
-            .setDebugMode(true) // only in development mode
-            .build()
-        WebengageInitializer.initialize(this as Application?, webEngageConfig)
+        // val webEngageConfig = WebEngageConfig.Builder()
+        //     .setWebEngageKey("")
+        //     .setAutoGCMRegistrationFlag(false)
+        //     .setLocationTrackingStrategy(LocationTrackingStrategy.ACCURACY_BEST)
+        //     .setDebugMode(true) // only in development mode
+        //     .build()
+        // WebengageInitializer.initialize(this as Application?, webEngageConfig)
 
-        val moEngage: MoEngage.Builder = MoEngage.Builder(this as Application, "MOE_ID", DataCenter.DATA_CENTER_3)
-            .configureLogs(LogConfig(LogLevel.VERBOSE, true))
-            .configureMoEngageEnvironment(MoEngageEnvironmentConfig(MoEngageEnvironment.LIVE))
-        MoEInitializer.initialiseDefaultInstance(applicationContext, moEngage)
+        // val moEngage: MoEngage.Builder = MoEngage.Builder(this as Application, "MOE_ID", DataCenter.DATA_CENTER_3)
+        //     .configureLogs(LogConfig(LogLevel.VERBOSE, true))
+        //     .configureMoEngageEnvironment(MoEngageEnvironmentConfig(MoEngageEnvironment.LIVE))
+        // MoEInitializer.initialiseDefaultInstance(applicationContext, moEngage)
     }
 }

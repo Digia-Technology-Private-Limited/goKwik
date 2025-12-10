@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:gokwik/api/snowplow_client.dart';
 import 'package:gokwik/api/http_snowplow_tracker.dart';
+import 'package:gokwik/config/cdn_config.dart';
 import 'package:gokwik/config/key_congif.dart';
 import 'package:gokwik/version.dart';
 import 'package:snowplow_tracker/snowplow_tracker.dart';
@@ -17,7 +18,7 @@ class SnowplowTrackerService {
 
   // Helper to fetch environment
   static Future<String> _getEnvironment() async {
-    return (await cacheInstance.getValue(KeyConfig.gkEnvironmentKey)) ??
+    return (await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkEnvironmentKey))) ??
         'production';
   }
 
@@ -58,8 +59,11 @@ class SnowplowTrackerService {
       return null;
     }
 
+    final schemas = cdnConfigInstance.getSnowplowSchemaOrDefault();
+    final cartSchema = schemas['cart'] ?? 'iglu:com.shopify/cart/jsonschema/1-0-0';
+
     return SelfDescribing(
-      schema: 'iglu:com.shopify/cart/jsonschema/1-0-0',
+      schema: cartSchema,
       data: {
         'id': cartId,
         'token': cartId,
@@ -68,7 +72,7 @@ class SnowplowTrackerService {
   }
 
   static Future<SelfDescribing?> getUserContext() async {
-    final userJson = await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
+    final userJson = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey));
     var user = userJson != null ? jsonDecode(userJson) : null;
     var phone =
         user != null ? user!['phone']?.replaceAll(RegExp(r'^\+91'), '') : null;
@@ -76,8 +80,11 @@ class SnowplowTrackerService {
 
     if (numericPhoneNumber != null ||
         (user != null && user?['email'] != null)) {
+      final schemas = cdnConfigInstance.getSnowplowSchemaOrDefault();
+      final userSchema = schemas['user'] ?? 'user/jsonschema/1-0-0';
+      
       return _createContext(
-        'user/jsonschema/1-0-0',
+        userSchema,
         {
           'phone': numericPhoneNumber?.toString() ?? '',
           'email': user?['email'] ?? '',
@@ -89,17 +96,20 @@ class SnowplowTrackerService {
 
   static Future<SelfDescribing> getProductContext(
       TrackProductEventContext contextData) async {
-    return _createContext('product/jsonschema/1-1-0', contextData.toJson());
+    final schemas = cdnConfigInstance.getSnowplowSchemaOrDefault();
+    final productSchema = schemas['product'] ?? 'product/jsonschema/1-1-0';
+    
+    return _createContext(productSchema, contextData.toJson());
   }
 
   static Future<SelfDescribing?> getDeviceInfoContext() async {
     final deviceFCM =
-        await cacheInstance.getValue(KeyConfig.gkNotificationToken);
-    final deviceInfoJson = await cacheInstance.getValue(KeyConfig.gkDeviceInfo);
+        await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkNotificationToken));
+    final deviceInfoJson = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkDeviceInfo));
     final deviceInfo = deviceInfoJson != null ? jsonDecode(deviceInfoJson) : {};
 
     // If no device id then dont pass the deviceInfoSchema
-    final deviceId = deviceInfo[KeyConfig.gkDeviceUniqueId];
+    final deviceId = deviceInfo[cdnConfigInstance.getKeyOrDefault(KeyConfig.gkDeviceUniqueId)];
     if (deviceId == null || deviceId.toString().isEmpty) {
       return null;
     }
@@ -120,17 +130,20 @@ class SnowplowTrackerService {
       });
     }
 
+    final schemas = cdnConfigInstance.getSnowplowSchemaOrDefault();
+    final userDeviceSchema = schemas['user_device'] ?? 'user_device/jsonschema/1-0-0';
+
     return _createContext(
-      'user_device/jsonschema/1-0-0',
+      userDeviceSchema,
       {
         'device_id': deviceId,
         'android_ad_id':
-            Platform.isAndroid ? deviceInfo[KeyConfig.gkGoogleAdId] : '',
-        'ios_ad_id': Platform.isIOS ? deviceInfo[KeyConfig.gkGoogleAdId] : '',
+            Platform.isAndroid ? deviceInfo[cdnConfigInstance.getKeyOrDefault(KeyConfig.gkGoogleAdId)] : '',
+        'ios_ad_id': Platform.isIOS ? deviceInfo[cdnConfigInstance.getKeyOrDefault(KeyConfig.gkGoogleAdId)] : '',
         'fcm_token': deviceFCM ?? '',
-        'app_domain': deviceInfo[KeyConfig.gkAppDomain],
+        'app_domain': deviceInfo[cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAppDomain)],
         'device_type': Platform.operatingSystem.toLowerCase(),
-        'app_version': deviceInfo[KeyConfig.gkAppVersion],
+        'app_version': deviceInfo[cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAppVersion)],
         'meta': metaItems,
       },
     );
@@ -138,7 +151,10 @@ class SnowplowTrackerService {
 
   static Future<SelfDescribing> getCollectionsContext(
       TrackCollectionEventContext params) async {
-    return _createContext('product/jsonschema/1-1-0', {
+    final schemas = cdnConfigInstance.getSnowplowSchemaOrDefault();
+    final productSchema = schemas['product'] ?? 'product/jsonschema/1-1-0';
+    
+    return _createContext(productSchema, {
       'collection_id': params.collection_id,
       'img_url': params.img_url ?? '',
       'collection_name': params.collection_name,
@@ -148,7 +164,10 @@ class SnowplowTrackerService {
   }
 
   static Future<SelfDescribing> getOtherEventsContext() async {
-    return _createContext('product/jsonschema/1-1-0', {'type': 'other'});
+    final schemas = cdnConfigInstance.getSnowplowSchemaOrDefault();
+    final productSchema = schemas['product'] ?? 'product/jsonschema/1-1-0';
+    
+    return _createContext(productSchema, {'type': 'other'});
   }
 
   // Generic event tracker using HTTP method
@@ -157,7 +176,7 @@ class SnowplowTrackerService {
     List<SelfDescribing> eventContext,
   ) async {
     final isTrackingEnabled =
-        await cacheInstance.getValue(KeyConfig.isSnowplowTrackingEnabled);
+        await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.isSnowplowTrackingEnabled));
     if (isTrackingEnabled == 'false') return;
 
     try {
@@ -219,7 +238,7 @@ class SnowplowTrackerService {
   // Specific Event Trackers
   static Future<void> trackProductEvent(TrackProductEventArgs args) async {
     final isTrackingEnabled =
-        await cacheInstance.getValue(KeyConfig.isSnowplowTrackingEnabled);
+        await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.isSnowplowTrackingEnabled));
     if (isTrackingEnabled == 'false') return;
 
     String cartId = args.cartId;
@@ -266,7 +285,7 @@ class SnowplowTrackerService {
 
   static Future<void> trackCartEvent(TrackCartEventArgs args) async {
     final merchantUrl =
-        (await cacheInstance.getValue(KeyConfig.gkMerchantUrlKey)) ?? '';
+        (await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantUrlKey))) ?? '';
 
     String cartId = args.cartId;
     if (cartId.contains('gid://shopify/Cart/')) {
@@ -293,7 +312,7 @@ class SnowplowTrackerService {
   static Future<void> trackCollectionsEvent(
       TrackCollectionsEventArgs args) async {
     final merchantUrl =
-        (await cacheInstance.getValue(KeyConfig.gkMerchantUrlKey)) ?? '';
+        (await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantUrlKey))) ?? '';
 
     String pageUrl = args.pageUrl ?? '';
     if (args.handle != null && merchantUrl.isNotEmpty && pageUrl.isEmpty) {
@@ -336,13 +355,13 @@ class SnowplowTrackerService {
   static Future<void> sendCustomEventToSnowPlow(
       Map<String, dynamic> eventObject) async {
     final snowplowTrackingEnabled =
-        await cacheInstance.getValue(KeyConfig.isSnowplowTrackingEnabled);
+        await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.isSnowplowTrackingEnabled));
     if (snowplowTrackingEnabled == 'false') return;
 
-    final mid = (await cacheInstance.getValue(KeyConfig.gkMerchantIdKey)) ?? '';
+    final mid = (await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantIdKey))) ?? '';
     final environment = await _getEnvironment();
     final shopDomain =
-        (await cacheInstance.getValue(KeyConfig.gkMerchantUrlKey)) ?? '';
+        (await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantUrlKey))) ?? '';
 
     final snowplow = await SnowplowClient.getSnowplowClient(
       InitializeSdkProps(
@@ -360,10 +379,13 @@ class SnowplowTrackerService {
       getDeviceInfoContext(),
     ])).where((context) => context != null).cast<SelfDescribing>().toList();
 
+    final schemas = cdnConfigInstance.getSnowplowSchemaOrDefault();
+    final structuredSchema = schemas['structured'] ?? 'structured/jsonschema/1-0-0';
+
     await snowplow?.track(
       SelfDescribing(
         schema:
-            'iglu:${SdkConfig.getSchemaVendor(environment)}/structured/jsonschema/1-0-0',
+            'iglu:${SdkConfig.getSchemaVendor(environment)}/$structuredSchema',
         data: filteredData,
       ),
       contexts: contexts,
@@ -409,14 +431,14 @@ class SnowplowTrackerService {
   static Future<void> snowplowStructuredEvent(dynamic args) async {
     try {
       final snowplowTrackingEnabled =
-          await cacheInstance.getValue(KeyConfig.isSnowplowTrackingEnabled);
+          await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.isSnowplowTrackingEnabled));
       if (snowplowTrackingEnabled == 'false') return;
 
       final mid =
-          (await cacheInstance.getValue(KeyConfig.gkMerchantIdKey)) ?? '';
+          (await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantIdKey))) ?? '';
       final environment = await _getEnvironment();
       final shopDomain =
-          (await cacheInstance.getValue(KeyConfig.gkMerchantUrlKey)) ?? '';
+          (await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantUrlKey))) ?? '';
 
       final snowplow = await SnowplowClient.getSnowplowClient(
         InitializeSdkProps(

@@ -5,6 +5,7 @@ import 'package:gokwik/api/base_response.dart';
 import 'package:gokwik/api/constant/api_config.dart';
 import 'package:gokwik/api/httpClient.dart';
 import 'package:gokwik/api/snowplow_events.dart';
+import 'package:gokwik/config/cdn_config.dart';
 import 'package:gokwik/config/key_congif.dart';
 
 import '../config/cache_instance.dart';
@@ -22,9 +23,9 @@ class ShopifyService {
       final gokwik = DioClient().getClient();
 
       final results = await Future.wait([
-        cacheInstance.getValue(KeyConfig.gkAccessTokenKey),
-        cacheInstance.getValue(KeyConfig.checkoutAccessTokenKey),
-        cacheInstance.getValue(KeyConfig.gkNotificationEnabled),
+        cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAccessTokenKey)),
+        cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.checkoutAccessTokenKey)),
+        cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkNotificationEnabled)),
       ]);
 
       final accessToken = results[0];
@@ -32,15 +33,15 @@ class ShopifyService {
       final notifications = results[2];
 
       if (accessToken != null) {
-        gokwik.options.headers[KeyConfig.gkAccessTokenKey] = accessToken;
+        gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.gkAccessToken)] = accessToken;
       }
       if (checkoutAccessToken != null) {
-        gokwik.options.headers[KeyConfig.checkoutAccessTokenKey] =
+        gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.checkoutAccessToken)] =
             checkoutAccessToken;
       }
 
       final response = await gokwik.post(
-        APIConfig.shopifyMultipass,
+        cdnConfigInstance.getEndpointOrDefault(APIConfig.shopifyMultipass),
         data: {
           'id': id ?? '',
           'email': email,
@@ -56,7 +57,7 @@ class ShopifyService {
       };
 
       await cacheInstance.setValue(
-        KeyConfig.gkVerifiedUserKey,
+        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey),
         jsonEncode(userData),
       );
 
@@ -72,7 +73,7 @@ class ShopifyService {
     try {
       final gokwik = DioClient().getClient();
 
-      final phoneNumber = await cacheInstance.getValue(KeyConfig.gkUserPhone);
+      final phoneNumber = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkUserPhone));
 
       await SnowplowTrackerService.sendCustomEventToSnowPlow({
         'category': 'login_modal',
@@ -83,7 +84,7 @@ class ShopifyService {
       });
 
       final response = (await gokwik.post(
-        APIConfig.sendEmailVerificationCode,
+        cdnConfigInstance.getEndpointOrDefault(APIConfig.sendEmailVerificationCode),
         data: {'email': email},
       ))
           .toBaseResponse();
@@ -106,11 +107,11 @@ class ShopifyService {
       final gokwik = DioClient().getClient();
 
       final notifications = await cacheInstance.getValue(
-        KeyConfig.gkNotificationEnabled,
+        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkNotificationEnabled),
       );
 
       final response = await gokwik.post(
-        APIConfig.verifyEmailCode,
+        cdnConfigInstance.getEndpointOrDefault(APIConfig.verifyEmailCode),
         data: {
           'email': email,
           'otp': otp,
@@ -120,7 +121,7 @@ class ShopifyService {
       );
 
       final userData =
-          await cacheInstance.getValue(KeyConfig.gkVerifiedUserKey);
+          await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey));
       final userDataObj = userData != null ? jsonDecode(userData) : {};
 
       final user = {
@@ -129,7 +130,7 @@ class ShopifyService {
       };
 
       await cacheInstance.setValue(
-        KeyConfig.gkVerifiedUserKey,
+        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey),
         jsonEncode(user),
       );
 
@@ -157,10 +158,10 @@ class ShopifyService {
     try {
       final gokwik = DioClient().getClient();
 
-      gokwik.options.headers[KeyConfig.gkAccessTokenKey] = gkAccessToken;
+      gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.gkAccessToken)] = gkAccessToken;
 
       final response = await gokwik.post(
-        APIConfig.shopifyMultipass,
+        cdnConfigInstance.getEndpointOrDefault(APIConfig.shopifyMultipass),
         data: {
           'id': id ?? '',
           'email': email,
@@ -182,7 +183,7 @@ class ShopifyService {
       // });
 
       await cacheInstance.setValue(
-        KeyConfig.gkVerifiedUserKey,
+        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey),
         jsonEncode(userData),
       );
 
@@ -204,7 +205,7 @@ class ShopifyService {
     try {
       final gokwik = DioClient().getClient();
 
-      final response = await gokwik.get('${APIConfig.disposableEmailCheck}$email');
+      final response = await gokwik.get('${cdnConfigInstance.getEndpointOrDefault(APIConfig.disposableEmailCheck)}$email');
 
       return response.data?['data'] != null &&
              response.data?['success'] == true;
@@ -222,7 +223,7 @@ class ShopifyService {
       final gokwik = DioClient().getClient();
       
       // Set the integration type header
-      gokwik.options.headers['kp-integration-type'] = 'APP_MAKER';
+      gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.kpIntegrationType)] = 'APP_MAKER';
 
       final Map<String, dynamic> body = {
         'email': email,
@@ -236,7 +237,7 @@ class ShopifyService {
       }
 
       final response = await gokwik.post(
-        APIConfig.customerShopifySession,
+        cdnConfigInstance.getEndpointOrDefault(APIConfig.customerShopifySession),
         data: body,
       );
 
