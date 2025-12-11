@@ -1,4 +1,7 @@
 ## [1.0.13]
+- fix multiple JS injection issue
+
+## [1.0.13]
 - fix multiple events issue
 
 ## [1.0.12]
