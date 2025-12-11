@@ -10,6 +10,8 @@ enum Environment {
 enum MerchantType {
   shopify,
   custom,
+  // ignore: constant_identifier_names
+  custom_shopify,
 }
 
 class Settings {

@@ -87,7 +87,7 @@ class RootCubit extends Cubit<RootState> {
         emit(state.copyWith(otpSent: true, isLoading: false));
         return;
       }
-      
+
       final response = await ApiService.sendVerificationCode(
           phoneController.text, state.notifications);
 
@@ -179,8 +179,15 @@ class RootCubit extends Cubit<RootState> {
           ? Map<String, dynamic>.from(responses)
           : responses.toJson();
 
+      // Check if merchant type is shopify or custom_shopify
+      final merchantTypeString =
+          await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
+      final isShopifyOrCustomShopify =
+          merchantTypeString == MerchantType.shopify ||
+              merchantTypeString == MerchantType.custom_shopify;
+
       // Handle Shopify merchant type
-      if (state.merchantType == MerchantType.shopify) {
+      if (isShopifyOrCustomShopify) {
         // shopify customer id
         if (responseMap.containsKey('data')) {
           if (!responseMap['data'].containsKey('phone')) {
@@ -237,8 +244,7 @@ class RootCubit extends Cubit<RootState> {
             onAnalytics!(AnalyticsEvents.appLoginSuccess, {
               'phone': phoneController.text.toString(),
               'email': responseMap['email'],
-              'customer_id':
-              responseMap['shopifyCustomerId']?.toString() ?? ""
+              'customer_id': responseMap['shopifyCustomerId']?.toString() ?? ""
             });
           }
           onSuccessData?.call(
@@ -280,7 +286,7 @@ class RootCubit extends Cubit<RootState> {
 
         // Handle email required case
         if (responseMap.containsKey('emailRequired')) {
-          if(responseMap['emailRequired'] == true) {
+          if (responseMap['emailRequired'] == true) {
             emit(state.copyWith(
               isNewUser: true,
               isLoading: false,
@@ -468,7 +474,8 @@ class RootCubit extends Cubit<RootState> {
         }
         if (responseToCheckIfUserIsNew!.containsKey('data')) {
           if (!responseToCheckIfUserIsNew['data'].containsKey('phone')) {
-            responseToCheckIfUserIsNew['data']['phone'] = phoneController.text.toString();
+            responseToCheckIfUserIsNew['data']['phone'] =
+                phoneController.text.toString();
           }
         }
         onSuccessData?.call(FlowResult(
@@ -517,13 +524,16 @@ class RootCubit extends Cubit<RootState> {
 
   //Listeners
   void _listenMerchantType() async {
-    final merchantType =
+    final merchantTypeString =
         await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
-    if (merchantType != null) {
+    if (merchantTypeString != null) {
+      // Check if merchant type is shopify or custom_shopify
       emit(state.copyWith(
-          merchantType: merchantType == 'shopify'
+          merchantType: merchantTypeString == 'shopify'
               ? MerchantType.shopify
-              : MerchantType.custom));
+              : merchantTypeString == 'custom_shopify'
+                  ? MerchantType.custom
+                  : MerchantType.custom));
     }
   }
 
@@ -532,13 +542,15 @@ class RootCubit extends Cubit<RootState> {
   }
 
   Future<void> onMerchantTypeUpdated() async {
-    final merchantType =
+    final merchantTypeString =
         await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
-    if (merchantType != null) {
+    if (merchantTypeString != null) {
       emit(state.copyWith(
-          merchantType: merchantType == 'shopify'
+          merchantType: merchantTypeString == 'shopify'
               ? MerchantType.shopify
-              : MerchantType.custom));
+              : merchantTypeString == 'custom_shopify'
+                  ? MerchantType.custom
+                  : MerchantType.custom));
     }
   }
 
@@ -552,7 +564,11 @@ class RootCubit extends Cubit<RootState> {
 
     final Map<String, dynamic> responseData = jsonDecode(response);
 
-    if (state.merchantType == MerchantType.shopify) {
+    final isShopifyOrCustomShopify =
+        state.merchantType == MerchantType.shopify ||
+            state.merchantType == MerchantType.custom_shopify;
+
+    if (isShopifyOrCustomShopify) {
       if (
           // responseData['emailRequired'] == true &&
           (responseData['email'] == null || responseData['email'].isEmpty)) {
@@ -581,7 +597,6 @@ class RootCubit extends Cubit<RootState> {
               responseData['email'] != null &&
               // responseData['multipassToken'] != null &&
               responseData['password'] != null)) {
-
         onSuccessData?.call(
             FlowResult(flowType: FlowType.alreadyLoggedIn, data: responseData));
         emit(state.copyWith(isUserLoggedIn: true));

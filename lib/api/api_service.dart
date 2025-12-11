@@ -792,6 +792,9 @@ abstract class ApiService {
         'property': 'phone_number',
         'value': int.tryParse(phoneNumber) ?? 0,
       });
+      
+      // Set the integration type header
+      gokwik.options.headers['kp-integration-type'] = 'APP_MAKER';
 
       final deviceInfoJson =
           await cacheInstance.getValue(KeyConfig.gkDeviceInfo);
@@ -830,7 +833,7 @@ abstract class ApiService {
       final String kpToken = data?['kpToken'];
       String? merchantType = await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
 
-      if (merchantType! == 'shopify') {
+      if (merchantType! == 'shopify' || merchantType == 'custom_shopify') {
         final res = await _handleShopifyVerifyResponse(
           response.data,
           phoneNumber,
