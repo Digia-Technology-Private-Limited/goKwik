@@ -290,10 +290,6 @@ window.addEventListener("gokwikLoaded", (event) => {
         webviewUrl += '&upi_apps=$encodedUpiApps';
       }
 
-      if (token != null && token.isNotEmpty) {
-        webviewUrl += '&gk_token=$token';
-      }
-
       setState(() {
         webUrl = webviewUrl;
       });
