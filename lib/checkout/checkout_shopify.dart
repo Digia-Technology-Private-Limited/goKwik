@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:gokwik/api/sdk_config.dart';
 import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/cdn_config.dart';
-import 'package:gokwik/config/key_congif.dart';
+import 'package:gokwik/config/config_constants.dart';
 import 'package:gokwik/flow_result.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -17,7 +17,7 @@ import 'package:gokwik/services/upi_app_checker.dart';
 // Get UPI packages from CDN config with fallback to default
 Map<String, Map<String, String>> getUpiAppPackages() {
   try {
-    final upiPackages = cdnConfigInstance.getCheckoutOrDefault('upi_packages');
+    final upiPackages = cdnConfigInstance.getCheckout('upi_packages');
     if (upiPackages != null && upiPackages is Map) {
       return Map<String, Map<String, String>>.from(
         upiPackages.map((key, value) => MapEntry(
@@ -266,15 +266,15 @@ window.addEventListener("gokwikLoaded", (event) => {
 
   Future<void> initiateCheckout() async {
     final environment =
-        await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkEnvironmentKey));
+        await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkEnvironmentKey)!);
 
     final merchantType =
-        await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantTypeKey));
+        await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
     final sdkConfig = SdkConfig.fromEnvironment(environment!);
 
     // GET LOGGED IN USER EMAIL HERE
     final verifiedUserData =
-        await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey));
+        await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!);
 
     String? userEmail;
 
@@ -290,8 +290,8 @@ window.addEventListener("gokwikLoaded", (event) => {
     }
     if (merchantType == 'custom') {
       final merchantId =
-          await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantIdKey));
-      final token = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAccessTokenKey));
+          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!);
+      final token = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!);
 
       String appplatform = Platform.operatingSystem.toLowerCase();
       String appversion = (await PackageInfo.fromPlatform()).version;
@@ -318,10 +318,10 @@ window.addEventListener("gokwikLoaded", (event) => {
     }
 
     final merchantInfo = {
-      'mid': await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantIdKey)),
+      'mid': await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!),
       'environment': environment,
-      'token': await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.checkoutAccessTokenKey)),
-      'shopDomain': await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantUrlKey)),
+      'token': await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutAccessTokenKey)!),
+      'shopDomain': await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantUrlKey)!),
     };
 
     // Determine order tags - use provided tags or default platform-specific tags
@@ -412,7 +412,7 @@ window.addEventListener("gokwikLoaded", (event) => {
     try {
       final decoded = jsonDecode(message.toString());
       final merchantType =
-          await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantTypeKey));
+          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
       if (merchantType == 'custom') {
         if (decoded['eventname'] == 'checkout-ready') {
           if (!checkoutLoaded) {

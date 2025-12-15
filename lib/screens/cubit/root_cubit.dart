@@ -9,7 +9,7 @@ import 'package:gokwik/api/shopify_service.dart';
 import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/cdn_config.dart';
-import 'package:gokwik/config/key_congif.dart';
+import 'package:gokwik/config/config_constants.dart';
 import 'package:gokwik/config/types.dart';
 import 'package:gokwik/module/single_use_data.dart';
 import 'package:gokwik/screens/cubit/root_model.dart';
@@ -105,7 +105,7 @@ class RootCubit extends Cubit<RootState> {
 
       if (onAnalytics != null) {
         onAnalytics!(
-          cdnConfigInstance.getAnalyticsEventOrDefault(AnalyticsEvents.appLoginPhone),
+          cdnConfigInstance.getAnalyticsEvent(AnalyticsEventKeys.appLoginPhone)!,
           {
             'phone': phoneController.text.toString(),
           },
@@ -140,7 +140,7 @@ class RootCubit extends Cubit<RootState> {
       emit(state.copyWith(isSuccess: true, isLoading: false));
       if (onAnalytics != null) {
         onAnalytics!(
-          cdnConfigInstance.getAnalyticsEventOrDefault(AnalyticsEvents.appLoginSuccess),
+          cdnConfigInstance.getAnalyticsEvent(AnalyticsEventKeys.appLoginSuccess)!,
           {
             'phone': phoneController.text.toString(),
             'email': shopifyEmailController.text,
@@ -188,7 +188,7 @@ class RootCubit extends Cubit<RootState> {
 
       // Check if merchant type is shopify or custom_shopify
       final merchantTypeString =
-          await cacheInstance.getValue(KeyConfig.gkMerchantTypeKey);
+          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
       final isShopifyOrCustomShopify =
           merchantTypeString == MerchantType.shopify ||
               merchantTypeString == MerchantType.custom_shopify;
@@ -249,7 +249,7 @@ class RootCubit extends Cubit<RootState> {
           emit(state.copyWith(isSuccess: true, isLoading: false));
           if (onAnalytics != null) {
             onAnalytics!(
-              cdnConfigInstance.getAnalyticsEventOrDefault(AnalyticsEvents.appLoginSuccess),
+              cdnConfigInstance.getAnalyticsEvent(AnalyticsEventKeys.appLoginSuccess)!,
               {
                 'phone': phoneController.text.toString(),
                 'email': responseMap['email'],
@@ -310,7 +310,7 @@ class RootCubit extends Cubit<RootState> {
         emit(state.copyWith(isSuccess: true, isLoading: false));
         if (onAnalytics != null) {
           onAnalytics!(
-            cdnConfigInstance.getAnalyticsEventOrDefault(AnalyticsEvents.appLoginSuccess),
+            cdnConfigInstance.getAnalyticsEvent(AnalyticsEventKeys.appLoginSuccess)!,
             {
               'phone': phoneController.text.toString(),
               'email': responseMap['data']['email'],
@@ -349,7 +349,7 @@ class RootCubit extends Cubit<RootState> {
 
         if (onAnalytics != null) {
           onAnalytics!(
-            cdnConfigInstance.getAnalyticsEventOrDefault(AnalyticsEvents.appLoginSuccess),
+            cdnConfigInstance.getAnalyticsEvent(AnalyticsEventKeys.appLoginSuccess)!,
             {
               'phone': phoneController.text.toString(),
               'email': responseMap['merchantResponse']['email'],
@@ -481,7 +481,7 @@ class RootCubit extends Cubit<RootState> {
       if (responseToCheckIfUserIsNew?['data']?['isNewUser'] == true) {
         if (onAnalytics != null) {
           onAnalytics!(
-            cdnConfigInstance.getAnalyticsEventOrDefault(AnalyticsEvents.appLoginSuccess),
+            cdnConfigInstance.getAnalyticsEvent(AnalyticsEventKeys.appLoginSuccess)!,
             {
               'email': email,
               'phone': phoneController.text.toString(),
@@ -545,7 +545,7 @@ class RootCubit extends Cubit<RootState> {
   //Listeners
   void _listenMerchantType() async {
     final merchantType =
-        await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantTypeKey));
+        await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
     if (merchantType != null) {
       emit(state.copyWith(
           merchantType: merchantType == 'shopify'
@@ -562,7 +562,7 @@ class RootCubit extends Cubit<RootState> {
 
   Future<void> onMerchantTypeUpdated() async {
     final merchantType =
-        await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantTypeKey));
+        await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
     if (merchantType != null) {
       emit(state.copyWith(
           merchantType: merchantType == 'shopify'
@@ -574,7 +574,7 @@ class RootCubit extends Cubit<RootState> {
   }
 
   Future<void> onUserStateUpdated() async {
-    final response = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey));
+    final response = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!);
     if (response == null) {
       // onErrorData?.call(FlowResult(
       //     flowType: FlowType.notLoggedIn, error: 'User Not Logged In'));
@@ -650,12 +650,12 @@ class RootCubit extends Cubit<RootState> {
 
   Future<void> _initializeDevMode() async {
     try {
-      final mode = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMode));
+      final mode = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMode)!);
       final isDev = mode == 'debug';
 
       if (isDev) {
         final requestId =
-            await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkRequestIdKey));
+            await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkRequestIdKey)!);
         emit(state.copyWith(
           isDevBuild: true,
           reqId: requestId ?? '',

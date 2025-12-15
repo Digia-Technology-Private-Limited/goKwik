@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:gokwik/api/constant/api_config.dart';
 import 'package:gokwik/config/cdn_config.dart';
+import 'package:gokwik/config/config_constants.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'base_response.dart';
 import 'sdk_config.dart';
@@ -33,16 +33,17 @@ class DioClient {
     final appVersion = packageInfo.version;
     final source = '${appPlatform}-app';
 
-    final baseUrl = cdnConfigInstance.getEnvironmentOrDefault(env)?.baseUrl ??
-                    SdkConfig.getBaseUrl(env);
+    // Get environment config - automatically falls back to bundled kp-config.json
+    final envConfig = cdnConfigInstance.getEnvironment(env);
+    final baseUrl = envConfig?.baseUrl ?? SdkConfig.getBaseUrl(env);
 
     _gokwikHttpClient = Dio(BaseOptions(
       baseUrl: baseUrl,
       headers: {
         'accept': '*/*',
-        cdnConfigInstance.getHeaderOrDefault(APIHeader.appplatform): appPlatform,
-        cdnConfigInstance.getHeaderOrDefault(APIHeader.appversion): appVersion,
-        cdnConfigInstance.getHeaderOrDefault(APIHeader.source): source,
+        cdnConfigInstance.getHeader(APIHeaderKeys.appplatform)!: appPlatform,
+        cdnConfigInstance.getHeader(APIHeaderKeys.appversion)!: appVersion,
+        cdnConfigInstance.getHeader(APIHeaderKeys.source)!: source,
       },
     ));
   }

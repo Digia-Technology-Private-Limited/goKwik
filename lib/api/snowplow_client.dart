@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:gokwik/config/cdn_config.dart';
-import 'package:gokwik/config/key_congif.dart';
+import 'package:gokwik/config/config_constants.dart';
 import 'package:snowplow_tracker/snowplow_tracker.dart';
 
 import '../config/cache_instance.dart';
@@ -62,7 +62,7 @@ abstract class SnowplowClient {
   static Future<SnowplowTracker?> getSnowplowClient(
       [InitializeSdkProps? args]) async {
     final snowplowTrackingEnabled = await cacheInstance.getValue(
-      cdnConfigInstance.getKeyOrDefault(KeyConfig.isSnowplowTrackingEnabled),
+      cdnConfigInstance.getKeys(StorageKeyKeys.isSnowplowTrackingEnabled)!,
     );
 
     if (snowplowTrackingEnabled == 'true' &&

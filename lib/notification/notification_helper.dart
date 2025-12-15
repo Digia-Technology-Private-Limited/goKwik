@@ -2,10 +2,10 @@
 import 'dart:io';
 
 // import 'package:gokwik/config/cache_instance.dart';
+// import 'package:gokwik/config/cdn_config.dart';
+// import 'package:gokwik/config/config_constants.dart';
 // import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
-
-// import '../config/key_congif.dart';
 
 class NotificationHelper {
   static Future<bool> checkAndRequestUserPermission() async {
@@ -30,10 +30,15 @@ class NotificationHelper {
     String buttonId = '',
   }) async {
     // try {
-    //   final url =
-    //       await cacheInstance.getValue(KeyConfig.kcNotificationEventUrl) ?? '';
-    //   final userId = await cacheInstance.getValue(KeyConfig.kcMerchantId);
-    //   final token = await cacheInstance.getValue(KeyConfig.kcMerchantToken);
+    //   final url = await cacheInstance.getValue(
+    //     cdnConfigInstance.getKeys(StorageKeyKeys.kcNotificationEventUrl)!,
+    //   ) ?? '';
+    //   final userId = await cacheInstance.getValue(
+    //     cdnConfigInstance.getKeys(StorageKeyKeys.kcMerchantId)!,
+    //   );
+    //   final token = await cacheInstance.getValue(
+    //     cdnConfigInstance.getKeys(StorageKeyKeys.kcMerchantToken)!,
+    //   );
 
     //   if (userId == null || token == null) return;
 
@@ -65,21 +70,27 @@ class NotificationHelper {
 
   static Future<void> sendOptInStatus(bool status) async {
     // try {
-    //   final deviceInfoJson =
-    //       await cacheInstance.getValue(KeyConfig.gkDeviceInfo);
+    //   final deviceInfoJson = await cacheInstance.getValue(
+    //     cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceInfo)!,
+    //   );
     //   final deviceInfo = jsonDecode(deviceInfoJson ?? '{}');
 
-    //   final url =
-    //       await cacheInstance.getValue(KeyConfig.kcNotificationEventUrl) ?? '';
-    //   final userId = await cacheInstance.getValue(KeyConfig.kcMerchantId);
-    //   final token = await cacheInstance.getValue(KeyConfig.kcMerchantToken);
+    //   final url = await cacheInstance.getValue(
+    //     cdnConfigInstance.getKeys(StorageKeyKeys.kcNotificationEventUrl)!,
+    //   ) ?? '';
+    //   final userId = await cacheInstance.getValue(
+    //     cdnConfigInstance.getKeys(StorageKeyKeys.kcMerchantId)!,
+    //   );
+    //   final token = await cacheInstance.getValue(
+    //     cdnConfigInstance.getKeys(StorageKeyKeys.kcMerchantToken)!,
+    //   );
 
     //   if (userId == null || token == null) return;
 
     //   final data = {
     //     'subscription_status': status,
-    //     'app_domain': deviceInfo[KeyConfig.gkAppDomain],
-    //     'device_id': deviceInfo[KeyConfig.gkDeviceUniqueId],
+    //     'app_domain': deviceInfo[cdnConfigInstance.getKeys(StorageKeyKeys.gkAppDomain)],
+    //     'device_id': deviceInfo[cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceUniqueId)],
     //   };
 
     //   final headers = {

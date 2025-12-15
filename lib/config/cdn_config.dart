@@ -376,96 +376,126 @@ class KwikPassCDNConfig {
     }
   }
 
-  /// Gets a specific key from CDN config
-  String? getKeys(String key) {
+  /// Gets a specific storage key from CDN config using constant identifiers
+  String? getKeys(String keyConstant) {
     _ensureInitialized();
     try {
       final cachedConfig = getCDNConfig();
-      if (cachedConfig?.keys?[key] != null) {
-        return cachedConfig!.keys![key];
+
+      // Use the constant to get the property name, then look up the value
+      if (cachedConfig?.keys?[keyConstant] != null) {
+        final value = cachedConfig!.keys![keyConstant];
+        debugPrint('[CDN Config] ✅ Storage key "$keyConstant" = "$value" from CACHED CDN config');
+        return value;
       }
       
-      return (_bundledConfig['keys'] as Map<String, dynamic>?)?[key] as String?;
+      // Fallback to default config using the same property name
+      final defaultValue = (_bundledConfig['keys'] as Map<String, dynamic>?)?[keyConstant] as String?;
+      debugPrint('[CDN Config] 📦 Storage key "$keyConstant" = "$defaultValue" from DEFAULT kp-config.json');
+      return defaultValue;
     } catch (e) {
-      // ignore: avoid_print
-      print('Error fetching key "$key": $e');
-      return (_bundledConfig['keys'] as Map<String, dynamic>?)?[key] as String?;
+      debugPrint('[CDN Config] ⚠️ Error fetching storage key "$keyConstant": $e');
+      return (_bundledConfig['keys'] as Map<String, dynamic>?)?[keyConstant] as String?;
     }
   }
 
-  /// Gets a specific API endpoint from CDN config
-  String? getEndpoint(String key) {
+  /// Gets a specific API endpoint from CDN config using constant identifiers
+  String? getEndpoint(String endpointConstant) {
     _ensureInitialized();
     try {
       final cachedConfig = getCDNConfig();
-      if (cachedConfig?.apiEndpoints?[key] != null) {
-        return cachedConfig!.apiEndpoints![key];
+
+      // Use the constant to get the property name, then look up the value
+      if (cachedConfig?.apiEndpoints?[endpointConstant] != null) {
+        final value = cachedConfig!.apiEndpoints![endpointConstant];
+        debugPrint('[CDN Config] ✅ Endpoint "$endpointConstant" = "$value" from CACHED CDN config');
+        return value;
       }
       
-      return (_bundledConfig['api']?['endpoints'] as Map<String, dynamic>?)?[key] as String?;
+      // Fallback to default config using the same property name
+      final defaultValue = (_bundledConfig['api']?['endpoints'] as Map<String, dynamic>?)?[endpointConstant] as String?;
+      debugPrint('[CDN Config] 📦 Endpoint "$endpointConstant" = "$defaultValue" from DEFAULT kp-config.json');
+      return defaultValue;
     } catch (e) {
-      // ignore: avoid_print
-      print('Error fetching endpoint "$key": $e');
-      return (_bundledConfig['api']?['endpoints'] as Map<String, dynamic>?)?[key] as String?;
+      debugPrint('[CDN Config] ⚠️ Error fetching endpoint "$endpointConstant": $e');
+      return (_bundledConfig['api']?['endpoints'] as Map<String, dynamic>?)?[endpointConstant] as String?;
     }
   }
 
-  /// Gets a specific environment configuration from CDN config
-  EnvironmentConfig? getEnvironment(String key) {
+  /// Gets a specific environment configuration from CDN config using constant identifiers
+  EnvironmentConfig? getEnvironment(String envConstant) {
     _ensureInitialized();
     try {
       final cachedConfig = getCDNConfig();
-      if (cachedConfig?.apiEnvironments?[key] != null) {
-        return cachedConfig!.apiEnvironments![key];
+      
+      // Use the constant to get the property name, then look up the value
+      if (cachedConfig?.apiEnvironments?[envConstant] != null) {
+        final value = cachedConfig!.apiEnvironments![envConstant]!;
+        debugPrint('[CDN Config] ✅ Environment "$envConstant" = ${value.toJson()} from CACHED CDN config');
+        return value;
       }
       
-      final envData = (_bundledConfig['api']?['environments'] as Map<String, dynamic>?)?[key];
+      // Fallback to default config using the same property name
+      final envData = (_bundledConfig['api']?['environments'] as Map<String, dynamic>?)?[envConstant];
+      if (envData != null) {
+        final defaultValue = EnvironmentConfig.fromJson(envData as Map<String, dynamic>);
+        debugPrint('[CDN Config] 📦 Environment "$envConstant" = ${defaultValue.toJson()} from DEFAULT kp-config.json');
+        return defaultValue;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('[CDN Config] ⚠️ Error fetching environment "$envConstant": $e');
+      final envData = (_bundledConfig['api']?['environments'] as Map<String, dynamic>?)?[envConstant];
       if (envData != null) {
         return EnvironmentConfig.fromJson(envData as Map<String, dynamic>);
       }
       return null;
-    } catch (e) {
-      // ignore: avoid_print
-      print('Error fetching environment "$key": $e');
-      final envData = (_bundledConfig['api']?['environments'] as Map<String, dynamic>?)?[key];
-      if (envData != null) {
-        return EnvironmentConfig.fromJson(envData as Map<String, dynamic>);
-      }
-      return null;
     }
   }
 
-  /// Gets a specific analytics event from CDN config
-  String? getAnalyticsEvent(String key) {
+  /// Gets a specific analytics event from CDN config using constant identifiers
+  String? getAnalyticsEvent(String eventConstant) {
     _ensureInitialized();
     try {
       final cachedConfig = getCDNConfig();
-      if (cachedConfig?.analyticsEvents?[key] != null) {
-        return cachedConfig!.analyticsEvents![key];
+      
+      // Use the constant to get the property name, then look up the value
+      if (cachedConfig?.analyticsEvents?[eventConstant] != null) {
+        final value = cachedConfig!.analyticsEvents![eventConstant];
+        debugPrint('[CDN Config] ✅ Analytics event "$eventConstant" = "$value" from CACHED CDN config');
+        return value;
       }
       
-      return (_bundledConfig['analytics']?['events'] as Map<String, dynamic>?)?[key] as String?;
+      // Fallback to default config using the same property name
+      final defaultValue = (_bundledConfig['analytics']?['events'] as Map<String, dynamic>?)?[eventConstant] as String?;
+      debugPrint('[CDN Config] 📦 Analytics event "$eventConstant" = "$defaultValue" from DEFAULT kp-config.json');
+      return defaultValue;
     } catch (e) {
-      // ignore: avoid_print
-      print('Error fetching analytics event "$key": $e');
-      return (_bundledConfig['analytics']?['events'] as Map<String, dynamic>?)?[key] as String?;
+      debugPrint('[CDN Config] ⚠️ Error fetching analytics event "$eventConstant": $e');
+      return (_bundledConfig['analytics']?['events'] as Map<String, dynamic>?)?[eventConstant] as String?;
     }
   }
 
-  /// Gets a specific header from CDN config
-  String? getHeader(String key) {
+  /// Gets a specific header from CDN config using constant identifiers
+  String? getHeader(String headerConstant) {
     _ensureInitialized();
     try {
       final cachedConfig = getCDNConfig();
-      if (cachedConfig?.apiHeaders?[key] != null) {
-        return cachedConfig!.apiHeaders![key];
+      
+      // Use the constant to get the property name, then look up the value
+      if (cachedConfig?.apiHeaders?[headerConstant] != null) {
+        final value = cachedConfig!.apiHeaders![headerConstant];
+        debugPrint('[CDN Config] ✅ Header "$headerConstant" = "$value" from CACHED CDN config');
+        return value;
       }
       
-      return (_bundledConfig['api']?['headers'] as Map<String, dynamic>?)?[key] as String?;
+      // Fallback to default config using the same property name
+      final defaultValue = (_bundledConfig['api']?['headers'] as Map<String, dynamic>?)?[headerConstant] as String?;
+      debugPrint('[CDN Config] 📦 Header "$headerConstant" = "$defaultValue" from DEFAULT kp-config.json');
+      return defaultValue;
     } catch (e) {
-      // ignore: avoid_print
-      print('Error fetching header "$key": $e');
-      return (_bundledConfig['api']?['headers'] as Map<String, dynamic>?)?[key] as String?;
+      debugPrint('[CDN Config] ⚠️ Error fetching header "$headerConstant": $e');
+      return (_bundledConfig['api']?['headers'] as Map<String, dynamic>?)?[headerConstant] as String?;
     }
   }
 
@@ -474,20 +504,21 @@ class KwikPassCDNConfig {
     _ensureInitialized();
     try {
       final cachedConfig = getCDNConfig();
-      dynamic checkout = cachedConfig?.additionalData?['checkout'];
+      final checkout = cachedConfig?.additionalData?['checkout'];
       
-      // ignore: prefer_conditional_assignment
-      if (checkout == null) {
-        checkout = _bundledConfig['checkout'];
+      if (checkout != null) {
+        debugPrint('[CDN Config] ✅ Checkout config${key != null ? ' "$key"' : ''} from CACHED CDN config');
+        return key != null ? checkout[key] : checkout;
       }
       
-      if (key != null && checkout != null) {
-        return checkout[key];
+      debugPrint('[CDN Config] 📦 Checkout config${key != null ? ' "$key"' : ''} from DEFAULT kp-config.json');
+      final defaultCheckout = _bundledConfig['checkout'];
+      if (key != null && defaultCheckout != null) {
+        return defaultCheckout[key];
       }
-      return checkout;
+      return defaultCheckout;
     } catch (e) {
-      // ignore: avoid_print
-      print('Error fetching checkout config${key != null ? ' "$key"' : ''}: $e');
+      debugPrint('[CDN Config] ⚠️ Error fetching checkout config${key != null ? ' "$key"' : ''}: $e');
       final checkout = _bundledConfig['checkout'];
       if (key != null && checkout != null) {
         return checkout[key];
@@ -496,172 +527,50 @@ class KwikPassCDNConfig {
     }
   }
 
-  /// Gets snowplow schema object from cached CDN config or falls back to bundled JSON
-  Map<String, String> getSnowplowSchema() {
+  /// Gets a specific snowplow schema from CDN config using constant identifiers
+  /// If no schema constant is provided, returns all schemas
+  dynamic getSnowplowSchema([String? schemaConstant]) {
     _ensureInitialized();
     try {
       final cachedConfig = getCDNConfig();
       final schema = cachedConfig?.additionalData?['snowplow']?['schema'];
       
-      if (schema != null && (schema as Map).isNotEmpty) {
-        return Map<String, String>.from(schema);
+      // If no specific schema requested, return all schemas
+      if (schemaConstant == null) {
+        if (schema != null && (schema as Map).isNotEmpty) {
+          debugPrint('[CDN Config] ✅ All Snowplow schemas from CACHED CDN config');
+          return Map<String, String>.from(schema);
+        }
+        debugPrint('[CDN Config] 📦 All Snowplow schemas from DEFAULT kp-config.json');
+        final bundledSchema = _bundledConfig['snowplow']?['schema'];
+        return bundledSchema != null
+            ? Map<String, String>.from(bundledSchema as Map)
+            : <String, String>{};
       }
       
-      final bundledSchema = _bundledConfig['snowplow']?['schema'];
-      return bundledSchema != null
-          ? Map<String, String>.from(bundledSchema as Map)
-          : {};
+      // Use the constant to get the property name, then look up the value
+      if (schema?[schemaConstant] != null) {
+        final value = schema[schemaConstant];
+        debugPrint('[CDN Config] ✅ Snowplow schema "$schemaConstant" = "$value" from CACHED CDN config');
+        return value;
+      }
+      
+      // Fallback to default config using the same property name
+      final defaultValue = _bundledConfig['snowplow']?['schema']?[schemaConstant];
+      debugPrint('[CDN Config] 📦 Snowplow schema "$schemaConstant" = "$defaultValue" from DEFAULT kp-config.json');
+      return defaultValue;
     } catch (e) {
-      // ignore: avoid_print
-      print('Error fetching snowplow schema: $e');
+      debugPrint('[CDN Config] ⚠️ Error fetching snowplow schema${schemaConstant != null ? ' "$schemaConstant"' : ''}: $e');
+      if (schemaConstant != null) {
+        return _bundledConfig['snowplow']?['schema']?[schemaConstant];
+      }
       final bundledSchema = _bundledConfig['snowplow']?['schema'];
       return bundledSchema != null
           ? Map<String, String>.from(bundledSchema as Map)
-          : {};
+          : <String, String>{};
     }
   }
 
-  /// Helper method to get key with fallback
-  String getKeyOrDefault(String defaultKey) {
-    _ensureInitialized();
-    
-    // Try to find the key property name by reverse lookup
-    final keysMap = _bundledConfig['keys'] as Map<String, dynamic>?;
-    if (keysMap != null) {
-      final keyPropertyName = keysMap.entries
-          .firstWhere(
-            (entry) => entry.value == defaultKey,
-            orElse: () => const MapEntry('', ''),
-          )
-          .key;
-      
-      if (keyPropertyName.isNotEmpty) {
-        final cdnValue = getKeys(keyPropertyName);
-        debugPrint("GOT KEY?? : $cdnValue");
-        return cdnValue ?? defaultKey;
-      }
-    }
-    
-    debugPrint("Return DEFAULT $defaultKey");
-    return defaultKey;
-  }
-
-  /// Helper method to get endpoint with fallback
-  String getEndpointOrDefault(String defaultEndpoint) {
-    _ensureInitialized();
-    
-    final endpointsMap = _bundledConfig['api']?['endpoints'] as Map<String, dynamic>?;
-    if (endpointsMap != null) {
-      final endpointPropertyName = endpointsMap.entries
-          .firstWhere(
-            (entry) => entry.value == defaultEndpoint,
-            orElse: () => const MapEntry('', ''),
-          )
-          .key;
-      
-      if (endpointPropertyName.isNotEmpty) {
-        final cdnValue = getEndpoint(endpointPropertyName);
-        debugPrint("GOT ENDPOINT?? : $cdnValue");
-        if (cdnValue != null) {
-          return cdnValue;
-        }
-      }
-    }
-    
-    debugPrint("Return DEFAULT ENDPOINT: $defaultEndpoint");
-    return defaultEndpoint;
-  }
-
-  /// Helper method to get analytics event with fallback
-  String getAnalyticsEventOrDefault(String defaultEvent) {
-    _ensureInitialized();
-    
-    final eventsMap = _bundledConfig['analytics']?['events'] as Map<String, dynamic>?;
-    if (eventsMap != null) {
-      final eventPropertyName = eventsMap.entries
-          .firstWhere(
-            (entry) => entry.value == defaultEvent,
-            orElse: () => const MapEntry('', ''),
-          )
-          .key;
-      
-      if (eventPropertyName.isNotEmpty) {
-        final cdnValue = getAnalyticsEvent(eventPropertyName);
-        debugPrint("GOT ANALYTICS EVENT?? : $cdnValue");
-        if (cdnValue != null) {
-          return cdnValue;
-        }
-      }
-    }
-    
-    debugPrint("Return DEFAULT ANALYTICS EVENT: $defaultEvent");
-    return defaultEvent;
-  }
-
-  /// Helper method to get environment with fallback
-  EnvironmentConfig? getEnvironmentOrDefault(String defaultEnvironmentKey) {
-    _ensureInitialized();
-    
-    final environmentsMap = _bundledConfig['api']?['environments'] as Map<String, dynamic>?;
-    if (environmentsMap != null && environmentsMap.containsKey(defaultEnvironmentKey)) {
-      final cdnValue = getEnvironment(defaultEnvironmentKey);
-      debugPrint("GOT ENVIRONMENT?? : ${cdnValue?.baseUrl}");
-      return cdnValue;
-    }
-    
-    debugPrint("Return DEFAULT ENVIRONMENT: $defaultEnvironmentKey");
-    return getEnvironment(defaultEnvironmentKey);
-  }
-
-  /// Helper method to get checkout config with fallback
-  dynamic getCheckoutOrDefault([String? defaultCheckoutKey]) {
-    _ensureInitialized();
-    
-    final cdnValue = getCheckout(defaultCheckoutKey);
-    debugPrint("GOT CHECKOUT CONFIG?? : $cdnValue");
-    if (cdnValue == null) {
-      debugPrint("Return DEFAULT CHECKOUT CONFIG: ${defaultCheckoutKey ?? 'full checkout'}");
-    }
-    return cdnValue;
-  }
-
-  /// Helper method to get header with fallback
-  String getHeaderOrDefault(String defaultHeader) {
-    _ensureInitialized();
-    
-    final headersMap = _bundledConfig['api']?['headers'] as Map<String, dynamic>?;
-    if (headersMap != null) {
-      final headerPropertyName = headersMap.entries
-          .firstWhere(
-            (entry) => entry.value == defaultHeader,
-            orElse: () => const MapEntry('', ''),
-          )
-          .key;
-      
-      if (headerPropertyName.isNotEmpty) {
-        final cdnValue = getHeader(headerPropertyName);
-        debugPrint("GOT HEADER?? : $cdnValue");
-        if (cdnValue != null) {
-          return cdnValue;
-        }
-      }
-    }
-    
-    debugPrint("Return DEFAULT HEADER: $defaultHeader");
-    return defaultHeader;
-  }
-
-  /// Helper method to get snowplow schema with fallback
-  Map<String, String> getSnowplowSchemaOrDefault() {
-    _ensureInitialized();
-    
-    final cdnValue = getSnowplowSchema();
-    debugPrint("GOT SNOWPLOW SCHEMA?? : ${cdnValue.keys.toList()}");
-    if (cdnValue.isEmpty) {
-      debugPrint("Return DEFAULT SNOWPLOW SCHEMA: empty");
-    }
-    return cdnValue;
-  }
 }
 
 /// Export a single instance

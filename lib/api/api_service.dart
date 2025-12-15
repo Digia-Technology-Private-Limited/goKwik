@@ -6,15 +6,13 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:gokwik/analytics/config.dart';
 import 'package:gokwik/api/base_response.dart';
-import 'package:gokwik/api/constant/api_config.dart';
 import 'package:gokwik/api/httpClient.dart';
 import 'package:gokwik/api/snowplow_client.dart';
 import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/cdn_config.dart';
-import 'package:gokwik/config/key_congif.dart';
+import 'package:gokwik/config/config_constants.dart';
 import 'package:gokwik/config/storege.dart';
 import 'package:gokwik/get_config.dart';
 import 'package:gokwik/module/advertise.dart';
@@ -62,9 +60,9 @@ abstract class ApiService {
       final gokwik = DioClient().getClient();
 
       final results = await Future.wait([
-        cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkRequestIdKey)),
-        cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAccessTokenKey)),
-        cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantIdKey)),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkRequestIdKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!),
       ]);
 
       final requestId = results[0];
@@ -73,20 +71,20 @@ abstract class ApiService {
 
       // Set all headers at once
       final headers = <String, String>{
-        cdnConfigInstance.getHeaderOrDefault(APIHeader.kpMerchantId): mid ?? '',
+        cdnConfigInstance.getHeader(APIHeaderKeys.kpMerchantId)!: mid ?? '',
       };
 
       if(requestId != null && requestId.isNotEmpty){
-        headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.kpRequestId)] = requestId;
+        headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpRequestId)!] = requestId;
       }
       
       if (accessToken.isNotEmpty) {
-        headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.gkAccessToken)] = accessToken;
+        headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkAccessToken)!] = accessToken;
       }
 
       gokwik.options.headers.addAll(headers);
 
-      final response = (await gokwik.get(cdnConfigInstance.getEndpointOrDefault(APIConfig.kpHealthCheck))).toBaseResponse(
+      final response = (await gokwik.get(cdnConfigInstance.getEndpoint(APIEndpointKeys.kpHealthCheck)!)).toBaseResponse(
         fromJson: (json) => HealthCheckResponseData.fromJson(json),
       );
 
@@ -173,7 +171,7 @@ abstract class ApiService {
     }
 
     final merchantJson =
-        await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantConfig));
+        await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantConfig)!);
     if (merchantJson == null) {
       return const Success(null); // No merchant config, not an error.
     }
@@ -202,7 +200,7 @@ abstract class ApiService {
 
     try {
       final response = (await gokwik.get(
-        cdnConfigInstance.getEndpointOrDefault(APIConfig.customerIntelligence),
+        cdnConfigInstance.getEndpoint(APIEndpointKeys.customerIntelligence)!,
         queryParameters: {'cstmr-mtrcs': trueKeys.join(',')},
       ))
           .toBaseResponse();
@@ -239,7 +237,7 @@ abstract class ApiService {
     };
 
     try {
-      final phone = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkUserPhone));
+      final phone = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkUserPhone)!);
       await SnowplowTrackerService.sendCustomEventToSnowPlow({
         'category': 'login_modal',
         'label': 'account_activated',
@@ -266,23 +264,23 @@ abstract class ApiService {
   static Future<Result<dynamic>> getBrowserToken() async {
     try {
       final goKwik = DioClient().getClient();
-      final response = (await goKwik.get(cdnConfigInstance.getEndpointOrDefault(APIConfig.getBrowserToken))).toBaseResponse();
+      final response = (await goKwik.get(cdnConfigInstance.getEndpoint(APIEndpointKeys.getBrowserToken)!)).toBaseResponse();
       final data = response.data ?? {};
       final requestId = data['requestId'];
       final token = data['token'];
 
       final headers = {
-        cdnConfigInstance.getHeaderOrDefault(APIHeader.gkRequestId): requestId,
-        cdnConfigInstance.getHeaderOrDefault(APIHeader.kpRequestId): requestId,
-        cdnConfigInstance.getHeaderOrDefault(APIHeader.authorization): token,
+        cdnConfigInstance.getHeader(APIHeaderKeys.gkRequestId)!: requestId,
+        cdnConfigInstance.getHeader(APIHeaderKeys.kpRequestId)!: requestId,
+        cdnConfigInstance.getHeader(APIHeaderKeys.authorization)!: token,
       };
 
       goKwik.options.headers.addAll(headers);
 
       await Future.wait([
-        cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkRequestIdKey), requestId),
-        cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.kpRequestIdKey), requestId),
-        cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAuthTokenKey), token),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkRequestIdKey)!, requestId),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.kpRequestIdKey)!, requestId),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkAuthTokenKey)!, token),
       ]);
 
       return Success(response.data);
@@ -296,20 +294,20 @@ abstract class ApiService {
     try {
       final gokwik = DioClient().getClient();
 
-      final response = (await gokwik.get('${cdnConfigInstance.getEndpointOrDefault(APIConfig.merchantConfiguration)}$mid')).toBaseResponse(
+      final response = (await gokwik.get('${cdnConfigInstance.getEndpoint(APIEndpointKeys.merchantConfiguration)!}$mid')).toBaseResponse(
         fromJson: (json) => MerchantConfig.fromJson(json),
       );
 
       final merchantRes = response.data;
       await cacheInstance.setValue(
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantConfig),
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantConfig)!,
         jsonEncode(merchantRes),
       );
 
       final requestId = merchantRes?.kpRequestId;
       if (requestId != null) {
         await cacheInstance.setValue(
-          cdnConfigInstance.getKeyOrDefault(KeyConfig.gkRequestIdKey),
+          cdnConfigInstance.getKeys(StorageKeyKeys.gkRequestIdKey)!,
           requestId.toString(),
         );
       }
@@ -353,19 +351,19 @@ abstract class ApiService {
 
       await Future.wait([
         cacheInstance.setValue(
-          cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMode),
+          cdnConfigInstance.getKeys(StorageKeyKeys.gkMode)!,
           mode.toString(),
         ),
-        cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkEnvironmentKey), environment.name),
-        cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantIdKey), mid),
-        cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.kcMerchantId), kcMerchantId),
-        cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.kcMerchantToken), kcMerchantToken),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkEnvironmentKey)!, environment.name),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!, mid),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.kcMerchantId)!, kcMerchantId),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.kcMerchantToken)!, kcMerchantToken),
         cacheInstance.setValue(
-          cdnConfigInstance.getKeyOrDefault(KeyConfig.kcNotificationEventUrl),
+          cdnConfigInstance.getKeys(StorageKeyKeys.kcNotificationEventUrl)!,
           SdkConfig.getNotifEventsUrl(environment.name),
         ),
-        cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkKPEnabled), enableKwikPass.toString()),
-        cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkCheckoutEnabled), enableCheckout.toString()),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkKPEnabled)!, enableKwikPass.toString()),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkCheckoutEnabled)!, enableCheckout.toString()),
       ]);
 
       if (enableKwikPass == false) {
@@ -373,14 +371,14 @@ abstract class ApiService {
       }
 
       cacheInstance.setValue(
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.isSnowplowTrackingEnabled),
+        cdnConfigInstance.getKeys(StorageKeyKeys.isSnowplowTrackingEnabled)!,
         isSnowplowTrackingEnabled.toString(),
       );
       await DioClient().initialize(args.environment.name);
       final gokwik = DioClient().getClient();
-      gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.gkMerchantId)] = mid;
-      gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.kpSdkPlatform)] = 'flutter';
-      gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.kpSdkVersion)] = KPSdkVersion.version;
+      gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkMerchantId)!] = mid;
+      gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpSdkPlatform)!] = 'flutter';
+      gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpSdkVersion)!] = KPSdkVersion.version;
 
       // await Logger().log(
       //   'SDK Initialized',
@@ -391,19 +389,19 @@ abstract class ApiService {
       // );
 
       final results = await Future.wait([
-        cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkRequestIdKey)),
-        cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAccessTokenKey)),
-        cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.checkoutAccessTokenKey)),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkRequestIdKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutAccessTokenKey)!),
       ]);
 
       final accessToken = results[1];
       final checkoutAccessToken = results[2];
 
       if (accessToken != null) {
-        gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.gkAccessToken)] = accessToken;
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkAccessToken)!] = accessToken;
       }
       if (checkoutAccessToken != null) {
-        gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.checkoutAccessToken)] =
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.checkoutAccessToken)!] =
             checkoutAccessToken;
       }
 
@@ -422,11 +420,11 @@ abstract class ApiService {
         if (merchantConfigData?.platform != null) {
           final platform =
               merchantConfigData!.platform.toString().toLowerCase();
-          await cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantTypeKey), platform);
+          await cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!, platform);
         }
 
         final hostName = getHostName(merchantConfigData!.host);
-        await cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantUrlKey), hostName);
+        await cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantUrlKey)!, hostName);
       }
 
       await SnowplowClient.initializeSnowplowClient(args);
@@ -456,41 +454,41 @@ abstract class ApiService {
           '${screenSize.width.toInt()}x${screenSize.height.toInt()}';
 
       final deviceInfoDetails = {
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkDeviceModel): deviceModel,
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAppDomain): packageInfo.packageName,
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkOperatingSystem): osVersion,
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkDeviveId): deviceId,
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkDeviceUniqueId): deviceId,
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkGoogleAnalyticsId): deviceId,
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkGoogleAdId): '',
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAppVersion): packageInfo.version,
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAppVersionCode): packageInfo.buildNumber,
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkScreenResolution): screenResolution,
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkCarrierInfo): 'Unknown',
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkBatteryStatus): 'Unknown',
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkLanguage): Intl.getCurrentLocale(),
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkTimeZone): DateTime.now().timeZoneName,
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceModel)!: deviceModel,
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkAppDomain)!: packageInfo.packageName,
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkOperatingSystem)!: osVersion,
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviveId)!: deviceId,
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceUniqueId)!: deviceId,
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAnalyticsId)!: deviceId,
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAdId)!: '',
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkAppVersion)!: packageInfo.version,
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkAppVersionCode)!: packageInfo.buildNumber,
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkScreenResolution)!: screenResolution,
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkCarrierInfo)!: 'Unknown',
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkBatteryStatus)!: 'Unknown',
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkLanguage)!: Intl.getCurrentLocale(),
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkTimeZone)!: DateTime.now().timeZoneName,
       };
 
       try {
         final advertisingInfo = await AdvertisingInfo.getAdvertisingInfo();
 
         if (advertisingInfo.id != null) {
-          deviceInfoDetails[cdnConfigInstance.getKeyOrDefault(KeyConfig.gkGoogleAdId)] = advertisingInfo.id!;
+          deviceInfoDetails[cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAdId)!] = advertisingInfo.id!;
         }
       } catch (e) {
-        deviceInfoDetails[cdnConfigInstance.getKeyOrDefault(KeyConfig.gkGoogleAdId)] = "";
+        deviceInfoDetails[cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAdId)!] = "";
       }
 
       await cacheInstance.setValue(
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkDeviceInfo),
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceInfo)!,
         jsonEncode(deviceInfoDetails),
       );
 
       final requestId = results[0];
       if (requestId != null) {
-        gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.kpRequestId)] = requestId;
-        gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.gkRequestId)] = requestId;
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpRequestId)!] = requestId;
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkRequestId)!] = requestId;
       }
 
 
@@ -508,13 +506,13 @@ abstract class ApiService {
 
       // Get verified user data and track identified user event
       final verifiedUserJson =
-          await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey));
+          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!);
       if (verifiedUserJson != null) {
         final verifiedUser = jsonDecode(verifiedUserJson);
 
         if (verifiedUser['email'] != null && verifiedUser['phone'] != null) {
           analyticsCallback(
-            cdnConfigInstance.getAnalyticsEventOrDefault(AnalyticsEvents.appIdentifiedUser),
+            cdnConfigInstance.getAnalyticsEvent(AnalyticsEventKeys.appIdentifiedUser)!,
             {
               'phone': verifiedUser['phone']?.toString() ?? "",
               'email': verifiedUser['email']?.toString() ?? "",
@@ -555,11 +553,11 @@ abstract class ApiService {
 
       await Future.wait([
         cacheInstance.setValue(
-          cdnConfigInstance.getKeyOrDefault(KeyConfig.gkNotificationEnabled),
+          cdnConfigInstance.getKeys(StorageKeyKeys.gkNotificationEnabled)!,
           notifications.toString(),
         ),
         cacheInstance.setValue(
-          cdnConfigInstance.getKeyOrDefault(KeyConfig.gkUserPhone),
+          cdnConfigInstance.getKeys(StorageKeyKeys.gkUserPhone)!,
           phoneNumber,
         ),
       ]);
@@ -581,7 +579,7 @@ abstract class ApiService {
         }),
       ]);
       final response = (await gokwik.post(
-        cdnConfigInstance.getEndpointOrDefault(APIConfig.sendVerificationCode),
+        cdnConfigInstance.getEndpoint(APIEndpointKeys.sendVerificationCode)!,
         data: {'phone': phoneNumber},
       ))
           .toBaseResponse(
@@ -630,7 +628,7 @@ abstract class ApiService {
       // );
 
       final response =
-          (await gokwik.get(cdnConfigInstance.getEndpointOrDefault(APIConfig.customCustomerLogin))).toBaseResponse(
+          (await gokwik.get(cdnConfigInstance.getEndpoint(APIEndpointKeys.customCustomerLogin)!)).toBaseResponse(
         fromJson: (json) => LoginResponseData.fromJson(json),
       );
       if (response.statusCode == 200) {}
@@ -664,7 +662,7 @@ abstract class ApiService {
       final gokwik = DioClient().getClient();
 
       final response = (await gokwik.post(
-        cdnConfigInstance.getEndpointOrDefault(APIConfig.customCreateUser),
+        cdnConfigInstance.getEndpoint(APIEndpointKeys.customCreateUser)!,
         data: {
           'email': email,
           'name': name,
@@ -706,7 +704,7 @@ abstract class ApiService {
       };
 
       await cacheInstance.setValue(
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey),
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!,
         jsonEncode(userRes),
       );
 
@@ -729,22 +727,22 @@ abstract class ApiService {
       final gokwik = DioClient().getClient();
 
       final results = await Future.wait([
-        cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAccessTokenKey)),
-        cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.checkoutAccessTokenKey)),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutAccessTokenKey)!),
       ]);
 
       final accessToken = results[0];
       final checkoutAccessToken = results[1];
 
       if (accessToken != null) {
-        gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.gkAccessToken)] = accessToken;
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkAccessToken)!] = accessToken;
       }
       if (checkoutAccessToken != null) {
-        gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.checkoutAccessToken)] =
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.checkoutAccessToken)!] =
             checkoutAccessToken;
       }
 
-      final response = (await gokwik.get(cdnConfigInstance.getEndpointOrDefault(APIConfig.validateUserToken)))
+      final response = (await gokwik.get(cdnConfigInstance.getEndpoint(APIEndpointKeys.validateUserToken)!))
           .toBaseResponse<ValidateUserTokenResponseData>(
         fromJson: (json) {
           // if (json == null) {
@@ -766,7 +764,7 @@ abstract class ApiService {
         final responseData = jsonEncode(response.data);
 
         await cacheInstance.setValue(
-          cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey),
+          cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!,
           responseData,
         );
 
@@ -803,7 +801,7 @@ abstract class ApiService {
       gokwik.options.headers['kp-integration-type'] = 'APP_MAKER';
 
       final deviceInfoJson =
-          await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkDeviceInfo));
+          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceInfo)!);
       final deviceInfoDetails =
           deviceInfoJson != null ? jsonDecode(deviceInfoJson) : {};
 
@@ -811,15 +809,15 @@ abstract class ApiService {
 
       if (Platform.isAndroid) {
         bodyParams['google_ad_id'] =
-            deviceInfoDetails[cdnConfigInstance.getKeyOrDefault(KeyConfig.gkGoogleAdId)] ?? '';
+            deviceInfoDetails[cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAdId)!] ?? '';
       }
       if (Platform.isIOS) {
         bodyParams['ios_ad_id'] =
-            deviceInfoDetails[cdnConfigInstance.getKeyOrDefault(KeyConfig.gkGoogleAdId)] ?? '';
+            deviceInfoDetails[cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAdId)!] ?? '';
       }
 
       final response = (await gokwik.post(
-        cdnConfigInstance.getEndpointOrDefault(APIConfig.verifyCode),
+        cdnConfigInstance.getEndpoint(APIEndpointKeys.verifyCode)!,
         data: {
           'phone': phoneNumber,
           'otp': int.tryParse(code),
@@ -837,7 +835,7 @@ abstract class ApiService {
       final String token = data['token'];
       final coreToken = data['coreToken'];
       final String kpToken = data?['kpToken'];
-      String? merchantType = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantTypeKey));
+      String? merchantType = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
 
       if (merchantType! == 'shopify' || merchantType == 'custom_shopify') {
         final res = await _handleShopifyVerifyResponse(
@@ -862,11 +860,11 @@ abstract class ApiService {
         return res;
       }
 
-      await cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAccessTokenKey), token);
+      await cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!, token);
 
       if (coreToken != null) {
         await cacheInstance.setValue(
-            cdnConfigInstance.getKeyOrDefault(KeyConfig.checkoutAccessTokenKey), coreToken);
+            cdnConfigInstance.getKeys(StorageKeyKeys.checkoutAccessTokenKey)!, coreToken);
       }
 
       // final responseForAffluence = await customerIntelligence();
@@ -891,7 +889,7 @@ abstract class ApiService {
             );
 
             await cacheInstance.setValue(
-              cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey),
+              cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!,
               jsonEncode(updatedData),
             );
             await SnowplowTrackerService.sendCustomEventToSnowPlow({
@@ -923,17 +921,17 @@ abstract class ApiService {
     final gokwik = DioClient().getClient();
     
     if (token != null) {
-      gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.gkAccessToken)] = token;
-      await cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAccessTokenKey), token);
+      gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkAccessToken)!] = token;
+      await cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!, token);
     }
 
     if (kpToken != null) {
-      await cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkKpToken), kpToken);
+      await cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkKpToken)!, kpToken);
     }
 
     if (coreToken != null) {
-      gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.checkoutAccessToken)] = coreToken;
-      await cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.checkoutAccessTokenKey), coreToken);
+      gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.checkoutAccessToken)!] = coreToken;
+      await cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutAccessTokenKey)!, coreToken);
     }
 
     if(responseData.containsKey('authRequired')){
@@ -1023,7 +1021,7 @@ abstract class ApiService {
     }
 
     await cacheInstance.setValue(
-      cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey),
+      cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!,
       jsonEncode(userData),
     );
 
@@ -1047,7 +1045,7 @@ abstract class ApiService {
     try {
       // Check if user is already authenticated
       final verifiedUserJson =
-          await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey));
+          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!);
       
       if (verifiedUserJson != null) {
         final responseData = jsonDecode(verifiedUserJson) as Map<String, dynamic>;
@@ -1083,8 +1081,8 @@ abstract class ApiService {
 
       // Get merchant ID and request ID from cache
       final results = await Future.wait([
-        cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantIdKey)),
-        cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkRequestIdKey)),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkRequestIdKey)!),
       ]);
 
       final mid = results[0];
@@ -1094,17 +1092,17 @@ abstract class ApiService {
       final headers = <String, String>{
         'accept': 'application/json',
         'Content-Type': 'application/json',
-        cdnConfigInstance.getHeaderOrDefault(APIHeader.kpMerchantId): mid ?? '',
+        cdnConfigInstance.getHeader(APIHeaderKeys.kpMerchantId)!: mid ?? '',
         'token': token,
       };
 
       // Add request ID if available
       if (requestId != null && requestId.isNotEmpty) {
-        headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.gkRequestId)] = requestId;
+        headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkRequestId)!] = requestId;
       }
 
       final response = await gokwik.get(
-        cdnConfigInstance.getEndpointOrDefault(APIConfig.reverseKpAuthLogin),
+        cdnConfigInstance.getEndpoint(APIEndpointKeys.reverseKpAuthLogin)!,
         options: Options(headers: headers),
       );
 
@@ -1114,14 +1112,14 @@ abstract class ApiService {
       if (data?['data']?['token'] != null) {
         // Store access token
         final accessToken = data['data']['token'] as String;
-        await cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAccessTokenKey), accessToken);
-        gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.gkAccessToken)] = accessToken;
+        await cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!, accessToken);
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkAccessToken)!] = accessToken;
       }
 
       if (data?['data']?['coreToken'] != null) {
         // Store core token
-        await cacheInstance.setValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.checkoutAccessTokenKey), token);
-        gokwik.options.headers[cdnConfigInstance.getHeaderOrDefault(APIHeader.checkoutAccessToken)] = token;
+        await cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutAccessTokenKey)!, token);
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.checkoutAccessToken)!] = token;
       }
 
       // Validate user token
@@ -1136,7 +1134,7 @@ abstract class ApiService {
       };
       
       await cacheInstance.setValue(
-        cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey),
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!,
         jsonEncode(userData),
       );
 
@@ -1149,7 +1147,7 @@ abstract class ApiService {
   static Future<bool> clearKwikpassSession() async {
     try {
       final userJson =
-          await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey));
+          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!);
       final parsedUser =
           userJson != null ? jsonDecode(userJson) : <String, dynamic>{'phone': '0'};
       final phone = parsedUser['phone']?.toString() ?? '0';
@@ -1168,29 +1166,29 @@ abstract class ApiService {
       //   'customer_id': parsedUser['shopifyCustomerId']?.toString() ?? "",
       // });
 
-      final env = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkEnvironmentKey));
-      final mid = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantIdKey)) ?? '';
+      final env = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkEnvironmentKey)!);
+      final mid = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!) ?? '';
       final isSnowplowTrackingEnabled =
-          await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.isSnowplowTrackingEnabled)) ==
+          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.isSnowplowTrackingEnabled)!) ==
               'true';
 
       final isKpEnabled =
-          await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkKPEnabled)) ==
+          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkKPEnabled)!) ==
               'true';
               final isCheckoutEnabled =
-          await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkCheckoutEnabled)) ==
+          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkCheckoutEnabled)!) ==
               'true';
 
               final mode =
-          await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMode));
+          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMode)!);
 
       final gokwik = DioClient().getClient();
 
-      gokwik.options.headers.remove(cdnConfigInstance.getHeaderOrDefault(APIHeader.gkAccessToken));
-      gokwik.options.headers.remove(cdnConfigInstance.getHeaderOrDefault(APIHeader.checkoutAccessToken));
-      gokwik.options.headers.remove(cdnConfigInstance.getHeaderOrDefault(APIHeader.kpRequestId));
-      gokwik.options.headers.remove(cdnConfigInstance.getHeaderOrDefault(APIHeader.gkRequestId));
-      gokwik.options.headers.remove(cdnConfigInstance.getHeaderOrDefault(APIHeader.authorization));
+      gokwik.options.headers.remove(cdnConfigInstance.getHeader(APIHeaderKeys.gkAccessToken)!);
+      gokwik.options.headers.remove(cdnConfigInstance.getHeader(APIHeaderKeys.checkoutAccessToken)!);
+      gokwik.options.headers.remove(cdnConfigInstance.getHeader(APIHeaderKeys.kpRequestId)!);
+      gokwik.options.headers.remove(cdnConfigInstance.getHeader(APIHeaderKeys.gkRequestId)!);
+      gokwik.options.headers.remove(cdnConfigInstance.getHeader(APIHeaderKeys.authorization)!);
 
       cacheInstance.clearCache();
       // final prefs = await SharedPreferences.getInstance();

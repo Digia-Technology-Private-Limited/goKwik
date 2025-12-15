@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:uuid/uuid.dart';
 import '../config/cache_instance.dart';
 import '../config/cdn_config.dart';
-import '../config/key_congif.dart';
+import '../config/config_constants.dart';
 // import '../config/types.dart';
 import 'sdk_config.dart';
 
@@ -60,8 +60,8 @@ class HttpSnowplowTracker {
 
   // Cache static values that don't change during session
   static Future<void> _cacheStaticValues() async {
-    _cachedEnvironment = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkEnvironmentKey)) ?? 'sandbox';
-    _cachedAppId = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkMerchantIdKey)) ?? '';
+    _cachedEnvironment = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkEnvironmentKey)!) ?? 'sandbox';
+    _cachedAppId = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!) ?? '';
     
     final url = SdkConfig.getSnowplowUrl(_cachedEnvironment!);
     _cachedCollectorUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
@@ -174,7 +174,7 @@ class HttpSnowplowTracker {
 
   // Get user context
   static Future<Map<String, dynamic>?> _getUserContext() async {
-    final userJson = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkVerifiedUserKey));
+    final userJson = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!);
     if (userJson == null) return null;
 
     try {
@@ -183,8 +183,10 @@ class HttpSnowplowTracker {
       final numericPhoneNumber = int.tryParse(phone ?? '');
 
       if (numericPhoneNumber != null || user['email'] != null) {
-        final schemas = cdnConfigInstance.getSnowplowSchemaOrDefault();
-        final userSchema = schemas['user'] ?? 'user/jsonschema/1-0-0';
+        final schemas = cdnConfigInstance.getSnowplowSchema();
+        final userSchema = (schemas is Map<String, String>)
+            ? (schemas['user'] ?? 'user/jsonschema/1-0-0')
+            : 'user/jsonschema/1-0-0';
         
         return {
           'schema': 'iglu:${SdkConfig.getSchemaVendor(_cachedEnvironment!)}/$userSchema',
@@ -201,23 +203,25 @@ class HttpSnowplowTracker {
 
   // Get device context
   static Future<Map<String, dynamic>> _getDeviceContext() async {
-    final deviceFCM = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkNotificationToken));
-    final deviceInfoJson = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.gkDeviceInfo));
+    final deviceFCM = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkNotificationToken)!);
+    final deviceInfoJson = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceInfo)!);
     final deviceInfo = deviceInfoJson != null ? jsonDecode(deviceInfoJson) : <String, dynamic>{};
 
-    final schemas = cdnConfigInstance.getSnowplowSchemaOrDefault();
-    final userDeviceSchema = schemas['user_device'] ?? 'user_device/jsonschema/1-0-0';
+    final schemas = cdnConfigInstance.getSnowplowSchema();
+    final userDeviceSchema = (schemas is Map<String, String>)
+        ? (schemas['user_device'] ?? 'user_device/jsonschema/1-0-0')
+        : 'user_device/jsonschema/1-0-0';
 
     return {
       'schema': 'iglu:${SdkConfig.getSchemaVendor(_cachedEnvironment!)}/$userDeviceSchema',
       'data': {
-        'device_id': deviceInfo[cdnConfigInstance.getKeyOrDefault(KeyConfig.gkDeviceUniqueId)] ?? '',
-        'android_ad_id': Platform.isAndroid ? deviceInfo[cdnConfigInstance.getKeyOrDefault(KeyConfig.gkGoogleAdId)] ?? '' : '',
-        'ios_ad_id': Platform.isIOS ? deviceInfo[cdnConfigInstance.getKeyOrDefault(KeyConfig.gkGoogleAdId)] ?? '' : '',
+        'device_id': deviceInfo[cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceUniqueId)] ?? '',
+        'android_ad_id': Platform.isAndroid ? deviceInfo[cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAdId)] ?? '' : '',
+        'ios_ad_id': Platform.isIOS ? deviceInfo[cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAdId)] ?? '' : '',
         'fcm_token': deviceFCM ?? '',
-        'app_domain': deviceInfo[cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAppDomain)] ?? '',
+        'app_domain': deviceInfo[cdnConfigInstance.getKeys(StorageKeyKeys.gkAppDomain)] ?? '',
         'device_type': Platform.operatingSystem.toLowerCase(),
-        'app_version': deviceInfo[cdnConfigInstance.getKeyOrDefault(KeyConfig.gkAppVersion)] ?? '',
+        'app_version': deviceInfo[cdnConfigInstance.getKeys(StorageKeyKeys.gkAppVersion)] ?? '',
       }
     };
   }
@@ -226,8 +230,10 @@ class HttpSnowplowTracker {
   static Map<String, dynamic>? _getCartContext(String? cartId) {
     if (cartId == null || cartId.isEmpty) return null;
 
-    final schemas = cdnConfigInstance.getSnowplowSchemaOrDefault();
-    final cartSchema = schemas['cart'] ?? 'iglu:com.shopify/cart/jsonschema/1-0-0';
+    final schemas = cdnConfigInstance.getSnowplowSchema();
+    final cartSchema = (schemas is Map<String, String>)
+        ? (schemas['cart'] ?? 'iglu:com.shopify/cart/jsonschema/1-0-0')
+        : 'iglu:com.shopify/cart/jsonschema/1-0-0';
 
     return {
       'schema': cartSchema,
@@ -261,8 +267,10 @@ class HttpSnowplowTracker {
 
     // Add custom context if provided
     if (customProperties != null && customProperties.isNotEmpty) {
-      final schemas = cdnConfigInstance.getSnowplowSchemaOrDefault();
-      final productSchema = schemas['product'] ?? 'product/jsonschema/1-1-0';
+      final schemas = cdnConfigInstance.getSnowplowSchema();
+      final productSchema = (schemas is Map<String, String>)
+          ? (schemas['product'] ?? 'product/jsonschema/1-1-0')
+          : 'product/jsonschema/1-1-0';
       
       contexts.add({
         'schema': 'iglu:${SdkConfig.getSchemaVendor(_cachedEnvironment!)}/$productSchema',
@@ -319,7 +327,7 @@ class HttpSnowplowTracker {
 
   // Check if tracking is enabled
   static Future<bool> _isTrackingEnabled() async {
-    final isEnabled = await cacheInstance.getValue(cdnConfigInstance.getKeyOrDefault(KeyConfig.isSnowplowTrackingEnabled));
+    final isEnabled = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.isSnowplowTrackingEnabled)!);
     return isEnabled == 'true';
   }
 
