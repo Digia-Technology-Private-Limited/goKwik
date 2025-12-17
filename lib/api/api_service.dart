@@ -485,6 +485,8 @@ abstract class ApiService {
         jsonEncode(deviceInfoDetails),
       );
 
+      await sendGoogleAdIdentification();
+
       final requestId = results[0];
       if (requestId != null) {
         gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpRequestId)!] = requestId;
@@ -1217,6 +1219,70 @@ abstract class ApiService {
       return true;
     } catch (error) {
       throw handleApiError(error);
+    }
+  }
+
+  static Future<Result<dynamic>> sendGoogleAdIdentification() async {
+    final result = await checkKwikpassHealth();
+    if(result.isSuccess) {
+      final healthData = result.getDataOrThrow();
+      if(healthData?.isKwikpassHealthy == false){
+        throw Exception('Kwikpass is unhealthy');
+      }
+    }
+
+    try {
+      final gokwik = DioClient().getClient();
+
+      // Get device info from cache
+      final deviceInfoJson = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceInfo)!);
+      final deviceInfoDetails = deviceInfoJson != null ? jsonDecode(deviceInfoJson) : <String, dynamic>{};
+
+      // Get Google Ad ID (works for both Android and iOS)
+      final googleAdId = deviceInfoDetails[cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAdId)!];
+      
+      // Get device ID
+      final deviceId = deviceInfoDetails[cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceUniqueId)!];
+
+      // Get merchant ID and request ID from cache
+      final results = await Future.wait([
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkRequestIdKey)!),
+      ]);
+
+      final mid = results[0];
+      final requestId = results[1];
+
+      // Prepare headers
+      final headers = <String, String>{
+        cdnConfigInstance.getHeader(APIHeaderKeys.kpMerchantId)!: mid ?? '',
+      };
+
+      // Add request ID if available
+      if (requestId != null && requestId.isNotEmpty) {
+        headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpRequestId)!] = requestId;
+      }
+
+      // Prepare query parameters
+      final params = <String, String>{};
+      if (googleAdId != null && googleAdId.isNotEmpty) {
+        params['google_ad_id'] = googleAdId;
+      }
+      if (deviceId != null && deviceId.isNotEmpty) {
+        params['device_id'] = deviceId;
+      }
+
+      debugPrint("Endpoint: ${cdnConfigInstance.getEndpoint(APIEndpointKeys.customerGoogleAd)}");
+
+      final response = await gokwik.get(
+        cdnConfigInstance.getEndpoint(APIEndpointKeys.customerGoogleAd)!,
+        queryParameters: params,
+        options: Options(headers: headers),
+      );
+
+      return Success(response.data);
+    } catch (err) {
+      throw handleApiError(err);
     }
   }
 }

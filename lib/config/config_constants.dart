@@ -115,6 +115,7 @@ class APIEndpoint {
   static const verifyEmailCode = "kp/api/v1/auth/email-otp/verify";
   static const shopifyMultipass = "kp/api/v2/customer/shopify/multipass";
   static const reverseKpAuthLogin = "kp/api/v1/auth/core-token/login";
+  static const customerGoogleAd = "kp/api/v1/customer/google-ad";
 
   static const Map<String, String> values = {
     'kpHealthCheck': kpHealthCheck,
@@ -132,6 +133,7 @@ class APIEndpoint {
     'verifyEmailCode': verifyEmailCode,
     'shopifyMultipass': shopifyMultipass,
     'reverseKpAuthLogin': reverseKpAuthLogin,
+    'customerGoogleAd': customerGoogleAd,
   };
 }
 
@@ -153,6 +155,7 @@ class APIEndpointKeys {
   static const verifyEmailCode = 'verifyEmailCode';
   static const shopifyMultipass = 'shopifyMultipass';
   static const reverseKpAuthLogin = 'reverseKpAuthLogin';
+  static const customerGoogleAd = 'customerGoogleAd';
 }
 
 // ============================================================================
