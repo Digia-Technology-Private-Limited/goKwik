@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:gokwik/analytics/config.dart';
 import 'package:gokwik/api/api_service.dart';
 import 'package:gokwik/api/base_response.dart';
 import 'package:gokwik/api/shopify_service.dart';

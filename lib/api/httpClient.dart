@@ -5,6 +5,7 @@ import 'package:gokwik/config/config_constants.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'base_response.dart';
 import 'sdk_config.dart';
+import 'ssl_pinning_adapter.dart';
 
 class DioClient {
   static final DioClient _instance = DioClient._internal();
@@ -46,6 +47,20 @@ class DioClient {
         cdnConfigInstance.getHeader(APIHeaderKeys.source)!: source,
       },
     ));
+
+    // Configure SSL pinning for the environment
+    try {
+      SSLPinningAdapter.configureDio(_gokwikHttpClient!, env);
+      if (kDebugMode) {
+        print('✅ SSL Pinning configured for environment: $env');
+        print('   Pinned domain: ${SSLPinningAdapter.getPinnedDomain(env)}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Failed to configure SSL pinning: $e');
+      }
+      // Continue without SSL pinning in case of configuration error
+    }
   }
 
   Dio getClient() {
