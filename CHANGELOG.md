@@ -1,4 +1,7 @@
-## [1.0.13]
+## [1.0.15]
+- Add OTA config for sdk and update the config
+
+## [1.0.14]
 - fix multiple JS injection issue
 
 ## [1.0.13]

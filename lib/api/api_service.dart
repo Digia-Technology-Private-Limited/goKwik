@@ -100,7 +100,6 @@ abstract class ApiService {
       // Throw custom exception when API call fails
       throw KwikpassHealthException();
     } catch (error) {
-      debugPrint("ERRORRR $error");
       if (error is KwikpassHealthException) {
         rethrow; // Re-throw the custom exception
       }
@@ -1271,8 +1270,6 @@ abstract class ApiService {
       if (deviceId != null && deviceId.isNotEmpty) {
         params['device_id'] = deviceId;
       }
-
-      debugPrint("Endpoint: ${cdnConfigInstance.getEndpoint(APIEndpointKeys.customerGoogleAd)}");
 
       final response = await gokwik.get(
         cdnConfigInstance.getEndpoint(APIEndpointKeys.customerGoogleAd)!,

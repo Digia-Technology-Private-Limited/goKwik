@@ -26,9 +26,8 @@ Map<String, Map<String, String>> getUpiAppPackages() {
         )),
       );
     }
-  } catch (e) {
-    debugPrint('Error getting UPI packages from CDN config: $e');
-  }
+  // ignore: empty_catches
+  } catch (e) { }
   
   // Fallback to default packages
   return {
@@ -61,12 +60,10 @@ Future<List<String>> detectInstalledUpiApps() async {
 
   for (final app in upiPackages.keys) {
     if (Platform.isAndroid) {
-      debugPrint('Using package: ${upiPackages[app]!['android']}');
       try {
         final isInstalled = await UpiAppChecker.isAppInstalled(
           upiPackages[app]!['android']!,
         );
-        debugPrint('UPI App $app installed: $isInstalled');
         if (isInstalled) installedApps.add(app);
       } catch (e) {
         // Ignore error
@@ -177,7 +174,6 @@ window.addEventListener("gokwikLoaded", (event) => {
       ..addJavaScriptChannel(
         'Flutter',
         onMessageReceived: (JavaScriptMessage message) {
-          debugPrint("MESSAGE RECEIVED ${message.message}");
           handleMessageAsync(message.message);
         },
       )

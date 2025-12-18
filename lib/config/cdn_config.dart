@@ -141,22 +141,21 @@ class KwikPassCDNConfig {
   /// Initialize the CDN config by loading the bundled JSON from package
   /// This should be called once during app initialization
   Future<void> initialize() async {
-    debugPrint("IS CDN CONFIG ALREADY INITIALISED??? $_isInitialized");
+    
     if (_isInitialized) return;
     
     try {
       // Load from package assets using package path
       final jsonString = await rootBundle.loadString('packages/gokwik/lib/kp-config.json');
       _bundledConfig = jsonDecode(jsonString) as Map<String, dynamic>;
-      debugPrint("CDN Config initialized successfully $jsonString");
+      
       _isInitialized = true;
     } catch (error) {
-      debugPrint('Error loading bundled config from package: $error');
       // Fallback: try loading without package prefix (for development)
       try {
         final jsonString = await rootBundle.loadString('lib/kp-config.json');
         _bundledConfig = jsonDecode(jsonString) as Map<String, dynamic>;
-        debugPrint("CDN Config initialized from local path");
+        
         _isInitialized = true;
       } catch (fallbackError) {
         // ignore: avoid_print
@@ -260,7 +259,7 @@ class KwikPassCDNConfig {
   Future<void> cacheConfig(CDNConfig config) async {
     try {
       final configStr = jsonEncode(config.toJson());
-      debugPrint("CONFIG STRING FROM API IS:::: $configStr");
+      
       setValue(_configCacheKey, configStr);
       setValue(_configTimestampKey, DateTime.now().millisecondsSinceEpoch.toString());
     } catch (error) {
@@ -385,16 +384,13 @@ class KwikPassCDNConfig {
       // Use the constant to get the property name, then look up the value
       if (cachedConfig?.keys?[keyConstant] != null) {
         final value = cachedConfig!.keys![keyConstant];
-        debugPrint('[CDN Config] ✅ Storage key "$keyConstant" = "$value" from CACHED CDN config');
         return value;
       }
       
       // Fallback to default config using the same property name
       final defaultValue = (_bundledConfig['keys'] as Map<String, dynamic>?)?[keyConstant] as String?;
-      debugPrint('[CDN Config] 📦 Storage key "$keyConstant" = "$defaultValue" from DEFAULT kp-config.json');
       return defaultValue;
     } catch (e) {
-      debugPrint('[CDN Config] ⚠️ Error fetching storage key "$keyConstant": $e');
       return (_bundledConfig['keys'] as Map<String, dynamic>?)?[keyConstant] as String?;
     }
   }
@@ -408,16 +404,13 @@ class KwikPassCDNConfig {
       // Use the constant to get the property name, then look up the value
       if (cachedConfig?.apiEndpoints?[endpointConstant] != null) {
         final value = cachedConfig!.apiEndpoints![endpointConstant];
-        debugPrint('[CDN Config] ✅ Endpoint "$endpointConstant" = "$value" from CACHED CDN config');
         return value;
       }
       
       // Fallback to default config using the same property name
       final defaultValue = (_bundledConfig['api']?['endpoints'] as Map<String, dynamic>?)?[endpointConstant] as String?;
-      debugPrint('[CDN Config] 📦 Endpoint "$endpointConstant" = "$defaultValue" from DEFAULT kp-config.json');
       return defaultValue;
     } catch (e) {
-      debugPrint('[CDN Config] ⚠️ Error fetching endpoint "$endpointConstant": $e');
       return (_bundledConfig['api']?['endpoints'] as Map<String, dynamic>?)?[endpointConstant] as String?;
     }
   }
@@ -431,7 +424,6 @@ class KwikPassCDNConfig {
       // Use the constant to get the property name, then look up the value
       if (cachedConfig?.apiEnvironments?[envConstant] != null) {
         final value = cachedConfig!.apiEnvironments![envConstant]!;
-        debugPrint('[CDN Config] ✅ Environment "$envConstant" = ${value.toJson()} from CACHED CDN config');
         return value;
       }
       
@@ -439,12 +431,10 @@ class KwikPassCDNConfig {
       final envData = (_bundledConfig['api']?['environments'] as Map<String, dynamic>?)?[envConstant];
       if (envData != null) {
         final defaultValue = EnvironmentConfig.fromJson(envData as Map<String, dynamic>);
-        debugPrint('[CDN Config] 📦 Environment "$envConstant" = ${defaultValue.toJson()} from DEFAULT kp-config.json');
         return defaultValue;
       }
       return null;
     } catch (e) {
-      debugPrint('[CDN Config] ⚠️ Error fetching environment "$envConstant": $e');
       final envData = (_bundledConfig['api']?['environments'] as Map<String, dynamic>?)?[envConstant];
       if (envData != null) {
         return EnvironmentConfig.fromJson(envData as Map<String, dynamic>);
@@ -462,16 +452,13 @@ class KwikPassCDNConfig {
       // Use the constant to get the property name, then look up the value
       if (cachedConfig?.analyticsEvents?[eventConstant] != null) {
         final value = cachedConfig!.analyticsEvents![eventConstant];
-        debugPrint('[CDN Config] ✅ Analytics event "$eventConstant" = "$value" from CACHED CDN config');
         return value;
       }
       
       // Fallback to default config using the same property name
       final defaultValue = (_bundledConfig['analytics']?['events'] as Map<String, dynamic>?)?[eventConstant] as String?;
-      debugPrint('[CDN Config] 📦 Analytics event "$eventConstant" = "$defaultValue" from DEFAULT kp-config.json');
       return defaultValue;
     } catch (e) {
-      debugPrint('[CDN Config] ⚠️ Error fetching analytics event "$eventConstant": $e');
       return (_bundledConfig['analytics']?['events'] as Map<String, dynamic>?)?[eventConstant] as String?;
     }
   }
@@ -485,16 +472,13 @@ class KwikPassCDNConfig {
       // Use the constant to get the property name, then look up the value
       if (cachedConfig?.apiHeaders?[headerConstant] != null) {
         final value = cachedConfig!.apiHeaders![headerConstant];
-        debugPrint('[CDN Config] ✅ Header "$headerConstant" = "$value" from CACHED CDN config');
         return value;
       }
       
       // Fallback to default config using the same property name
       final defaultValue = (_bundledConfig['api']?['headers'] as Map<String, dynamic>?)?[headerConstant] as String?;
-      debugPrint('[CDN Config] 📦 Header "$headerConstant" = "$defaultValue" from DEFAULT kp-config.json');
       return defaultValue;
     } catch (e) {
-      debugPrint('[CDN Config] ⚠️ Error fetching header "$headerConstant": $e');
       return (_bundledConfig['api']?['headers'] as Map<String, dynamic>?)?[headerConstant] as String?;
     }
   }
@@ -507,18 +491,15 @@ class KwikPassCDNConfig {
       final checkout = cachedConfig?.additionalData?['checkout'];
       
       if (checkout != null) {
-        debugPrint('[CDN Config] ✅ Checkout config${key != null ? ' "$key"' : ''} from CACHED CDN config');
         return key != null ? checkout[key] : checkout;
       }
       
-      debugPrint('[CDN Config] 📦 Checkout config${key != null ? ' "$key"' : ''} from DEFAULT kp-config.json');
       final defaultCheckout = _bundledConfig['checkout'];
       if (key != null && defaultCheckout != null) {
         return defaultCheckout[key];
       }
       return defaultCheckout;
     } catch (e) {
-      debugPrint('[CDN Config] ⚠️ Error fetching checkout config${key != null ? ' "$key"' : ''}: $e');
       final checkout = _bundledConfig['checkout'];
       if (key != null && checkout != null) {
         return checkout[key];
@@ -538,10 +519,8 @@ class KwikPassCDNConfig {
       // If no specific schema requested, return all schemas
       if (schemaConstant == null) {
         if (schema != null && (schema as Map).isNotEmpty) {
-          debugPrint('[CDN Config] ✅ All Snowplow schemas from CACHED CDN config');
           return Map<String, String>.from(schema);
         }
-        debugPrint('[CDN Config] 📦 All Snowplow schemas from DEFAULT kp-config.json');
         final bundledSchema = _bundledConfig['snowplow']?['schema'];
         return bundledSchema != null
             ? Map<String, String>.from(bundledSchema as Map)
@@ -551,16 +530,13 @@ class KwikPassCDNConfig {
       // Use the constant to get the property name, then look up the value
       if (schema?[schemaConstant] != null) {
         final value = schema[schemaConstant];
-        debugPrint('[CDN Config] ✅ Snowplow schema "$schemaConstant" = "$value" from CACHED CDN config');
         return value;
       }
       
       // Fallback to default config using the same property name
       final defaultValue = _bundledConfig['snowplow']?['schema']?[schemaConstant];
-      debugPrint('[CDN Config] 📦 Snowplow schema "$schemaConstant" = "$defaultValue" from DEFAULT kp-config.json');
       return defaultValue;
     } catch (e) {
-      debugPrint('[CDN Config] ⚠️ Error fetching snowplow schema${schemaConstant != null ? ' "$schemaConstant"' : ''}: $e');
       if (schemaConstant != null) {
         return _bundledConfig['snowplow']?['schema']?[schemaConstant];
       }

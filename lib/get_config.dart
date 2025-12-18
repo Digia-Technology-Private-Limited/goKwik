@@ -51,7 +51,6 @@ Future<CDNConfig> fetchConfigFromCDN([CDNConfigOptions? options]) async {
       final cachedConfig = await cdnConfigInstance.getCachedConfig();
       if (cachedConfig != null) {
         // Alert: Config fetched from local cache
-        debugPrint('🟢 [CDN Config] ✅ Data source: LOCAL CACHE (valid, within 24 hours)');
         _showConfigSourceNotification('Config loaded from local cache', isLocal: true);
         return cachedConfig;
       }
@@ -62,7 +61,6 @@ Future<CDNConfig> fetchConfigFromCDN([CDNConfigOptions? options]) async {
 
     try {
       // Alert: Fetching config from remote CDN
-      debugPrint('🔵 [CDN Config] 🌐 Data source: Fetching from REMOTE CDN URL: $url');
       _showConfigSourceNotification('Fetching config from remote CDN...', isLocal: false);
       
       final dio = Dio();
@@ -89,9 +87,7 @@ Future<CDNConfig> fetchConfigFromCDN([CDNConfigOptions? options]) async {
         await cdnConfigInstance.cacheConfig(processedConfig);
         
         // Alert: Successfully fetched from remote CDN
-        debugPrint('🟢 [CDN Config] ✅ Data source: REMOTE CDN (successfully fetched and cached)');
         _showConfigSourceNotification('Config successfully fetched from remote CDN', isLocal: false);
-        debugPrint("CDN CONFIG FETCHED: THIS IS PROCESSED CONFIG:::: $processedConfig");
         return processedConfig;
       } else {
         throw Exception('CDN returned status code: ${response.statusCode}');
@@ -104,7 +100,6 @@ Future<CDNConfig> fetchConfigFromCDN([CDNConfigOptions? options]) async {
         final storedConfig = await cdnConfigInstance.getStoredCDNConfig();
         if (storedConfig != null) {
           // Alert: Using stored config as fallback
-          debugPrint('🟡 [CDN Config] ✅ Data source: STORED CONFIG (fallback, valid cache exists)');
           _showConfigSourceNotification('Using stored config (CDN unavailable)', isLocal: true);
           return storedConfig;
         }
@@ -114,7 +109,6 @@ Future<CDNConfig> fetchConfigFromCDN([CDNConfigOptions? options]) async {
       
       // Strategy 4: Final fallback - use the local kp-config.json file
       // Alert: Using local bundled config as final fallback
-      debugPrint('🟡 [CDN Config] ✅ Data source: LOCAL kp-config.json (final fallback)');
       _showConfigSourceNotification('Using local bundled config (fallback)', isLocal: true);
       final localConfig = await _loadLocalConfig();
       
@@ -287,7 +281,6 @@ void _showConfigSourceNotification(String message, {required bool isLocal}) {
   
   // Option 1: Using debugPrint (always works)
   final icon = isLocal ? '📦' : '🌐';
-  debugPrint('$icon [Config Notification] $message');
   
   // Option 2: If you have a BuildContext, you can show a SnackBar
   // This would need to be implemented where you have access to context

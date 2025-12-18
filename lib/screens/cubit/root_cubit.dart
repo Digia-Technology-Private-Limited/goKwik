@@ -473,7 +473,6 @@ class RootCubit extends Cubit<RootState> {
           );
         } catch (err) {
           // If customerShopifySession fails, continue with normal flow
-          debugPrint("customerShopifySession failed: $err");
         }
       }
 
