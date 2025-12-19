@@ -1,3 +1,6 @@
+## [1.0.16]
+- Remove unused api
+
 ## [1.0.15]
 - Add OTA config for sdk and update the config
 

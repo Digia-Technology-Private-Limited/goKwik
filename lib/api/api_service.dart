@@ -484,7 +484,7 @@ abstract class ApiService {
         jsonEncode(deviceInfoDetails),
       );
 
-      await sendGoogleAdIdentification();
+      // await sendGoogleAdIdentification();
 
       final requestId = results[0];
       if (requestId != null) {
