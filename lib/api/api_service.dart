@@ -1237,8 +1237,8 @@ abstract class ApiService {
       final deviceInfoJson = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceInfo)!);
       final deviceInfoDetails = deviceInfoJson != null ? jsonDecode(deviceInfoJson) : <String, dynamic>{};
 
-      // Get Google Ad ID (works for both Android and iOS)
-      final googleAdId = deviceInfoDetails[cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAdId)!];
+      // Get Ad ID (works for both Android and iOS)
+      final adId = deviceInfoDetails[cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAdId)!];
       
       // Get device ID
       final deviceId = deviceInfoDetails[cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceUniqueId)!];
@@ -1262,13 +1262,19 @@ abstract class ApiService {
         headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpRequestId)!] = requestId;
       }
 
-      // Prepare query parameters
+      // Prepare query parameters with separate ad IDs for Android and iOS
       final params = <String, String>{};
-      if (googleAdId != null && googleAdId.isNotEmpty) {
-        params['google_ad_id'] = googleAdId;
+      
+      if (Platform.isAndroid && adId != null && adId.isNotEmpty) {
+        params['google_ad_id'] = adId;
       }
+      
+      if (Platform.isIOS && adId != null && adId.isNotEmpty) {
+        params['ios_ad_id'] = adId;
+      }
+      
       if (deviceId != null && deviceId.isNotEmpty) {
-        params['device_id'] = deviceId;
+        params['deviceId'] = deviceId;
       }
 
       final response = await gokwik.get(
