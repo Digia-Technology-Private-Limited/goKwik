@@ -115,7 +115,7 @@ class APIEndpoint {
   static const VerifyEmailCode = "kp/api/v1/auth/email-otp/verify";
   static const shopifyMultipass = "kp/api/v2/customer/shopify/multipass";
   static const reverseKpAuthLogin = "kp/api/v1/auth/core-token/login";
-  static const customerGoogleAd = "kp/api/v1/customer/google-ad";
+  static const customerGoogleAd = "kp/api/v1/customers/lookup";
 
   static const Map<String, String> values = {
     'kpHealthCheck': kpHealthCheck,

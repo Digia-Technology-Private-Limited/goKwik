@@ -52,8 +52,8 @@ class DioClient {
     try {
       SSLPinningAdapter.configureDio(_gokwikHttpClient!, env);
       if (kDebugMode) {
-        print('✅ SSL Pinning configured for environment: $env');
-        print('   Pinned domain: ${SSLPinningAdapter.getPinnedDomain(env)}');
+        // print('✅ SSL Pinning configured for environment: $env');
+        // print('   Pinned domain: ${SSLPinningAdapter.getPinnedDomain(env)}');
       }
     } catch (e) {
       if (kDebugMode) {
