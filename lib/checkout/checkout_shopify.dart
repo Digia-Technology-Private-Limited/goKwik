@@ -166,7 +166,6 @@ window.addEventListener("gokwikLoaded", (event) => {
     initiateCheckout();
   }
 
-  bool jsInjectedOnce = false;
   void _initWebViewController() {
     _webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -181,12 +180,6 @@ window.addEventListener("gokwikLoaded", (event) => {
         NavigationDelegate(
           onPageStarted: (url) async {
             final canGoBack = await _webViewController.canGoBack();
-            if (!jsInjectedOnce) {
-              jsInjectedOnce = true;
-              await _webViewController.runJavaScript(injectedJavaScript);
-            }
-            // final canGoForward = await _webViewController.canGoForward();
-            // await _webViewController.runJavaScript(injectedJavaScript);
             _sendNavigationEvent('pageStarted', {
               'url': url,
               'isLoading': true,
@@ -196,6 +189,9 @@ window.addEventListener("gokwikLoaded", (event) => {
           onPageFinished: (url) async {
             final canGoBack = await _webViewController.canGoBack();
             final canGoForward = await _webViewController.canGoForward();
+            
+            // Inject JavaScript after page is fully loaded (works on both iOS and Android)
+            await _webViewController.runJavaScript(injectedJavaScript);
 
             _sendNavigationEvent('pageFinished', {
               'url': url,

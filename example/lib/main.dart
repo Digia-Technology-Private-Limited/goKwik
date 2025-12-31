@@ -53,10 +53,10 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _initializeData() async {
     try {
       await GoKwikClient.instance.initializeSDK(InitializeSdkProps(
-        // mid: '19g6jle2d5p3n',
+        mid: '19g6jle2d5p3n',
         // mid: '19x8g5js05wj',
-        mid: "2be09imdmw6032",
-        environment: Environment.qa,
+        // mid: "2be09imdmw6032",
+        environment: Environment.sandbox,
         isSnowplowTrackingEnabled: false,
         mode: 'debug',
 
