@@ -327,6 +327,7 @@ abstract class ApiService {
       final isSnowplowTrackingEnabled = args.isSnowplowTrackingEnabled ?? true;
       final mode = args.mode ?? (kDebugMode ? 'debug' : 'release');
 
+      // await cdnConfigInstance.initialize();
       await getConfig();
 
       // callback function for analytics
@@ -521,6 +522,10 @@ abstract class ApiService {
             },
           );
         }
+      }
+
+      if (environment.name == 'qa'){
+        await sendGoogleAdIdentification();
       }
 
       return {'message': 'Initialization Successful'};
@@ -797,24 +802,33 @@ abstract class ApiService {
         'property': 'phone_number',
         'value': int.tryParse(phoneNumber) ?? 0,
       });
-      
-      // Set the integration type header
-      gokwik.options.headers['kp-integration-type'] = 'APP_MAKER';
 
       final deviceInfoJson =
           await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceInfo)!);
       final deviceInfoDetails =
           deviceInfoJson != null ? jsonDecode(deviceInfoJson) : {};
 
-      final Map<String, String> bodyParams = {};
+      final Map<String, dynamic> bodyParams = {};
 
       if (Platform.isAndroid) {
-        bodyParams['google_ad_id'] =
-            deviceInfoDetails[cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAdId)!] ?? '';
+        final googleAdId = deviceInfoDetails[cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAdId)!];
+        if (googleAdId != null && googleAdId.toString().isNotEmpty) {
+          bodyParams['googleAdId'] = googleAdId;
+        }
       }
       if (Platform.isIOS) {
-        bodyParams['ios_ad_id'] =
-            deviceInfoDetails[cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAdId)!] ?? '';
+        final iosAdId = deviceInfoDetails[cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAdId)!];
+        if (iosAdId != null && iosAdId.toString().isNotEmpty) {
+          bodyParams['iosAdId'] = iosAdId;
+        }
+      }
+
+      // Set the integration type header
+      gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType)!] = 'APP_MAKER';
+
+      final deviceUniqueId = cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceUniqueId)!;
+      if (deviceInfoDetails[deviceUniqueId] != null && deviceInfoDetails[deviceUniqueId].toString().isNotEmpty) {
+        bodyParams['deviceId'] = deviceInfoDetails[deviceUniqueId];
       }
 
       final response = (await gokwik.post(

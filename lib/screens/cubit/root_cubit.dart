@@ -189,8 +189,8 @@ class RootCubit extends Cubit<RootState> {
       final merchantTypeString =
           await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
       final isShopifyOrCustomShopify =
-          merchantTypeString == MerchantType.shopify ||
-              merchantTypeString == MerchantType.custom_shopify;
+          merchantTypeString == "shopify" ||
+              merchantTypeString == "custom_shopify";
 
       // Handle Shopify merchant type
       if (isShopifyOrCustomShopify) {
@@ -582,8 +582,8 @@ class RootCubit extends Cubit<RootState> {
     final Map<String, dynamic> responseData = jsonDecode(response);
 
     final isShopifyOrCustomShopify =
-        state.merchantType == MerchantType.shopify ||
-            state.merchantType == MerchantType.custom_shopify;
+        state.merchantType == "shopify" ||
+            state.merchantType == "custom_shopify";
 
     if (isShopifyOrCustomShopify) {
       if (
@@ -632,7 +632,7 @@ class RootCubit extends Cubit<RootState> {
       }
     }
 
-    if (state.merchantType == MerchantType.custom) {
+    if (state.merchantType == "custom") {
       if (responseData['emailRequired'] == true &&
           (responseData['email'] == null || responseData['email'].isEmpty)) {
         emit(state.copyWith(isNewUser: true));

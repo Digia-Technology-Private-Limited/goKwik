@@ -187,7 +187,7 @@ class _RootScreenState extends State<RootScreen> {
                                         textAlign: TextAlign.center,
                                       )
                                     : isNewUserState
-                                        ? merchantType == MerchantType.custom
+                                        ? merchantType == "custom"
                                             ? CreateAccount(
                                                 titleStyle: widget
                                                     .inputProps?.titleStyle,

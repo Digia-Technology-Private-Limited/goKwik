@@ -450,7 +450,7 @@ class KwikPassCDNConfig {
       final cachedConfig = getCDNConfig();
       
       // Use the constant to get the property name, then look up the value
-      if (cachedConfig?.analyticsEvents?[eventConstant] != null) {
+      if (cachedConfig?.analyticsEvents?[eventConstant] == null) {
         final value = cachedConfig!.analyticsEvents![eventConstant];
         return value;
       }

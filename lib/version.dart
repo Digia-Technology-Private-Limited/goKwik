@@ -1,5 +1,5 @@
 
 /// SDK VERSION
 class KPSdkVersion {
-  static const String version = '1.0.16';
+  static const String version = '1.0.19';
 }

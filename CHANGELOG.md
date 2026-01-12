@@ -1,3 +1,12 @@
+## [1.0.19]
+- API Changes and optimisations
+
+## [1.0.18]
+- Fix config initialisation issue
+
+## [1.0.17]
+- Fix checkout events for android and iOS
+
 ## [1.0.16]
 - Remove unused api
 

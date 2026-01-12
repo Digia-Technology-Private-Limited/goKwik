@@ -112,7 +112,7 @@ class APIEndpoint {
   static const customerShopifySession = "kp/api/v1/customer/shopify-session";
   static const disposableEmailCheck = "kp/api/v1/disposable-email/validate/";
   static const sendEmailVerificationCode = "kp/api/v1/auth/email-otp/send";
-  static const verifyEmailCode = "kp/api/v1/auth/email-otp/verify";
+  static const VerifyEmailCode = "kp/api/v1/auth/email-otp/verify";
   static const shopifyMultipass = "kp/api/v2/customer/shopify/multipass";
   static const reverseKpAuthLogin = "kp/api/v1/auth/core-token/login";
   static const customerGoogleAd = "kp/api/v1/customer/google-ad";
@@ -130,7 +130,7 @@ class APIEndpoint {
     'customerShopifySession': customerShopifySession,
     'disposableEmailCheck': disposableEmailCheck,
     'sendEmailVerificationCode': sendEmailVerificationCode,
-    'verifyEmailCode': verifyEmailCode,
+    'verifyEmailCode': VerifyEmailCode,
     'shopifyMultipass': shopifyMultipass,
     'reverseKpAuthLogin': reverseKpAuthLogin,
     'customerGoogleAd': customerGoogleAd,
@@ -152,7 +152,7 @@ class APIEndpointKeys {
   static const customerShopifySession = 'customerShopifySession';
   static const disposableEmailCheck = 'disposableEmailCheck';
   static const sendEmailVerificationCode = 'sendEmailVerificationCode';
-  static const verifyEmailCode = 'verifyEmailCode';
+  static const verifyEmailCode = 'VerifyEmailCode';
   static const shopifyMultipass = 'shopifyMultipass';
   static const reverseKpAuthLogin = 'reverseKpAuthLogin';
   static const customerGoogleAd = 'customerGoogleAd';
@@ -165,44 +165,68 @@ class APIEndpointKeys {
 /// Analytics Event Configuration
 /// Maps property names to actual event names
 class AnalyticsEvent {
-  static const whatsappLoggedIn = "kp_whatsapp_logged_in";
-  static const phoneNumberLoggedIn = "kp_phone_number_logged_in";
-  static const truecallerLoggedIn = "kp_truecaller_logged_in";
-  static const shopifyLoggedIn = "kp_shopify_logged_in";
-  static const successfullyLoggedOut = "kp_successfully_logged_out";
-  static const appLoginPhone = "kp_app_login_phone";
-  static const appLoginSuccess = "kp_app_login_success";
-  static const appLoginShopifySuccess = "kp_app_login_shopify_success";
-  static const appLogout = "kp_app_logout";
-  static const appIdentifiedUser = "kp_app_identified_user";
+  static const WHATSAPP_LOGGED_IN = "kp_whatsapp_logged_in";
+  static const PHONE_NUMBER_LOGGED_IN = "kp_phone_number_logged_in";
+  static const TRUECALLER_LOGGED_IN = "kp_truecaller_logged_in";
+  static const SHOPPIFY_LOGGED_IN = "kp_shopify_logged_in";
+  static const SUCCESSFULLY_LOGGED_OUT = "kp_successfully_logged_out";
+  static const APP_LOGIN_PHONE = "kp_app_login_phone";
+  static const APP_LOGIN_SUCCESS = "kp_app_login_success";
+  static const APP_LOGIN_SHOPIFY_SUCCESS = "kp_app_login_shopify_success";
+  static const APP_LOGOUT = "kp_app_logout";
+  static const APP_IDENTIFIED_USER = "kp_app_identified_user";
+
+  // Backward compatibility aliases (camelCase)
+  static const whatsappLoggedIn = WHATSAPP_LOGGED_IN;
+  static const phoneNumberLoggedIn = PHONE_NUMBER_LOGGED_IN;
+  static const truecallerLoggedIn = TRUECALLER_LOGGED_IN;
+  static const shopifyLoggedIn = SHOPPIFY_LOGGED_IN;
+  static const successfullyLoggedOut = SUCCESSFULLY_LOGGED_OUT;
+  static const appLoginPhone = APP_LOGIN_PHONE;
+  static const appLoginSuccess = APP_LOGIN_SUCCESS;
+  static const appLoginShopifySuccess = APP_LOGIN_SHOPIFY_SUCCESS;
+  static const appLogout = APP_LOGOUT;
+  static const appIdentifiedUser = APP_IDENTIFIED_USER;
 
   static const Map<String, String> values = {
-    'whatsappLoggedIn': whatsappLoggedIn,
-    'phoneNumberLoggedIn': phoneNumberLoggedIn,
-    'truecallerLoggedIn': truecallerLoggedIn,
-    'shopifyLoggedIn': shopifyLoggedIn,
-    'successfullyLoggedOut': successfullyLoggedOut,
-    'appLoginPhone': appLoginPhone,
-    'appLoginSuccess': appLoginSuccess,
-    'appLoginShopifySuccess': appLoginShopifySuccess,
-    'appLogout': appLogout,
-    'appIdentifiedUser': appIdentifiedUser,
+    'WHATSAPP_LOGGED_IN': WHATSAPP_LOGGED_IN,
+    'PHONE_NUMBER_LOGGED_IN': PHONE_NUMBER_LOGGED_IN,
+    'TRUECALLER_LOGGED_IN': TRUECALLER_LOGGED_IN,
+    'SHOPPIFY_LOGGED_IN': SHOPPIFY_LOGGED_IN,
+    'SUCCESSFULLY_LOGGED_OUT': SUCCESSFULLY_LOGGED_OUT,
+    'APP_LOGIN_PHONE': APP_LOGIN_PHONE,
+    'APP_LOGIN_SUCCESS': APP_LOGIN_SUCCESS,
+    'APP_LOGIN_SHOPIFY_SUCCESS': APP_LOGIN_SHOPIFY_SUCCESS,
+    'APP_LOGOUT': APP_LOGOUT,
+    'APP_IDENTIFIED_USER': APP_IDENTIFIED_USER,
   };
 }
 
 /// Analytics Event Keys - Auto-generated from AnalyticsEvent
 /// Provides type-safe access to analytics event property names
 class AnalyticsEventKeys {
-  static const whatsappLoggedIn = 'whatsappLoggedIn';
-  static const phoneNumberLoggedIn = 'phoneNumberLoggedIn';
-  static const truecallerLoggedIn = 'truecallerLoggedIn';
-  static const shopifyLoggedIn = 'shopifyLoggedIn';
-  static const successfullyLoggedOut = 'successfullyLoggedOut';
-  static const appLoginPhone = 'appLoginPhone';
-  static const appLoginSuccess = 'appLoginSuccess';
-  static const appLoginShopifySuccess = 'appLoginShopifySuccess';
-  static const appLogout = 'appLogout';
-  static const appIdentifiedUser = 'appIdentifiedUser';
+  static const WHATSAPP_LOGGED_IN = 'WHATSAPP_LOGGED_IN';
+  static const PHONE_NUMBER_LOGGED_IN = 'PHONE_NUMBER_LOGGED_IN';
+  static const TRUECALLER_LOGGED_IN = 'TRUECALLER_LOGGED_IN';
+  static const SHOPPIFY_LOGGED_IN = 'SHOPPIFY_LOGGED_IN';
+  static const SUCCESSFULLY_LOGGED_OUT = 'SUCCESSFULLY_LOGGED_OUT';
+  static const APP_LOGIN_PHONE = 'APP_LOGIN_PHONE';
+  static const APP_LOGIN_SUCCESS = 'APP_LOGIN_SUCCESS';
+  static const APP_LOGIN_SHOPIFY_SUCCESS = 'APP_LOGIN_SHOPIFY_SUCCESS';
+  static const APP_LOGOUT = 'APP_LOGOUT';
+  static const APP_IDENTIFIED_USER = 'APP_IDENTIFIED_USER';
+
+  // Backward compatibility aliases (camelCase)
+  static const whatsappLoggedIn = WHATSAPP_LOGGED_IN;
+  static const phoneNumberLoggedIn = PHONE_NUMBER_LOGGED_IN;
+  static const truecallerLoggedIn = TRUECALLER_LOGGED_IN;
+  static const shopifyLoggedIn = SHOPPIFY_LOGGED_IN;
+  static const successfullyLoggedOut = SUCCESSFULLY_LOGGED_OUT;
+  static const appLoginPhone = APP_LOGIN_PHONE;
+  static const appLoginSuccess = APP_LOGIN_SUCCESS;
+  static const appLoginShopifySuccess = APP_LOGIN_SHOPIFY_SUCCESS;
+  static const appLogout = APP_LOGOUT;
+  static const appIdentifiedUser = APP_IDENTIFIED_USER;
 }
 
 // ============================================================================
@@ -370,6 +394,10 @@ class StorageKey {
   static const kwikpassCurrentVersion = 'kwikpass_current_version';
   static const kwikpassBundlePrefix = 'kwikpass_bundle_';
   static const kwikpassManifestPrefix = 'kwikpass_manifest_';
+  static const gkBureauEnabled = 'gk-bureau-enabled';
+  static const gkBureauClientId = 'gk-bureau-client-id';
+  static const gkBureauEnvironment = 'gk-bureau-environment';
+  static const gkBureauTimeout = 'gk-bureau-timeout';
 
   static const Map<String, String> values = {
     'gkKPEnabled': gkKPEnabled,
@@ -414,12 +442,16 @@ class StorageKey {
     'kcMerchantToken': kcMerchantToken,
     'kcNotificationEventUrl': kcNotificationEventUrl,
     'moengageId': moengageId,
-    'kpSdkVersion': kpSdkVersion,
-    'kpSdkPlatform': kpSdkPlatform,
-    'kpOtpLocked': kpOtpLocked,
-    'kwikpassCurrentVersion': kwikpassCurrentVersion,
-    'kwikpassBundlePrefix': kwikpassBundlePrefix,
-    'kwikpassManifestPrefix': kwikpassManifestPrefix,
+    'kp_sdk_version': kpSdkVersion,
+    'kp_sdk_platform': kpSdkPlatform,
+    'kp_otp_locked': kpOtpLocked,
+    'kwikpass_current_version': kwikpassCurrentVersion,
+    'kwikpass_bundle_prefix': kwikpassBundlePrefix,
+    'kwikpass_manifest_prefix': kwikpassManifestPrefix,
+    'gkBureauEnabled': gkBureauEnabled,
+    'gkBureauClientId': gkBureauClientId,
+    'gkBureauEnvironment': gkBureauEnvironment,
+    'gkBureauTimeout': gkBureauTimeout,
   };
 }
 
@@ -468,10 +500,14 @@ class StorageKeyKeys {
   static const kcMerchantToken = 'kcMerchantToken';
   static const kcNotificationEventUrl = 'kcNotificationEventUrl';
   static const moengageId = 'moengageId';
-  static const kpSdkVersion = 'kpSdkVersion';
-  static const kpSdkPlatform = 'kpSdkPlatform';
-  static const kpOtpLocked = 'kpOtpLocked';
-  static const kwikpassCurrentVersion = 'kwikpassCurrentVersion';
-  static const kwikpassBundlePrefix = 'kwikpassBundlePrefix';
-  static const kwikpassManifestPrefix = 'kwikpassManifestPrefix';
+  static const kp_sdk_version = 'kp_sdk_version';
+  static const kp_sdk_platform = 'kp_sdk_platform';
+  static const kp_otp_locked = 'kp_otp_locked';
+  static const kwikpass_current_version = 'kwikpass_current_version';
+  static const kwikpass_bundle_prefix = 'kwikpass_bundle_prefix';
+  static const kwikpass_manifest_prefix = 'kwikpass_manifest_prefix';
+  static const gkBureauEnabled = 'gkBureauEnabled';
+  static const gkBureauClientId = 'gkBureauClientId';
+  static const gkBureauEnvironment = 'gkBureauEnvironment';
+  static const gkBureauTimeout = 'gkBureauTimeout';
 }
