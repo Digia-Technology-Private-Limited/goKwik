@@ -116,6 +116,8 @@ class APIEndpoint {
   static const shopifyMultipass = "kp/api/v2/customer/shopify/multipass";
   static const reverseKpAuthLogin = "kp/api/v1/auth/core-token/login";
   static const customerGoogleAd = "kp/api/v1/customers/lookup";
+  static const bureauOtpless = "kp/api/v1/auth/otpless/bureau";
+  static const kpAuthRequest = "kp/api/v1/auth/request";
 
   static const Map<String, String> values = {
     'kpHealthCheck': kpHealthCheck,
@@ -134,6 +136,8 @@ class APIEndpoint {
     'shopifyMultipass': shopifyMultipass,
     'reverseKpAuthLogin': reverseKpAuthLogin,
     'customerGoogleAd': customerGoogleAd,
+    'bureauOtpless': bureauOtpless,
+    'kpAuthRequest': kpAuthRequest,
   };
 }
 
@@ -156,6 +160,8 @@ class APIEndpointKeys {
   static const shopifyMultipass = 'shopifyMultipass';
   static const reverseKpAuthLogin = 'reverseKpAuthLogin';
   static const customerGoogleAd = 'customerGoogleAd';
+  static const bureauOtpless = 'bureauOtpless';
+  static const kpAuthRequest = 'kpAuthRequest';
 }
 
 // ============================================================================

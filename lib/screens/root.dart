@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/types.dart';
+import 'package:gokwik/screens/comp/LoadingModal.dart';
 import 'package:gokwik/screens/create_account.dart';
 import 'package:gokwik/screens/cubit/root_cubit.dart';
 import 'package:gokwik/screens/cubit/root_model.dart';
@@ -23,6 +24,9 @@ class RootScreen extends StatefulWidget {
 
   // Loader customization props
   final LoadingConfig? loaderConfig;
+
+  // Loading Modal customization props
+  final LoadingModalConfig? loadingModalConfig;
 
   // URLs
   final String? footerText;
@@ -58,6 +62,7 @@ class RootScreen extends StatefulWidget {
     this.formContainerStyle,
     this.imageContainerStyle,
     this.loaderConfig,
+    this.loadingModalConfig,
     this.footerText,
     this.footerUrls,
     this.footerTextStyle,
@@ -283,7 +288,7 @@ class _RootScreenState extends State<RootScreen> {
                                                   )
                                                 : Login(
                                                     onSubmit: () =>
-                                                        cubit.handleOtpSend(),
+                                                        cubit.handlePhoneSubmission(),
                                                     isLoading: state.isLoading,
                                                     formData: LoginForm(
                                                       phone: cubit
@@ -413,6 +418,22 @@ class _RootScreenState extends State<RootScreen> {
                       ),
                     ),
                   ),
+
+                // LOADING MODAL
+                LoadingModal(
+                  visible: state.showLoadingModal,
+                  title: state.loadingModalTitle,
+                  message: state.loadingModalMessage,
+                  titleStyle: widget.loadingModalConfig?.titleStyle,
+                  messageStyle: widget.loadingModalConfig?.messageStyle,
+                  containerStyle: widget.loadingModalConfig?.containerStyle,
+                  overlayStyle: widget.loadingModalConfig?.overlayStyle,
+                  primaryColor: widget.loadingModalConfig?.primaryColor,
+                  secondaryColor: widget.loadingModalConfig?.secondaryColor,
+                  showSpinner: widget.loadingModalConfig?.showSpinner ?? true,
+                  customSpinner: widget.loadingModalConfig?.customSpinner,
+                  backgroundImage: widget.loadingModalConfig?.backgroundImage,
+                )
               ],
             ),
           );
@@ -694,6 +715,34 @@ class LoadingConfig {
   const LoadingConfig({
     this.loadingText,
     this.loadingTextStyle,
+  });
+}
+
+class LoadingModalConfig {
+  final String? title;
+  final String? message;
+  final TextStyle? titleStyle;
+  final TextStyle? messageStyle;
+  final BoxDecoration? containerStyle;
+  final Color? overlayStyle;
+  final Color? primaryColor;
+  final Color? secondaryColor;
+  final bool? showSpinner;
+  final Widget? customSpinner;
+  final String? backgroundImage;
+
+  const LoadingModalConfig({
+    this.title,
+    this.message,
+    this.titleStyle,
+    this.messageStyle,
+    this.containerStyle,
+    this.overlayStyle,
+    this.primaryColor,
+    this.secondaryColor,
+    this.showSpinner,
+    this.customSpinner,
+    this.backgroundImage,
   });
 }
 

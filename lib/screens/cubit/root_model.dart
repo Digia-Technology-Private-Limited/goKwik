@@ -32,6 +32,12 @@ class RootState {
   final String? lastSubmittedPhone;
   final String? lastSubmittedEmail;
 
+  // Loading Modal states
+  final bool showLoadingModal;
+  final String? loadingModalTitle;
+  final String? loadingModalMessage;
+  final bool phoneEditedAfterBureau;
+
   const RootState({
     this.isUserLoggedIn = false,
     this.merchantType = MerchantType.shopify,
@@ -50,6 +56,10 @@ class RootState {
     this.shopifyCustomerId,
     this.lastSubmittedPhone,
     this.lastSubmittedEmail,
+    this.showLoadingModal = false,
+    this.loadingModalTitle,
+    this.loadingModalMessage,
+    this.phoneEditedAfterBureau = false,
   });
 
   RootState copyWith({
@@ -70,6 +80,10 @@ class RootState {
     String? shopifyCustomerId,
     String? lastSubmittedPhone,
     String? lastSubmittedEmail,
+    bool? showLoadingModal,
+    String? loadingModalTitle,
+    String? loadingModalMessage,
+    bool? phoneEditedAfterBureau,
   }) {
     return RootState(
       isUserLoggedIn: isUserLoggedIn ?? this.isUserLoggedIn,
@@ -89,6 +103,10 @@ class RootState {
       shopifyCustomerId: shopifyCustomerId ?? this.shopifyCustomerId,
       lastSubmittedPhone: lastSubmittedPhone ?? this.lastSubmittedPhone,
       lastSubmittedEmail: lastSubmittedEmail ?? this.lastSubmittedEmail,
+      showLoadingModal: showLoadingModal ?? this.showLoadingModal,
+      loadingModalTitle: loadingModalTitle ?? this.loadingModalTitle,
+      loadingModalMessage: loadingModalMessage ?? this.loadingModalMessage,
+      phoneEditedAfterBureau: phoneEditedAfterBureau ?? this.phoneEditedAfterBureau,
     );
   }
 }

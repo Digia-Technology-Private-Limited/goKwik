@@ -740,6 +740,7 @@ class MerchantConfig {
   final List<ThirdPartyServiceProvider> thirdPartyServiceProviders;
   final String kpRequestId;
   final bool customerIntelligenceEnabled;
+  final bool isSilentAuth;
   final dynamic customerIntelligenceMetrics;
   final String marketingPopupGlobalLimit;
   final String customerAccountsVersion;
@@ -761,6 +762,7 @@ class MerchantConfig {
     required this.thirdPartyServiceProviders,
     required this.kpRequestId,
     required this.customerIntelligenceEnabled,
+    required this.isSilentAuth,
     required this.customerIntelligenceMetrics,
     required this.marketingPopupGlobalLimit,
     required this.customerAccountsVersion,
@@ -781,6 +783,7 @@ class MerchantConfig {
       popupBreakpoint: json['popupBreakpoint'],
       apiKey: json['apiKey'] ?? "",
       isPublicAppInstalled: json['isPublicAppInstalled'],
+      isSilentAuth: json['isSilentAuth'],
       thirdPartyServiceProviders: (json['thirdPartyServiceProviders'] as List)
           .map((e) => ThirdPartyServiceProvider.fromJson(e))
           .toList(),
@@ -807,6 +810,7 @@ class MerchantConfig {
       'popupBreakpoint': popupBreakpoint,
       'apiKey': apiKey,
       'isPublicAppInstalled': isPublicAppInstalled,
+      'isSilentAuth': isSilentAuth,
       'thirdPartyServiceProviders':
           thirdPartyServiceProviders.map((e) => e.toJson()).toList(),
       'kpRequestId': kpRequestId,

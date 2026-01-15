@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:gokwik/api/api_service.dart';
 import 'package:gokwik/api/base_response.dart';
+import 'package:gokwik/api/httpClient.dart';
 import 'package:gokwik/api/shopify_service.dart';
 import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/cache_instance.dart';
@@ -12,6 +13,7 @@ import 'package:gokwik/config/config_constants.dart';
 import 'package:gokwik/config/types.dart';
 import 'package:gokwik/module/single_use_data.dart';
 import 'package:gokwik/screens/cubit/root_model.dart';
+import 'package:onetaplogin/onetaplogin.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
@@ -76,6 +78,481 @@ class RootCubit extends Cubit<RootState> {
       ));
       emit(state.copyWith(isLoading: false));
     }
+  }
+
+  Future<void> handlePhoneSubmission() async {
+    // Get merchant config from cache
+    final merchantConfigStr = await cacheInstance.getValue(
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantConfig)!);
+    
+    Map<String, dynamic> merchantConfig = {};
+    if (merchantConfigStr != null && merchantConfigStr.isNotEmpty) {
+      try {
+        merchantConfig = jsonDecode(merchantConfigStr);
+      } catch (e) {
+        merchantConfig = {};
+      }
+    }
+
+    debugPrint("HELLO MERCHANT??? $merchantConfig");
+    debugPrint("IS SILENT AUTH ENABLED??? ${merchantConfig['isSilentAuth']}");
+
+    // Check if phone was edited after bureau or if silent auth is disabled
+    if (state.phoneEditedAfterBureau || merchantConfig['isSilentAuth'] != true) {
+      // await handleOtpSend();
+      return;
+    }
+
+    // Otherwise, handle bureau submit
+    await handleBureauSubmit();
+  }
+
+  Future<void> handleBureauSubmit() async {
+    try {
+      print("BUREAU CALLED");
+      
+      // Get environment from cache
+      final env = await cacheInstance.getValue(
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkEnvironmentKey)!
+      ) ?? 'production';
+
+      print("ENV:: $env");
+
+      // Get Bureau client ID from credentials - using 'sandbox' as per RN code
+      final bureauClientId = cdnConfigInstance.getCredentials('sandbox');
+      
+      emit(state.copyWith(isLoading: true));
+      
+      // Get transaction ID from API
+      final uuid = await ApiService.getBureauTransactionId();
+      print("UUID FROM API:: $uuid");
+      
+      // Parse phone number to int (phoneNumber should be starting with 91)
+      final phoneNumberInt = int.tryParse('91${phoneController.text}');
+      final fullPhoneNumber = '+91${phoneController.text}';
+
+      // Validate required parameters
+      if (bureauClientId == null || uuid == null || phoneNumberInt == null || env.isEmpty) {
+        print('Missing required Bureau parameters, falling back to OTP');
+        emit(state.copyWith(isLoading: false));
+        await handleOtpSend();
+        return;
+      }
+
+      print('Calling Bureau with: bureauClientId=$bureauClientId, uuid=$uuid, phone=$fullPhoneNumber, env=$env');
+
+      // Bureau timeout configuration
+      const bureauTimeout = Duration(milliseconds: 5000);
+      
+      // Start timing authentication
+      final authStartTime = DateTime.now();
+      print('🕐 Authentication started at: ${authStartTime.toIso8601String()}');
+
+      // Call Bureau SDK authentication with timeout race
+      final bureauPromise = Onetaplogin.authenticate(
+        bureauClientId!,
+        uuid,
+        phoneNumberInt,
+        env: env,
+        timeoutinMs: bureauTimeout.inMilliseconds,
+      );
+
+      final timeoutPromise = Future.delayed(
+        bureauTimeout,
+        () => throw Exception(jsonEncode({
+          'status': 503,
+          'error': 'BureauTimeout',
+          'message': 'Authentication Failed! Fallback to OTP',
+          'timestamp': DateTime.now().toIso8601String(),
+        })),
+      );
+
+      // Race between bureau authentication and timeout
+      final status = await Future.any([
+        bureauPromise,
+        timeoutPromise,
+      ]);
+
+      // End timing authentication
+      final authEndTime = DateTime.now();
+      final authDurationMs = authEndTime.difference(authStartTime).inMilliseconds;
+      final authDurationSeconds = (authDurationMs / 1000).toStringAsFixed(2);
+      
+      print('✅ Authentication completed at: ${authEndTime.toIso8601String()}');
+      print('⏱️ Authentication Response Time: ${authDurationMs}ms ($authDurationSeconds seconds)');
+      print('Authentication STATUS: $status');
+      
+      // Check if authentication was successful (status 1 = completed)
+      final isCompleted = status == 1;
+      
+      if (isCompleted) {
+        // Bureau success - show loading modal
+        emit(state.copyWith(
+          showLoadingModal: true,
+          loadingModalTitle: 'Hang tight!',
+          loadingModalMessage: 'Verifying your account...',
+        ));
+
+        try {
+          // Call sendBureauData API
+          final responseFromBureauAPI = await ApiService.sendBureauData(
+            transactionId: uuid,
+          );
+
+          // Update loading modal
+          emit(state.copyWith(
+            showLoadingModal: true,
+            loadingModalTitle: 'Almost there...',
+            loadingModalMessage: 'Logging you in...',
+          ));
+
+          // Handle bureau response using helper function
+          final response = await _handleBureauResponse(
+            responseFromBureauAPI,
+            phoneController.text,
+          );
+          
+          final responseData = response['data'];
+
+          // Get merchant type
+          final merchantTypeStr = await cacheInstance.getValue(
+            cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!
+          );
+
+          // Store shopifyCustomerId if present
+          if (responseData?['shopifyCustomerId'] != null) {
+            emit(state.copyWith(
+              shopifyCustomerId: responseData['shopifyCustomerId'].toString(),
+            ));
+          }
+
+          // Store state if present
+          if (responseData?['state'] != null) {
+            // Store state in cubit if needed for later use
+          }
+
+          // Handle Shopify and custom_shopify merchant types
+          if (['shopify', 'custom_shopify'].contains(merchantTypeStr) &&
+              responseData?['email'] != null) {
+            
+            // Remove unnecessary fields
+            responseData?.remove('state');
+            responseData?.remove('accountActivationUrl');
+
+            print("INSIDE THE CONDITION $merchantTypeStr");
+
+            // Handle auth required case
+            if (responseData?['authRequired'] == true && responseData?['email'] != null) {
+              shopifyEmailController.text = responseData['email'];
+              otpController.clear();
+              shopifyOtpController.clear();
+
+              emit(state.copyWith(
+                lastSubmittedEmail: responseData['email'],
+              ));
+
+              await ShopifyService.shopifySendEmailVerificationCode(responseData['email']);
+
+              emit(state.copyWith(
+                emailOtpSent: true,
+                isNewUser: false,
+                isLoading: false,
+                showLoadingModal: false,
+                loadingModalTitle: '',
+                loadingModalMessage: '',
+              ));
+              return;
+            }
+
+            // Add phone if not present
+            if (responseData?['phone'] == null) {
+              responseData['phone'] = phoneController.text;
+            }
+
+            // Success case
+            emit(state.copyWith(isSuccess: true));
+
+            await SnowplowTrackerService.sendCustomEventToSnowPlow({
+              'category': 'login_modal',
+              'action': 'automated',
+              'label': 'success_screen',
+              'property': 'phone_number',
+              'value': int.tryParse(phoneController.text),
+            });
+
+            if (onAnalytics != null) {
+              onAnalytics!(
+                cdnConfigInstance.getAnalyticsEvent(AnalyticsEventKeys.appLoginSuccess)!,
+                {
+                  'email': responseData?['email'],
+                  'phone': phoneController.text,
+                  'customer_id': responseData?['shopifyCustomerId']?.toString() ?? '',
+                },
+              );
+            }
+
+            onSuccessData?.call(FlowResult(
+              flowType: FlowType.otpVerify,
+              data: responseData,
+            ));
+
+            emit(state.copyWith(
+              isLoading: false,
+              showLoadingModal: false,
+              loadingModalTitle: '',
+              loadingModalMessage: '',
+            ));
+            return;
+          }
+
+          // Handle multiple emails
+          if (responseData?['multipleEmail'] != null) {
+            emit(state.copyWith(
+              multipleEmails: (responseData['multipleEmail'] as String)
+                  .split(',')
+                  .map((item) => MultipleEmail(
+                        label: item.trim(),
+                        value: item.trim(),
+                      ))
+                  .toList(),
+              showLoadingModal: false,
+              loadingModalTitle: '',
+              loadingModalMessage: '',
+            ));
+          }
+
+          // Handle email required case
+          if (responseData?['emailRequired'] == true &&
+              (responseData?['email'] == null || responseData?['email'].isEmpty)) {
+            emit(state.copyWith(
+              isNewUser: true,
+              showLoadingModal: false,
+              loadingModalTitle: '',
+              loadingModalMessage: '',
+            ));
+          }
+
+          // Handle merchant response with email
+          if (responseData?['merchantResponse']?['email'] != null) {
+            if (responseData['merchantResponse']['phone'] == null) {
+              responseData['merchantResponse']['phone'] = phoneController.text;
+            }
+
+            emit(state.copyWith(isSuccess: true));
+
+            await SnowplowTrackerService.sendCustomEventToSnowPlow({
+              'category': 'login_modal',
+              'action': 'automated',
+              'label': 'success_screen',
+              'property': 'phone_number',
+              'value': int.tryParse(phoneController.text),
+            });
+
+            if (onAnalytics != null) {
+              onAnalytics!(
+                cdnConfigInstance.getAnalyticsEvent(AnalyticsEventKeys.appLoginSuccess)!,
+                {
+                  'email': responseData['merchantResponse']['email'],
+                  'phone': phoneController.text,
+                  'customer_id': responseData['merchantResponse']['id']?.toString() ?? '',
+                },
+              );
+            }
+
+            onSuccessData?.call(FlowResult(
+              flowType: FlowType.otpVerify,
+              data: responseData['merchantResponse'],
+            ));
+
+            emit(state.copyWith(
+              isLoading: false,
+              showLoadingModal: false,
+              loadingModalTitle: '',
+              loadingModalMessage: '',
+            ));
+          }
+        } catch (e) {
+          // Handle API error from sendBureauData
+          emit(state.copyWith(
+            showLoadingModal: false,
+            loadingModalMessage: '',
+            isLoading: false,
+          ));
+          
+          print('Error in Bureau API call: $e');
+          
+          emit(state.copyWith(
+            error: SingleUseData(e.toString()),
+          ));
+        }
+      } else {
+        // Bureau failed - fallback to OTP
+        print('Bureau authentication failed, falling back to OTP');
+        emit(state.copyWith(
+          showLoadingModal: false,
+          loadingModalMessage: '',
+          isLoading: false,
+        ));
+        await handleOtpSend();
+      }
+    } catch (error) {
+      // Timeout or error - fallback to OTP
+      print('Bureau error/timeout, falling back to OTP: $error');
+      emit(state.copyWith(
+        showLoadingModal: false,
+        loadingModalMessage: '',
+        isLoading: false,
+      ));
+      await handleOtpSend();
+    }
+  }
+
+  /// Helper function to handle bureau API response
+  /// Processes tokens, user data, and merchant-specific logic
+  Future<Map<String, dynamic>> _handleBureauResponse(
+    Map<String, dynamic> data,
+    String phone,
+  ) async {
+    final gokwik = DioClient().getClient();
+    final merchantType = await cacheInstance.getValue(
+      cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!
+    );
+
+    if (['shopify', 'custom_shopify'].contains(merchantType)) {
+      // Handle tokens from the response
+      if (data['data']?['token'] != null) {
+        // Store access token
+        await cacheInstance.setValue(
+          cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!,
+          data['data']['token'],
+        );
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkAccessToken)!] =
+          data['data']['token'];
+      }
+
+      if (data['data']?['coreToken'] != null) {
+        // Store core token
+        await cacheInstance.setValue(
+          cdnConfigInstance.getKeys(StorageKeyKeys.checkoutAccessTokenKey)!,
+          data['data']['coreToken'],
+        );
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.checkoutAccessToken)!] =
+          data['data']['coreToken'];
+      }
+
+      if (data['data']?['kpToken'] != null) {
+        // Store KP token
+        await cacheInstance.setValue(
+          cdnConfigInstance.getKeys(StorageKeyKeys.gkKpToken)!,
+          data['data']['kpToken'],
+        );
+      }
+
+      // If email exists and auth is required, return early
+      if (data['data']?['email'] != null && data['data']?['authRequired'] == true) {
+        return data;
+      }
+
+      // Get customer intelligence
+      final responseForAffluence = await ApiService.customerIntelligence();
+
+      // Handle DISABLED or ENABLED state with email
+      if ((data['data']?['state'] == 'DISABLED' || data['data']?['state'] == 'ENABLED') &&
+          data['data']?['email'] != null) {
+        final multipassResponse = await ShopifyService.getShopifyMultipassToken(
+          phone: phone,
+          email: data['data']['email'],
+          id: data['data']['shopifyCustomerId'],
+          state: data['data']['state'],
+        );
+
+        if (multipassResponse['data']?['accountActivationUrl'] != null &&
+            multipassResponse['data']?['shopifyCustomerId'] != null) {
+          final accountActivationUrl = multipassResponse['data']['accountActivationUrl'] as String;
+          final activationUrlParts = accountActivationUrl.split('/');
+          final token = activationUrlParts.last;
+
+          final merchantConfigJSON = await cacheInstance.getValue(
+            cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantConfig)!
+          );
+          
+          if (merchantConfigJSON != null) {
+            final merchant = jsonDecode(merchantConfigJSON);
+            await ApiService.activateUserAccount(
+              multipassResponse['data']['shopifyCustomerId'],
+              merchant['host'],
+              multipassResponse['data']['password'],
+              token,
+            );
+          }
+        }
+
+        if (responseForAffluence.isSuccess && responseForAffluence.getDataOrThrow() != null) {
+          multipassResponse['data']['customer_insights'] = responseForAffluence.getDataOrThrow();
+        }
+
+        await SnowplowTrackerService.sendCustomEventToSnowPlow({
+          'category': 'login_modal',
+          'action': 'logged_in',
+          'label': 'phone_Number_logged_in',
+          'property': 'phone_number',
+          'value': int.tryParse(phone),
+        });
+
+        return multipassResponse;
+      }
+
+      // Handle case with email but no specific state
+      if (data['data']?['email'] != null) {
+        final multipassResponse = await ShopifyService.getShopifyMultipassToken(
+          phone: phone,
+          email: data['data']['email'],
+          id: data['data']['shopifyCustomerId'],
+        );
+
+        await SnowplowTrackerService.sendCustomEventToSnowPlow({
+          'category': 'login_modal',
+          'action': 'logged_in',
+          'label': 'phone_Number_logged_in',
+          'property': 'phone_number',
+          'value': int.tryParse(phone),
+        });
+
+        if (responseForAffluence.isSuccess && responseForAffluence.getDataOrThrow() != null) {
+          multipassResponse['data']['customer_insights'] = responseForAffluence.getDataOrThrow();
+        }
+
+        return multipassResponse;
+      }
+
+      // Default case: store user data and return
+      final userData = {
+        ...data['data'],
+        'phone': phone,
+      };
+
+      await cacheInstance.setValue(
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!,
+        jsonEncode(userData),
+      );
+
+      if (responseForAffluence.isSuccess && responseForAffluence.getDataOrThrow() != null) {
+        data['data']['customer_insights'] = responseForAffluence.getDataOrThrow();
+      }
+
+      await SnowplowTrackerService.sendCustomEventToSnowPlow({
+        'category': 'login_modal',
+        'action': 'logged_in',
+        'label': 'phone_Number_logged_in',
+        'property': 'phone_number',
+        'value': int.tryParse(phone),
+      });
+
+      return data;
+    }
+
+    // For non-Shopify merchants, just return the data
+    return data;
   }
 
   Future<void> handleOtpSend() async {
@@ -606,14 +1083,10 @@ class RootCubit extends Cubit<RootState> {
       if ((responseData['shopifyCustomerId'] != null &&
               responseData['phone'] != null &&
               responseData['email'] != null
-          // &&
-          // responseData['multipassToken'] != null
           ) ||
           (responseData['shopifyCustomerId'] != null &&
               responseData['phone'] != null &&
-              responseData['email'] != null &&
-              // responseData['multipassToken'] != null &&
-              responseData['password'] != null)) {
+              responseData['email'] != null)) {
         onSuccessData?.call(
             FlowResult(flowType: FlowType.alreadyLoggedIn, data: responseData));
         emit(state.copyWith(isUserLoggedIn: true));

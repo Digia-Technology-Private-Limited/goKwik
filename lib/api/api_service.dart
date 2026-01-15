@@ -242,7 +242,7 @@ abstract class ApiService {
         'label': 'account_activated',
         'action': 'automated',
         'property': 'phone_number',
-        'value': int.tryParse(phone ?? '0') ?? 0,
+        'value': int.tryParse(phone ?? ''),
       });
 
       final response = await Dio().post(
@@ -574,14 +574,14 @@ abstract class ApiService {
           'label': 'phone_number_filled',
           'action': 'click',
           'property': 'phone_number',
-          'value': int.tryParse(phoneNumber) ?? 0,
+          'value': int.tryParse(phoneNumber),
         }),
         SnowplowTrackerService.sendCustomEventToSnowPlow({
           'category': 'login_modal',
           'label': 'phone_number_entered',
           'action': 'click',
           'property': 'phone_number',
-          'value': int.tryParse(phoneNumber) ?? 0,
+          'value': int.tryParse(phoneNumber),
         }),
       ]);
       final response = (await gokwik.post(
@@ -606,7 +606,7 @@ abstract class ApiService {
         'label': 'otp_sent_successfully',
         'action': 'automated',
         'property': 'phone_number',
-        'value': int.tryParse(phoneNumber) ?? 0,
+        'value': int.tryParse(phoneNumber),
       });
 
       return Success(response.data);
@@ -800,7 +800,7 @@ abstract class ApiService {
         'label': 'submit_otp',
         'action': 'automated',
         'property': 'phone_number',
-        'value': int.tryParse(phoneNumber) ?? 0,
+        'value': int.tryParse(phoneNumber),
       });
 
       final deviceInfoJson =
@@ -912,7 +912,7 @@ abstract class ApiService {
               'label': 'phone_Number_logged_in',
               'action': 'logged_in',
               'property': 'phone_number',
-              'value': int.tryParse(phoneNumber) ?? 0,
+              'value': int.tryParse(phoneNumber),
             });
 
             return Success(updatedData);
@@ -997,7 +997,7 @@ abstract class ApiService {
         'label': 'phone_Number_logged_in',
         'action': 'logged_in',
         'property': 'phone_number',
-        'value': int.tryParse(phoneNumber) ?? 0,
+        'value': int.tryParse(phoneNumber),
       });
       return Success(multipassResponse);
     }
@@ -1014,7 +1014,7 @@ abstract class ApiService {
         'label': 'phone_Number_logged_in',
         'action': 'logged_in',
         'property': 'phone_number',
-        'value': int.tryParse(phoneNumber) ?? 0,
+        'value': int.tryParse(phoneNumber),
       });
 
       if (responseForAffluence is Success &&
@@ -1045,7 +1045,7 @@ abstract class ApiService {
       'label': 'phone_Number_logged_in',
       'action': 'logged_in',
       'property': 'phone_number',
-      'value': int.tryParse(phoneNumber) ?? 0,
+      'value': int.tryParse(phoneNumber),
     });
 
     return Success(userData);
@@ -1165,14 +1165,14 @@ abstract class ApiService {
           await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!);
       final parsedUser =
           userJson != null ? jsonDecode(userJson) : <String, dynamic>{'phone': '0'};
-      final phone = parsedUser['phone']?.toString() ?? '0';
+      final phone = parsedUser['phone']?.toString() ?? '';
       
       await SnowplowTrackerService.sendCustomEventToSnowPlow({
         'category': 'logged_in_page',
         'label': 'logout_button_click',
         'action': 'automated',
         'property': 'phone_number',
-        'value': int.tryParse(phone) ?? 0,
+        'value': int.tryParse(phone),
       });
 
       // await trackAnalyticsEvent(AnalyticsEvents.appLogout, {
@@ -1298,6 +1298,125 @@ abstract class ApiService {
       );
 
       return Success(response.data);
+    } catch (err) {
+      throw handleApiError(err);
+    }
+  }
+
+  static Future<String?> getBureauTransactionId() async {
+    final result = await checkKwikpassHealth();
+    if(result.isSuccess) {
+      final healthData = result.getDataOrThrow();
+      if(healthData?.isKwikpassHealthy == false){
+        throw Exception('Kwikpass is unhealthy');
+      }
+    }
+
+     try {
+      final gokwik = DioClient().getClient();
+
+      // Get merchant ID from cache
+      final mid = await cacheInstance.getValue(
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!
+      );
+
+      if (mid != null && mid.isNotEmpty) {
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpMerchantId)!] = mid;
+      }
+
+      final response = await gokwik.post(
+        cdnConfigInstance.getEndpoint(APIEndpointKeys.kpAuthRequest)!,
+      );
+
+      final transactionId = response.data?['data']?['transactionId'] ??
+                           response.data?['transactionId'];
+      
+      if (transactionId == null || transactionId.toString().isEmpty) {
+        throw Exception('Transaction ID not found in response');
+      }
+
+      return transactionId.toString();
+    } catch (err) {
+      throw handleApiError(err);
+    }
+  }
+
+  static Future<Map<String, dynamic>> sendBureauData({
+    required String transactionId,
+  }) async {
+    final result = await checkKwikpassHealth();
+    if(result.isSuccess) {
+      final healthData = result.getDataOrThrow();
+      if(healthData?.isKwikpassHealthy == false){
+        throw Exception('Kwikpass is unhealthy');
+      }
+    }
+
+   try {
+      final gokwik = DioClient().getClient();
+
+      // Get device info from cache
+      final deviceInfoJson = await cacheInstance.getValue(
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceInfo)!
+      );
+      final deviceInfoDetails = deviceInfoJson != null
+          ? jsonDecode(deviceInfoJson)
+          : <String, dynamic>{};
+
+      // Get merchant ID, request ID, and token from cache
+      final results = await Future.wait([
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkRequestIdKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!),
+      ]);
+
+      final mid = results[0];
+      final requestId = results[1];
+      final token = results[2];
+
+      // Set headers
+      if (mid != null && mid.isNotEmpty) {
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpMerchantId)!] = mid;
+      }
+
+      // If no request ID, get browser token first
+      if (requestId == null || requestId.isEmpty) {
+        await getBrowserToken();
+      } else {
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkRequestId)!] = requestId;
+      }
+
+      if (token != null && token.isNotEmpty) {
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkAccessToken)!] = token;
+      }
+
+      // Prepare request body
+      final bodyParams = <String, dynamic>{
+        'transactionId': transactionId,
+      };
+
+      // Add Ad ID based on platform
+      final adId = deviceInfoDetails[cdnConfigInstance.getKeys(StorageKeyKeys.gkGoogleAdId)!];
+      if (adId != null && adId.toString().isNotEmpty) {
+        if (Platform.isIOS) {
+          bodyParams['iosAdId'] = adId;
+        } else if (Platform.isAndroid) {
+          bodyParams['androidAdId'] = adId;
+        }
+      }
+
+      // Add deviceId if available
+      final deviceId = deviceInfoDetails[cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceUniqueId)!];
+      if (deviceId != null && deviceId.toString().isNotEmpty) {
+        bodyParams['deviceId'] = deviceId;
+      }
+
+      final response = await gokwik.post(
+        cdnConfigInstance.getEndpoint(APIEndpointKeys.bureauOtpless)!,
+        data: bodyParams,
+      );
+
+      return response.data as Map<String, dynamic>;
     } catch (err) {
       throw handleApiError(err);
     }

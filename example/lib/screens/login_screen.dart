@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
             if (data.data['email'] != null) {
               // add 5 seconds of delay
-              Future.delayed(const Duration(seconds: 5), () {
+              Future.delayed(const Duration(seconds: 0), () {
                 Navigator.pop(context);
               });
             }

@@ -483,6 +483,29 @@ class KwikPassCDNConfig {
     }
   }
 
+  /// Gets a specific environment credentials from CDN config using constant identifiers
+  /// @param credEnv The environment constant (e.g., 'sandbox', 'production')
+  /// @returns String The credential ID for the environment
+  String? getCredentials(String credEnv) {
+    _ensureInitialized();
+    try {
+      final cachedConfig = getCDNConfig();
+      
+      // Use the constant to get the property name, then look up the value from credentials.credId
+      if (cachedConfig?.additionalData?['api']?['credentials']?['credId']?[credEnv] != null) {
+        final value = cachedConfig!.additionalData!['api']['credentials']['credId'][credEnv] as String;
+        return value;
+      }
+      
+      // Fallback to default config using the same property name
+      final defaultValue = _bundledConfig['api']?['credentials']?['credId']?[credEnv] as String?;
+      return defaultValue;
+    } catch (e) {
+      debugPrint('[CDN Config] ⚠️ Error fetching credentials for "$credEnv": $e');
+      return _bundledConfig['api']?['credentials']?['credId']?[credEnv] as String?;
+    }
+  }
+
   /// Gets checkout configuration from CDN config
   dynamic getCheckout([String? key]) {
     _ensureInitialized();
