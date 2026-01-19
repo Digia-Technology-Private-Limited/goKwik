@@ -1,3 +1,6 @@
+## [1.0.20]
+- Update the outdated dependencies
+
 ## [1.0.19]
 - API Changes and optimisations
 
