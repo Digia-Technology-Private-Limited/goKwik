@@ -1,3 +1,6 @@
+## [1.0.21]
+- Update the conflicting dependencies
+
 ## [1.0.20]
 - Update the outdated dependencies
 
