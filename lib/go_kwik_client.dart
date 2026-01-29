@@ -16,6 +16,28 @@ class GoKwikClient {
   // Add your methods and properties here
   Future<void> initializeSDK(InitializeSdkProps props) async {
     try {
+      // CHECK FOR MID AND ENVIRONMENT
+      final List<String> missingParams = [];
+      
+      if (props.mid.isEmpty) {
+        missingParams.add('Merchant ID (mid)');
+      }
+      
+      if (props.environment == null) {
+        missingParams.add('Environment');
+      }
+      
+      if (missingParams.isNotEmpty) {
+        throw {
+          'errorCode': 400,
+          'error': 'Initialization Failed',
+          'message': 'SDK initialization requires ${missingParams.join(' and ')}. '
+              'Please provide ${missingParams.length > 1 ? 'these parameters' : 'this parameter'} to initialize the SDK.',
+          'result': false,
+          'timestamp': DateTime.now().toIso8601String(),
+        };
+      }
+
       this.props = props;
       Logger();
       await SecureStorage.init();

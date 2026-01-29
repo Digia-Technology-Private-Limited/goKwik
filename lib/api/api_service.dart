@@ -485,8 +485,6 @@ abstract class ApiService {
         jsonEncode(deviceInfoDetails),
       );
 
-      // await sendGoogleAdIdentification();
-
       final requestId = results[0];
       if (requestId != null) {
         gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpRequestId)!] = requestId;
@@ -522,9 +520,7 @@ abstract class ApiService {
             },
           );
         }
-      }
-
-      if (environment.name == 'qa'){
+      } else {
         await sendGoogleAdIdentification();
       }
 
@@ -1161,18 +1157,31 @@ abstract class ApiService {
 
   static Future<bool> clearKwikpassSession() async {
     try {
-      final userJson =
-          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!);
-      final parsedUser =
-          userJson != null ? jsonDecode(userJson) : <String, dynamic>{'phone': '0'};
-      final phone = parsedUser['phone']?.toString() ?? '0';
+      // Get verified user data from storage
+      final phoneNumber = await cacheInstance.getValue(
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!,
+      ) ?? jsonEncode({});
       
+      // Get phone number from storage as fallback
+      final phoneNumberFromStorage = await cacheInstance.getValue(
+        cdnConfigInstance.getKeys(StorageKeyKeys.gkUserPhone)!,
+      );
+      
+      // Parse verified user data
+      final parsedUser = jsonDecode(phoneNumber) as Map<String, dynamic>;
+      final phone = parsedUser['phone']?.toString();
+      
+      // Send logout event to Snowplow with phone number priority
       await SnowplowTrackerService.sendCustomEventToSnowPlow({
         'category': 'logged_in_page',
+        'action': 'logged_out',
         'label': 'logout_button_click',
-        'action': 'automated',
         'property': 'phone_number',
-        'value': int.tryParse(phone) ?? 0,
+        'value': phone != null && phone.isNotEmpty
+            ? int.tryParse(phone)
+            : (phoneNumberFromStorage != null && phoneNumberFromStorage.isNotEmpty
+                ? int.tryParse(phoneNumberFromStorage)
+                : null),
       });
 
       // await trackAnalyticsEvent(AnalyticsEvents.appLogout, {
