@@ -41,7 +41,7 @@ dev_dependencies:
     sdk: flutter
   dio: ^5.4.0
   device_info_plus: ^10.1.2
-  package_info_plus: ^9.0.0
+  package_info_plus: ^8.3.1
   shared_preferences: ^2.5.3
   intl: ^0.20.2
   webview_flutter: ^4.10.0
