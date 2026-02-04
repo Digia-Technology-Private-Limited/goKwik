@@ -1,3 +1,6 @@
+## [1.0.22]
+- code optimisations and internal structure updates
+
 ## [1.0.21]
 - Update the conflicting dependencies
 
