@@ -368,7 +368,7 @@ class SnowplowTrackerService {
       Map<String, dynamic> eventObject) async {
     final snowplowTrackingEnabled =
         await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.isSnowplowTrackingEnabled)!);
-    if (snowplowTrackingEnabled == 'false') return;
+    // if (snowplowTrackingEnabled == 'false') return;
 
     final mid = (await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!)) ?? '';
     final environment = await _getEnvironment();
