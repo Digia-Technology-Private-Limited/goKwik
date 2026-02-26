@@ -53,6 +53,27 @@ class KwikpassHealthException implements Exception {
   }
 }
 
+// --- Merchant user extraction helpers (mirrors React Native extractMerchantUser) ---
+
+const List<String> _requiredUserKeys = ['token', 'refreshToken', 'csrfToken'];
+
+bool _hasUserShape(dynamic obj) {
+  if (obj == null || obj is! Map) return false;
+  return _requiredUserKeys.every((key) => obj[key] is String);
+}
+
+Map<String, dynamic>? _extractMerchantUser(dynamic data) {
+  if (data == null || data is! Map) return null;
+  if (_hasUserShape(data)) return Map<String, dynamic>.from(data);
+  for (final value in data.values) {
+    final found = _extractMerchantUser(value);
+    if (found != null) return found;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------------
+
 abstract class ApiService {
 // add kp health api
   static Future<Result<HealthCheckResponseData?>> checkKwikpassHealth() async {
@@ -645,7 +666,6 @@ abstract class ApiService {
     }
   }
 
-//ToDo: @Ram
   static Future<Result<Map<String, dynamic>?>> createUserApi({
     required String email,
     required String name,
@@ -653,10 +673,10 @@ abstract class ApiService {
     String? gender,
   }) async {
     final result = await checkKwikpassHealth();
-    if(result.isSuccess) {
+    if (result.isSuccess) {
       final healthData = result.getDataOrThrow();
-      if(healthData?.isKwikpassHealthy == false){
-        throw Exception('Kwikpass is unhealthy');
+      if (healthData?.isKwikpassHealthy == false) {
+        throw KwikpassHealthException();
       }
     }
 
@@ -671,22 +691,22 @@ abstract class ApiService {
           if (dob != null) 'dob': dob,
           if (gender != null) 'gender': gender,
         },
-      ))
-          .toBaseResponse(
-        fromJson: (json) => json,
-      );
+      )).toBaseResponse(fromJson: (json) => json);
+
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to create user');
       }
 
       final data = response.data;
-      final merchantResponse = data?['merchantResponse']?['accountCreate'];
-      final errors = merchantResponse?['accountErrors'];
+      final merchantResponse = data?['merchantResponse'];
+      final user = _extractMerchantUser(merchantResponse);
 
-      if (merchantResponse?['user'] == null &&
-          errors != null &&
-          errors.isNotEmpty) {
-        throw errors[0];
+      if (user == null) {
+        final accountErrors = merchantResponse?['accountCreate']?['accountErrors'];
+        if (accountErrors != null && (accountErrors as List).isNotEmpty) {
+          throw accountErrors[0];
+        }
+        throw Exception('Email already exists.');
       }
 
       final userRes = {
@@ -697,11 +717,13 @@ abstract class ApiService {
         'isSuccess': true,
         'emailRequired': true,
         'merchantResponse': {
-          'csrfToken': merchantResponse?['user']?['csrfToken'],
-          'id': merchantResponse?['user']?['id'],
-          'token': merchantResponse?['user']?['token'],
-          'refreshToken': merchantResponse?['user']?['refreshToken'],
+          'csrfToken': user['csrfToken'],
+          'id': user['id'],
+          'token': user['token'],
+          'refreshToken': user['refreshToken'],
           'email': email,
+          if (merchantResponse is Map)
+            ...Map<String, dynamic>.from(merchantResponse),
         },
       };
 
@@ -820,7 +842,12 @@ abstract class ApiService {
       }
 
       // Set the integration type header
-      gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType)!] = 'APP_MAKER';
+      final String? merchantType = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
+      String integrationType = 'CUSTOM';
+      if (merchantType != null && ['shopify', 'custom_shopify'].contains(merchantType.toLowerCase())) {
+        integrationType = 'APP_MAKER';
+      }
+      gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType)!] = integrationType;
 
       final deviceUniqueId = cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceUniqueId)!;
       if (deviceInfoDetails[deviceUniqueId] != null && deviceInfoDetails[deviceUniqueId].toString().isNotEmpty) {
@@ -846,9 +873,7 @@ abstract class ApiService {
       final String token = data['token'];
       final coreToken = data['coreToken'];
       final String kpToken = data?['kpToken'];
-      String? merchantType = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
-
-      if (merchantType! == 'shopify' || merchantType == 'custom_shopify') {
+      if (merchantType != null && (merchantType == 'shopify' || merchantType == 'custom_shopify')) {
         final res = await _handleShopifyVerifyResponse(
           response.data,
           phoneNumber,
