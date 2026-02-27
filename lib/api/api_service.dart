@@ -526,23 +526,31 @@ abstract class ApiService {
       //         .length == 1;
 
       // Get verified user data and track identified user event
-      final verifiedUserJson =
-          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!);
+      final verifiedUserJson = await cacheInstance.getValue(
+          cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!);
       if (verifiedUserJson != null) {
         final verifiedUser = jsonDecode(verifiedUserJson);
 
         if (verifiedUser['email'] != null && verifiedUser['phone'] != null) {
           analyticsCallback(
-            cdnConfigInstance.getAnalyticsEvent(AnalyticsEventKeys.appIdentifiedUser)!,
+            cdnConfigInstance
+                .getAnalyticsEvent(AnalyticsEventKeys.appIdentifiedUser)!,
             {
               'phone': verifiedUser['phone']?.toString() ?? "",
               'email': verifiedUser['email']?.toString() ?? "",
-              'customer_id': verifiedUser['shopifyCustomerId']?.toString() ?? "",
+              'customer_id':
+                  verifiedUser['shopifyCustomerId']?.toString() ?? "",
             },
           );
+        } else if (verifiedUser['email'] == null &&
+            verifiedUser['phone'] == null) {
+          if (merchantConfig.isSuccess) {
+            final merchantConfigData = merchantConfig.getDataOrThrow();
+            if (merchantConfigData?.rlEnabled == true) {
+              await sendGoogleAdIdentification();
+            }
+          }
         }
-      } else {
-        await sendGoogleAdIdentification();
       }
 
       return {'message': 'Initialization Successful'};

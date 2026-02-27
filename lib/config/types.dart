@@ -743,6 +743,7 @@ class MerchantConfig {
   final dynamic customerIntelligenceMetrics;
   final String marketingPopupGlobalLimit;
   final String customerAccountsVersion;
+  final bool rlEnabled;
 
   MerchantConfig({
     required this.id,
@@ -764,6 +765,7 @@ class MerchantConfig {
     required this.customerIntelligenceMetrics,
     required this.marketingPopupGlobalLimit,
     required this.customerAccountsVersion,
+    required this.rlEnabled,
   });
 
   factory MerchantConfig.fromJson(Map<String, dynamic> json) {
@@ -789,6 +791,7 @@ class MerchantConfig {
       customerIntelligenceMetrics: json['customerIntelligenceMetrics'],
       marketingPopupGlobalLimit: json['marketingPopupGlobalLimit'],
       customerAccountsVersion: json['customerAccountsVersion'],
+      rlEnabled: json['rlEnabled'],
     );
   }
 
@@ -814,6 +817,7 @@ class MerchantConfig {
       'customerIntelligenceMetrics': customerIntelligenceMetrics,
       'marketingPopupGlobalLimit': marketingPopupGlobalLimit,
       'customerAccountsVersion': customerAccountsVersion,
+      'rlEnabled': rlEnabled,
     };
   }
 }
