@@ -401,6 +401,13 @@ abstract class ApiService {
       gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpSdkPlatform)!] = 'flutter';
       gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpSdkVersion)!] = KPSdkVersion.version;
 
+      final merchantTypeFromCache = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
+      if (merchantTypeFromCache != null) {
+        final merchantTypeLower = merchantTypeFromCache.toLowerCase();
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkPlatform)!] =
+            (merchantTypeLower == 'shopify' || merchantTypeLower == 'custom_shopify') ? 'shopify' : 'custom';
+      }
+
       // await Logger().log(
       //   'SDK Initialized',
       //   data: jsonEncode({
@@ -442,6 +449,10 @@ abstract class ApiService {
           final platform =
               merchantConfigData!.platform.toString().toLowerCase();
           await cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!, platform);
+
+          final platformHeaderValue =
+              (platform == 'shopify' || platform == 'custom_shopify') ? 'shopify' : 'custom';
+          gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkPlatform)!] = platformHeaderValue;
         }
 
         final hostName = getHostName(merchantConfigData!.host);

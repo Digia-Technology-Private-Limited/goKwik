@@ -55,6 +55,7 @@ class APIHeader {
   static const appplatform = "appplatform";
   static const appversion = "appversion";
   static const source = "source";
+  static const gkPlatform = "gk-platform";
 
   static const Map<String, String> values = {
     'authorization': authorization,
@@ -71,6 +72,7 @@ class APIHeader {
     'appplatform': appplatform,
     'appversion': appversion,
     'source': source,
+    'gkPlatform': gkPlatform,
   };
 }
 
@@ -91,6 +93,7 @@ class APIHeaderKeys {
   static const appplatform = 'appplatform';
   static const appversion = 'appversion';
   static const source = 'source';
+  static const gkPlatform = 'gkPlatform';
 }
 
 // ============================================================================
