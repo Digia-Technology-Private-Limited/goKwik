@@ -23,6 +23,7 @@ class HttpSnowplowTracker {
   static Map<String, String>? _cachedScreenInfo;
   static String? _cachedTimezone;
   static String? _cachedLanguage;
+  static String? _cachedMerchantType;
   
   // Constants
   static const String _trackerVersion = 'flutter-1.0.0';
@@ -62,6 +63,7 @@ class HttpSnowplowTracker {
   static Future<void> _cacheStaticValues() async {
     _cachedEnvironment = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkEnvironmentKey)!) ?? 'sandbox';
     _cachedAppId = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!) ?? '';
+    _cachedMerchantType = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!) ?? 'shopify';
     
     final url = SdkConfig.getSnowplowUrl(_cachedEnvironment!);
     _cachedCollectorUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
@@ -313,6 +315,11 @@ class HttpSnowplowTracker {
             'Content-Type': 'application/json',
             'User-Agent': 'Snowplow Flutter Tracker $_trackerVersion',
             'Accept': 'application/json',
+            cdnConfigInstance.getHeader(APIHeaderKeys.gkPlatform) ?? 'gk-platform': _cachedMerchantType ?? 'shopify',
+            cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType) ?? 'kp-integration-type':
+                ['shopify', 'custom_shopify'].contains((_cachedMerchantType ?? 'shopify').toLowerCase())
+                    ? 'APP_MAKER'
+                    : 'CUSTOM',
           },
           validateStatus: (status) => status != null && status < 500,
         ),

@@ -366,22 +366,16 @@ class SnowplowTrackerService {
   // Custom Event Tracker
   static Future<void> sendCustomEventToSnowPlow(
       Map<String, dynamic> eventObject) async {
-    final snowplowTrackingEnabled =
-        await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.isSnowplowTrackingEnabled)!);
     // if (snowplowTrackingEnabled == 'false') return;
 
     final mid = (await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!)) ?? '';
     final environment = await _getEnvironment();
-    final shopDomain =
-        (await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantUrlKey)!)) ?? '';
+    final merchantType = (await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!)) ?? 'shopify';
 
     final snowplow = await SnowplowClient.getSnowplowClient(
-      InitializeSdkProps(
-          mid: mid,
-          environment:
-              Environment.values.firstWhere((e) => e.name == environment),
-          shopDomain: shopDomain,
-          isSnowplowTrackingEnabled: snowplowTrackingEnabled == 'true'),
+      mid: mid,
+      environment: Environment.values.firstWhere((e) => e.name == environment),
+      merchantType: merchantType,
     );
 
     final filteredData = _filterEventValuesAsPerStructSchema(eventObject);
@@ -451,16 +445,12 @@ class SnowplowTrackerService {
       final mid =
           (await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!)) ?? '';
       final environment = await _getEnvironment();
-      final shopDomain =
-          (await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantUrlKey)!)) ?? '';
+      final merchantType = (await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!)) ?? 'shopify';
 
       final snowplow = await SnowplowClient.getSnowplowClient(
-        InitializeSdkProps(
-            mid: mid,
-            environment:
-                Environment.values.firstWhere((e) => e.name == environment),
-            shopDomain: shopDomain,
-            isSnowplowTrackingEnabled: snowplowTrackingEnabled == 'true'),
+        mid: mid,
+        environment: Environment.values.firstWhere((e) => e.name == environment),
+        merchantType: merchantType,
       );
 
       await snowplow?.track(

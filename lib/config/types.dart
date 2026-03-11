@@ -10,8 +10,6 @@ enum Environment {
 enum MerchantType {
   shopify,
   custom,
-  // ignore: constant_identifier_names
-  custom_shopify,
 }
 
 class Settings {
@@ -29,7 +27,7 @@ class InitializeSdkProps {
   final Environment environment; // 'sandbox' or 'production'
   String? shopDomain;
   bool? isSnowplowTrackingEnabled;
-  MerchantType? merchantType; // 'shopify' or 'custom'
+  MerchantType merchantType; // 'shopify' or 'custom'
   String? kcMerchantId;
   String? kcMerchantToken;
   String? mode; // 'debug' or 'release'
@@ -42,13 +40,23 @@ class InitializeSdkProps {
     required this.environment,
     this.shopDomain,
     this.isSnowplowTrackingEnabled,
-    this.merchantType,
+    required this.merchantType,
     this.kcMerchantId,
     this.kcMerchantToken,
     this.mode,
     this.settings,
     this.moEngageId,
     this.onAnalytics,
+  });
+}
+
+class InitializeMerchantProps {
+  final String mid;
+  final Environment environment;
+
+  InitializeMerchantProps({
+    required this.mid,
+    required this.environment,
   });
 }
 

@@ -17,7 +17,7 @@ class DioClient {
 
   DioClient._internal();
 
-  Future<void> initialize(String env) async {
+  Future<void> initialize(String env, [String? type]) async {
     if (_gokwikHttpClient != null) return;
 
     String appPlatform;
@@ -45,6 +45,7 @@ class DioClient {
         cdnConfigInstance.getHeader(APIHeaderKeys.appplatform)!: appPlatform,
         cdnConfigInstance.getHeader(APIHeaderKeys.appversion)!: appVersion,
         cdnConfigInstance.getHeader(APIHeaderKeys.source)!: source,
+        if (type != null) cdnConfigInstance.getHeader(APIHeaderKeys.gkPlatform)!: type,
       },
     ));
 

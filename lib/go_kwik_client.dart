@@ -26,6 +26,11 @@ class GoKwikClient {
       if (props.environment == null) {
         missingParams.add('Environment');
       }
+
+      // ignore: unnecessary_null_comparison
+      if (props.merchantType == null) {
+        missingParams.add('Merchant Type');
+      }
       
       if (missingParams.isNotEmpty) {
         throw {

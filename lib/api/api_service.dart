@@ -124,7 +124,7 @@ abstract class ApiService {
       if (error is KwikpassHealthException) {
         rethrow; // Re-throw the custom exception
       }
-      return Failure(handleApiError(error).message);
+      throw Failure(handleApiError(error).message);
     }
   }
 
@@ -385,6 +385,7 @@ abstract class ApiService {
         ),
         cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkKPEnabled)!, enableKwikPass.toString()),
         cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkCheckoutEnabled)!, enableCheckout.toString()),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!, args.merchantType.name),
       ]);
 
       if (enableKwikPass == false) {
@@ -395,18 +396,19 @@ abstract class ApiService {
         cdnConfigInstance.getKeys(StorageKeyKeys.isSnowplowTrackingEnabled)!,
         isSnowplowTrackingEnabled.toString(),
       );
-      await DioClient().initialize(args.environment.name);
+      await DioClient().initialize(args.environment.name, args.merchantType.name);
       final gokwik = DioClient().getClient();
       gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkMerchantId)!] = mid;
       gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpSdkPlatform)!] = 'flutter';
       gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpSdkVersion)!] = KPSdkVersion.version;
 
-      final merchantTypeFromCache = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
-      if (merchantTypeFromCache != null) {
-        final merchantTypeLower = merchantTypeFromCache.toLowerCase();
-        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkPlatform)!] =
-            (merchantTypeLower == 'shopify' || merchantTypeLower == 'custom_shopify') ? 'shopify' : 'custom';
+      gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkPlatform)!] = args.merchantType.name;
+
+      String integrationType = 'CUSTOM';
+      if (['shopify', 'custom_shopify'].contains(args.merchantType.name.toLowerCase())) {
+        integrationType = 'APP_MAKER';
       }
+      gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType)!] = integrationType;
 
       // await Logger().log(
       //   'SDK Initialized',
@@ -445,21 +447,19 @@ abstract class ApiService {
 
       if (merchantConfig.isSuccess) {
         final merchantConfigData = merchantConfig.getDataOrThrow();
-        if (merchantConfigData?.platform != null) {
-          final platform =
-              merchantConfigData!.platform.toString().toLowerCase();
-          await cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!, platform);
 
-          final platformHeaderValue =
-              (platform == 'shopify' || platform == 'custom_shopify') ? 'shopify' : 'custom';
-          gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkPlatform)!] = platformHeaderValue;
-        }
+        // if (merchantConfigData?.platform != null) {
+        //   final platform = merchantConfigData!.platform.toString().toLowerCase();
+        //   await cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!, platform);
+        //   final platformHeaderValue = (platform == 'shopify' || platform == 'custom_shopify') ? 'shopify' : 'custom';
+        //   gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkPlatform)!] = platformHeaderValue;
+        // }
 
         final hostName = getHostName(merchantConfigData!.host);
         await cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantUrlKey)!, hostName);
       }
 
-      await SnowplowClient.initializeSnowplowClient(args);
+      await SnowplowClient.initializeSnowplowClient(mid: args.mid, environment: args.environment);
 
       final deviceInfo = DeviceInfoPlugin();
       String osVersion = 'Unknown';
@@ -1236,6 +1236,11 @@ abstract class ApiService {
 
       final env = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkEnvironmentKey)!);
       final mid = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!) ?? '';
+      final merchantTypeStr = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
+      final merchantType = MerchantType.values.firstWhere(
+        (e) => e.name == merchantTypeStr,
+        orElse: () => MerchantType.shopify,
+      );
       final isSnowplowTrackingEnabled =
           await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.isSnowplowTrackingEnabled)!) ==
               'true';
@@ -1271,7 +1276,8 @@ abstract class ApiService {
       await initializeSdk(InitializeSdkProps(
         mid: mid,
         environment: Environment.values.firstWhere((e) => e.name == env,
-            orElse: () => Environment.sandbox),
+            orElse: () => Environment.production),
+        merchantType: merchantType,
         isSnowplowTrackingEnabled: isSnowplowTrackingEnabled,
         mode: mode ?? "",
         settings: Settings(

@@ -549,7 +549,7 @@ class RootCubit extends Cubit<RootState> {
           merchantType: merchantType == 'shopify'
               ? MerchantType.shopify
               : merchantType == 'custom_shopify'
-                  ? MerchantType.custom_shopify
+                  ? MerchantType.shopify
                   : MerchantType.custom));
     }
   }
@@ -566,7 +566,7 @@ class RootCubit extends Cubit<RootState> {
           merchantType: merchantType == 'shopify'
               ? MerchantType.shopify
               : merchantType == 'custom_shopify'
-                  ? MerchantType.custom_shopify
+                  ? MerchantType.shopify
                   : MerchantType.custom));
     }
   }

@@ -24,19 +24,36 @@ abstract class SnowplowClient {
     );
   }
 
-  static Future<void> initializeSnowplowClient(InitializeSdkProps args) async {
-    final environment = args.environment;
-    final mid = args.mid;
+  static Future<void> initializeSnowplowClient({
+    required String mid,
+    required Environment environment,
+    String merchantType = 'shopify',
+  }) async {
 
     final collectorUrl = SdkConfig.getSnowplowUrl(environment.name);
 
     String appId = mid;
+
+    final integrationType =
+        ['shopify', 'custom_shopify'].contains(merchantType.toLowerCase())
+            ? 'APP_MAKER'
+            : 'CUSTOM';
+
+    final platformHeaderKey =
+        cdnConfigInstance.getHeader(APIHeaderKeys.gkPlatform) ?? 'gk-platform';
+    final integrationTypeHeaderKey =
+        cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType) ??
+            'kp-integration-type';
 
     // Initialize Snowplow tracker
     _snowplowClient = await Snowplow.createTracker(
       namespace: 'appTracker',
       endpoint: collectorUrl,
       method: Method.get,
+      requestHeaders: {
+        platformHeaderKey: merchantType,
+        integrationTypeHeaderKey: integrationType,
+      },
       trackerConfig: TrackerConfiguration(
         appId: appId,
         screenEngagementAutotracking: false,
@@ -59,16 +76,24 @@ abstract class SnowplowClient {
     _snowplowClient?.setUserId(_snowplowUserId!);
   }
 
-  static Future<SnowplowTracker?> getSnowplowClient(
-      [InitializeSdkProps? args]) async {
+  static Future<SnowplowTracker?> getSnowplowClient({
+    String? mid,
+    Environment? environment,
+    String? merchantType,
+  }) async {
     final snowplowTrackingEnabled = await cacheInstance.getValue(
       cdnConfigInstance.getKeys(StorageKeyKeys.isSnowplowTrackingEnabled)!,
     );
 
     if (snowplowTrackingEnabled == 'true' &&
         _snowplowClient == null &&
-        args != null) {
-      await initializeSnowplowClient(args);
+        mid != null &&
+        environment != null) {
+      await initializeSnowplowClient(
+        mid: mid,
+        environment: environment,
+        merchantType: merchantType ?? 'shopify',
+      );
     }
 
     return _snowplowClient;
