@@ -54,7 +54,7 @@ class _MainScreenState extends State<MainScreen> {
     try {
       await GoKwikClient.instance.initializeSDK(InitializeSdkProps(
         // mid: '19g6jle2d5p3n',
-        mid: "19fjk2lgwg13",
+        mid: "19fjk2lgwg13", //waidon
         // mid: '19x8g5js05wj',
         // mid: "2be09imdmw6032",
         merchantType: MerchantType.custom,

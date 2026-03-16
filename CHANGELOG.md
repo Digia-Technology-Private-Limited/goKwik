@@ -1,3 +1,6 @@
+## [1.0.23]
+- code optimisations and improvements
+
 ## [1.0.22]
 - code optimisations and internal structure updates
 
