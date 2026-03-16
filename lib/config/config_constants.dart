@@ -291,6 +291,7 @@ class SnowplowSchemaKeys {
   static const product = 'product';
   static const userDevice = 'userDevice';
   static const structured = 'structured';
+  static const shopifyAnalytics = 'shopifyAnalytics';
 }
 
 // ============================================================================

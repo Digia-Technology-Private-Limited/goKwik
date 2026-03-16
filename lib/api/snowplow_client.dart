@@ -35,9 +35,7 @@ abstract class SnowplowClient {
     String appId = mid;
 
     final integrationType =
-        ['shopify', 'custom_shopify'].contains(merchantType.toLowerCase())
-            ? 'APP_MAKER'
-            : 'CUSTOM';
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.integrationType)!);
 
     final platformHeaderKey =
         cdnConfigInstance.getHeader(APIHeaderKeys.gkPlatform) ?? 'gk-platform';
@@ -52,7 +50,7 @@ abstract class SnowplowClient {
       method: Method.get,
       requestHeaders: {
         platformHeaderKey: merchantType,
-        integrationTypeHeaderKey: integrationType,
+        integrationTypeHeaderKey: integrationType.toString(),
       },
       trackerConfig: TrackerConfiguration(
         appId: appId,

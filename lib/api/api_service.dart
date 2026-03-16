@@ -401,14 +401,7 @@ abstract class ApiService {
       gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkMerchantId)!] = mid;
       gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpSdkPlatform)!] = 'flutter';
       gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpSdkVersion)!] = KPSdkVersion.version;
-
       gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkPlatform)!] = args.merchantType.name;
-
-      String integrationType = 'CUSTOM';
-      if (['shopify', 'custom_shopify'].contains(args.merchantType.name.toLowerCase())) {
-        integrationType = 'APP_MAKER';
-      }
-      gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType)!] = integrationType;
 
       // await Logger().log(
       //   'SDK Initialized',
@@ -422,14 +415,21 @@ abstract class ApiService {
         cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkRequestIdKey)!),
         cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!),
         cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutAccessTokenKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.integrationType)!),
       ]);
 
       final accessToken = results[1];
       final checkoutAccessToken = results[2];
+      final kpIntegrationType = results[3];
 
       if (accessToken != null) {
         gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkAccessToken)!] = accessToken;
       }
+
+      if (kpIntegrationType != null) {
+        gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType)!] = kpIntegrationType;
+      }
+
       if (checkoutAccessToken != null) {
         gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.checkoutAccessToken)!] =
             checkoutAccessToken;
@@ -448,7 +448,11 @@ abstract class ApiService {
       if (merchantConfig.isSuccess) {
         final merchantConfigData = merchantConfig.getDataOrThrow();
 
-        // if (merchantConfigData?.platform != null) {
+        if (merchantConfigData?.integrationType != null) {
+          final integrationType = merchantConfigData!.integrationType.toString();
+          await cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.integrationType)!, integrationType);
+          gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType)!] = integrationType;
+        }
         //   final platform = merchantConfigData!.platform.toString().toLowerCase();
         //   await cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!, platform);
         //   final platformHeaderValue = (platform == 'shopify' || platform == 'custom_shopify') ? 'shopify' : 'custom';
@@ -549,8 +553,9 @@ abstract class ApiService {
             {
               'phone': verifiedUser['phone']?.toString() ?? "",
               'email': verifiedUser['email']?.toString() ?? "",
-              'customer_id':
-                  verifiedUser['shopifyCustomerId']?.toString() ?? "",
+              if (verifiedUser['shopifyCustomerId'] != null || verifiedUser['id'] != null)
+                'customer_id':
+                    verifiedUser['shopifyCustomerId']?.toString() ?? verifiedUser['id']!.toString(),
             },
           );
         } else if (verifiedUser['email'] == null &&
@@ -610,14 +615,14 @@ abstract class ApiService {
           'label': 'phone_number_filled',
           'action': 'click',
           'property': 'phone_number',
-          'value': int.tryParse(phoneNumber) ?? 0,
+          'value': int.tryParse(phoneNumber),
         }),
         SnowplowTrackerService.sendCustomEventToSnowPlow({
           'category': 'login_modal',
           'label': 'phone_number_entered',
           'action': 'click',
           'property': 'phone_number',
-          'value': int.tryParse(phoneNumber) ?? 0,
+          'value': int.tryParse(phoneNumber),
         }),
       ]);
       final response = (await gokwik.post(
@@ -642,7 +647,7 @@ abstract class ApiService {
         'label': 'otp_sent_successfully',
         'action': 'automated',
         'property': 'phone_number',
-        'value': int.tryParse(phoneNumber) ?? 0,
+        'value': int.tryParse(phoneNumber),
       });
 
       return Success(response.data);
@@ -845,6 +850,9 @@ abstract class ApiService {
       final deviceInfoDetails =
           deviceInfoJson != null ? jsonDecode(deviceInfoJson) : {};
 
+      final kpIntegrationType =
+        await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.integrationType)!);
+
       final Map<String, dynamic> bodyParams = {};
 
       if (Platform.isAndroid) {
@@ -862,11 +870,11 @@ abstract class ApiService {
 
       // Set the integration type header
       final String? merchantType = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
-      String integrationType = 'CUSTOM';
-      if (merchantType != null && ['shopify', 'custom_shopify'].contains(merchantType.toLowerCase())) {
-        integrationType = 'APP_MAKER';
-      }
-      gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType)!] = integrationType;
+      // String integrationType = 'CUSTOM';
+      // if (merchantType != null && ['shopify', 'custom_shopify'].contains(merchantType.toLowerCase())) {
+      //   integrationType = 'APP_MAKER';
+      // }
+      // gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType)!] = integrationType;
 
       final deviceUniqueId = cdnConfigInstance.getKeys(StorageKeyKeys.gkDeviceUniqueId)!;
       if (deviceInfoDetails[deviceUniqueId] != null && deviceInfoDetails[deviceUniqueId].toString().isNotEmpty) {
@@ -883,12 +891,12 @@ abstract class ApiService {
       ))
           .toBaseResponse();
 
-
       if (response.isSuccess == false) {
         return Failure(response.errorMessage ?? 'Failed to verify OTP');
       }
 
       final data = response.data;
+
       final String token = data['token'];
       final coreToken = data['coreToken'];
       final String kpToken = data?['kpToken'];
@@ -921,9 +929,26 @@ abstract class ApiService {
         await cacheInstance.setValue(
             cdnConfigInstance.getKeys(StorageKeyKeys.checkoutAccessTokenKey)!, coreToken);
       }
-
+      
       // final responseForAffluence = await customerIntelligence();
-      await validateUserToken();
+      final validateRes = await validateUserToken();
+
+      if (kpIntegrationType.toString() == "CUSTOM_HEADLESS") {
+        final mergedData = Map<String, dynamic>.from(data as Map);
+        if (validateRes.isSuccess) {
+          final validateData = jsonDecode(validateRes.getDataOrThrow());
+          if (validateData is Map<String, dynamic>) {
+            mergedData.addAll(validateData);
+          }
+        }
+
+        return Success({
+          'phone': mergedData['phone'] ?? phoneNumber,
+          'email': mergedData['email'],
+          'kpToken': mergedData['kpToken'],
+        });
+      }
+
 
       final loginResponse = await loginKpUser();
 

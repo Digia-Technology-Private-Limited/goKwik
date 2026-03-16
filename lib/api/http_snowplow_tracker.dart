@@ -316,10 +316,6 @@ class HttpSnowplowTracker {
             'User-Agent': 'Snowplow Flutter Tracker $_trackerVersion',
             'Accept': 'application/json',
             cdnConfigInstance.getHeader(APIHeaderKeys.gkPlatform) ?? 'gk-platform': _cachedMerchantType ?? 'shopify',
-            cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType) ?? 'kp-integration-type':
-                ['shopify', 'custom_shopify'].contains((_cachedMerchantType ?? 'shopify').toLowerCase())
-                    ? 'APP_MAKER'
-                    : 'CUSTOM',
           },
           validateStatus: (status) => status != null && status < 500,
         ),

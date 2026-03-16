@@ -222,7 +222,7 @@ class ShopifyService {
       final gokwik = DioClient().getClient();
       
       // Set the integration type header
-      gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType)!] = 'APP_MAKER';
+      // gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType)!] = 'APP_MAKER';
 
       final Map<String, dynamic> body = {
         'email': email,

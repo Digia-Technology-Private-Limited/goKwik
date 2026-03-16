@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:gokwik/api/snowplow_client.dart';
 import 'package:gokwik/api/http_snowplow_tracker.dart';
 import 'package:gokwik/config/cdn_config.dart';
@@ -157,6 +158,35 @@ class SnowplowTrackerService {
     );
   }
 
+  static Future<SelfDescribing?> getShopifyAnalyticsContext() async {
+    final requestId =
+        (await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkRequestIdKey)!)) ?? '';
+    final merchantType =
+        (await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!)) ?? 'shopify';
+
+    // String integrationType = 'CUSTOM';
+    // if (['shopify', 'custom_shopify'].contains(merchantType.toLowerCase())) {
+    //   integrationType = 'APP_MAKER';
+    // }
+
+    final integrationType = cacheInstance
+        .getValue(cdnConfigInstance.getKeys(StorageKeyKeys.integrationType)!);
+
+    final schemas = cdnConfigInstance.getSnowplowSchema();
+    final shopifyAnalyticsSchema = (schemas is Map<String, String>)
+        ? (schemas[SnowplowSchemaKeys.shopifyAnalytics] ??
+            'shopifyAnalytics/jsonschema/1-0-3')
+        : 'shopifyAnalytics/jsonschema/1-0-3';
+
+    return _createContext(shopifyAnalyticsSchema, {
+      'appId': 'kwik_pass',
+      'request_id': requestId,
+      'session_id': requestId,
+      'gk_platform': merchantType,
+      'kp_integration_type': integrationType,
+    });
+  }
+
   static Future<SelfDescribing> getCollectionsContext(
       TrackCollectionEventContext params) async {
     final schemas = cdnConfigInstance.getSnowplowSchema();
@@ -284,6 +314,7 @@ class SnowplowTrackerService {
       getCartContext(cartId),
       getUserContext(),
       getDeviceInfoContext(),
+      // getShopifyAnalyticsContext(),
     ])).where((context) => context != null).cast<SelfDescribing>().toList();
 
     await _trackEvent(params, contexts);
@@ -316,6 +347,7 @@ class SnowplowTrackerService {
       getCartContext(cartId),
       getUserContext(),
       getDeviceInfoContext(),
+      // getShopifyAnalyticsContext(),
     ])).where((context) => context != null).cast<SelfDescribing>().toList();
 
     await _trackEvent(params, contexts);
@@ -358,6 +390,7 @@ class SnowplowTrackerService {
       getUserContext(),
       getCartContext(cartId),
       getDeviceInfoContext(),
+      // getShopifyAnalyticsContext(),
     ])).where((context) => context != null).cast<SelfDescribing>().toList();
 
     await _trackEvent(params, contexts);
@@ -383,6 +416,7 @@ class SnowplowTrackerService {
     final contexts = (await Future.wait([
       getUserContext(),
       getDeviceInfoContext(),
+      // getShopifyAnalyticsContext(),
     ])).where((context) => context != null).cast<SelfDescribing>().toList();
 
     final schemas = cdnConfigInstance.getSnowplowSchema();
@@ -488,6 +522,7 @@ class SnowplowTrackerService {
       getCartContext(cartId),
       getUserContext(),
       getDeviceInfoContext(),
+      // getShopifyAnalyticsContext(),
     ])).where((context) => context != null).cast<SelfDescribing>().toList();
 
     await _trackEvent(params, contexts);
