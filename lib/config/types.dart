@@ -752,6 +752,18 @@ class MerchantConfig {
   final String marketingPopupGlobalLimit;
   final String customerAccountsVersion;
   final bool rlEnabled;
+  final String? kpAppName;
+  final bool isCustomAccountPageEnabled;
+  final bool isPagePingEnabled;
+  final dynamic pagePingConfig;
+  final List<String> kpFeatures;
+  final String? consentState;
+  final bool isDPDPCompliancePopup;
+  final bool isSilentAuth;
+  final bool isCustomizePopupHandled;
+  final bool isMultiplePlatform;
+  final bool isS2sEventEnabled;
+  final Map<String, dynamic>? merchantIntegrationType;
 
   MerchantConfig({
     required this.id,
@@ -774,6 +786,18 @@ class MerchantConfig {
     required this.marketingPopupGlobalLimit,
     required this.customerAccountsVersion,
     required this.rlEnabled,
+    this.kpAppName,
+    this.isCustomAccountPageEnabled = false,
+    this.isPagePingEnabled = false,
+    this.pagePingConfig,
+    this.kpFeatures = const [],
+    this.consentState,
+    this.isDPDPCompliancePopup = false,
+    this.isSilentAuth = false,
+    this.isCustomizePopupHandled = false,
+    this.isMultiplePlatform = false,
+    this.isS2sEventEnabled = false,
+    this.merchantIntegrationType,
   });
 
   factory MerchantConfig.fromJson(Map<String, dynamic> json) {
@@ -800,6 +824,20 @@ class MerchantConfig {
       marketingPopupGlobalLimit: json['marketingPopupGlobalLimit'],
       customerAccountsVersion: json['customerAccountsVersion'],
       rlEnabled: json['rlEnabled'],
+      kpAppName: json['kpAppName'] as String?,
+      isCustomAccountPageEnabled: json['isCustomAccountPageEnabled'] ?? false,
+      isPagePingEnabled: json['isPagePingEnabled'] ?? false,
+      pagePingConfig: json['pagePingConfig'],
+      kpFeatures: (json['kpFeatures'] as List?)?.map((e) => e as String).toList() ?? [],
+      consentState: json['consentState'] as String?,
+      isDPDPCompliancePopup: json['isDPDPCompliancePopup'] ?? false,
+      isSilentAuth: json['isSilentAuth'] ?? false,
+      isCustomizePopupHandled: json['isCustomizePopupHandled'] ?? false,
+      isMultiplePlatform: json['isMultiplePlatform'] ?? false,
+      isS2sEventEnabled: json['isS2sEventEnabled'] ?? false,
+      merchantIntegrationType: json['merchantIntegrationType'] != null
+          ? Map<String, dynamic>.from(json['merchantIntegrationType'])
+          : null,
     );
   }
 
@@ -826,6 +864,18 @@ class MerchantConfig {
       'marketingPopupGlobalLimit': marketingPopupGlobalLimit,
       'customerAccountsVersion': customerAccountsVersion,
       'rlEnabled': rlEnabled,
+      'kpAppName': kpAppName,
+      'isCustomAccountPageEnabled': isCustomAccountPageEnabled,
+      'isPagePingEnabled': isPagePingEnabled,
+      'pagePingConfig': pagePingConfig,
+      'kpFeatures': kpFeatures,
+      'consentState': consentState,
+      'isDPDPCompliancePopup': isDPDPCompliancePopup,
+      'isSilentAuth': isSilentAuth,
+      'isCustomizePopupHandled': isCustomizePopupHandled,
+      'isMultiplePlatform': isMultiplePlatform,
+      'isS2sEventEnabled': isS2sEventEnabled,
+      'merchantIntegrationType': merchantIntegrationType,
     };
   }
 }

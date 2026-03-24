@@ -8,8 +8,21 @@ export 'api/snowplow_events.dart';
 // Component exports
 export 'checkout/kp_checkout.dart';
 export './screens/main_screen.dart';
+export './screens/root.dart' show
+    TextInputConfig,
+    LoadingConfig,
+    FooterUrl,
+    CreateUserConfig,
+    PhoneAuthScreenConfig,
+    OtpVerificationScreenConfig,
+    EmailOtpVerificationScreenConfig,
+    ShopifyEmailScreenConfig,
+    CreateUserScreenConfig;
 export './notification/kwik_chat_notification.dart';
 export './config/types.dart';
 export 'flow_result.dart';
 // DOWNLOAD LOGS
 export 'module/downloader.dart';
+
+// KwikForms
+export 'kwikforms/kwikforms.dart';

@@ -1386,4 +1386,229 @@ abstract class ApiService {
       throw handleApiError(err);
     }
   }
+
+  static Future<Result<dynamic>> getKfAssetsProperties() async {
+    await checkKwikpassHealth();
+
+    try {
+      final gokwik = DioClient().getClient();
+
+      final results = await Future.wait([
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.kpRequestIdKey)!),
+      ]);
+
+      final mid = results[0];
+      final requestId = results[1];
+
+      final headers = <String, String>{
+        cdnConfigInstance.getHeader(APIHeaderKeys.gkMerchantId)!: mid ?? '',
+        cdnConfigInstance.getHeader(APIHeaderKeys.kpRequestId)!: requestId ?? '',
+      };
+
+      final response = await gokwik.get(
+        '${cdnConfigInstance.getEndpoint(APIEndpointKeys.getKfAssetsProperties)!}/$mid',
+        options: Options(headers: headers),
+      );
+
+      return Success(response.data);
+    } catch (err) {
+      throw handleApiError(err);
+    }
+  }
+
+  static Future<Result<dynamic>> getKwikFormData() async {
+    await checkKwikpassHealth();
+
+    try {
+      final gokwik = DioClient().getClient();
+
+      final response = await gokwik.get(
+        cdnConfigInstance.getEndpoint(APIEndpointKeys.getKwikFormData)!,
+      );
+
+      return Success(response.data);
+    } catch (err) {
+      throw handleApiError(err);
+    }
+  }
+
+  static Future<Result<dynamic>> submitKwikFormData({
+    required String phone,
+    required String countryCode,
+    required String address,
+    required String name,
+    required String gender,
+    required String firstName,
+    required String lastName,
+    required String email,
+    required bool consent,
+  }) async {
+    await checkKwikpassHealth();
+
+    try {
+      final gokwik = DioClient().getClient();
+
+      gokwik.options.headers[cdnConfigInstance
+          .getHeader(APIHeaderKeys.kpIntegrationType)!] = 'PLUGIN';
+
+      final payload = {
+        'phone': phone,
+        'countryCode': countryCode,
+        'address': address,
+        'name': name,
+        'gender': gender,
+        'firstName': firstName,
+        'lastName': lastName,
+        'email': email,
+        'consent': consent,
+      };
+
+      final response = await gokwik.post(
+        cdnConfigInstance.getEndpoint(APIEndpointKeys.submitKwikFormData)!,
+        data: payload,
+      );
+
+      return Success(response.data);
+    } catch (err) {
+      throw handleApiError(err);
+    }
+  }
+
+  static Future<Result<dynamic>> getAddressByPhone(String phone) async {
+    await checkKwikpassHealth();
+
+    try {
+      final gokwik = DioClient().getClient();
+
+      final results = await Future.wait([
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkRequestIdKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.integrationType)!),
+      ]);
+
+      final accessToken = results[0];
+      final mid = results[1];
+      final requestId = results[2];
+      final integrationType = results[3];
+
+      final headers = <String, String>{
+        'accept': 'application/json',
+        'content-type': 'application/json',
+        cdnConfigInstance.getHeader(APIHeaderKeys.gkMerchantId)!: mid ?? '',
+        cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType)!:
+            integrationType ?? 'PLUGIN',
+      };
+
+      if (accessToken != null && accessToken.isNotEmpty) {
+        headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkAccessToken)!] = accessToken;
+      }
+
+      if (requestId != null && requestId.isNotEmpty) {
+        headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkRequestId)!] = requestId;
+      }
+
+      final response = await gokwik.post(
+        cdnConfigInstance.getEndpoint(APIEndpointKeys.getAddressByPhone)!,
+        data: {'phone': phone},
+        options: Options(headers: headers),
+      );
+
+      return Success(response.data);
+    } catch (err) {
+      throw handleApiError(err);
+    }
+  }
+
+  static Future<Result<dynamic>> getGeoInfo(String pincode) async {
+    await checkKwikpassHealth();
+
+    try {
+      final gokwik = DioClient().getClient();
+
+      final results = await Future.wait([
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkRequestIdKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.integrationType)!),
+      ]);
+
+      final accessToken = results[0];
+      final mid = results[1];
+      final requestId = results[2];
+      final integrationType = results[3];
+
+      final headers = <String, String>{
+        'accept': 'application/json',
+        cdnConfigInstance.getHeader(APIHeaderKeys.gkMerchantId)!: mid ?? '',
+        cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType)!:
+            integrationType ?? 'PLUGIN',
+      };
+
+      if (accessToken != null && accessToken.isNotEmpty) {
+        headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkAccessToken)!] = accessToken;
+      }
+
+      if (requestId != null && requestId.isNotEmpty) {
+        headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkRequestId)!] = requestId;
+      }
+
+      final response = await gokwik.get(
+        cdnConfigInstance.getEndpoint(APIEndpointKeys.getGeoInfo)!,
+        queryParameters: {'pincode': pincode},
+        options: Options(headers: headers),
+      );
+
+      return Success(response.data);
+    } catch (err) {
+      throw handleApiError(err);
+    }
+  }
+
+  static Future<Result<dynamic>> addAddress(Map<String, dynamic> body) async {
+    await checkKwikpassHealth();
+
+    try {
+      final gokwik = DioClient().getClient();
+
+      final results = await Future.wait([
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkRequestIdKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.integrationType)!),
+      ]);
+
+      final accessToken = results[0];
+      final mid = results[1];
+      final requestId = results[2];
+      final integrationType = results[3];
+
+      final headers = <String, String>{
+        'accept': 'application/json',
+        'content-type': 'application/json',
+        cdnConfigInstance.getHeader(APIHeaderKeys.gkMerchantId)!: mid ?? '',
+        cdnConfigInstance.getHeader(APIHeaderKeys.kpIntegrationType)!:
+            integrationType ?? 'PLUGIN',
+      };
+
+      if (accessToken != null && accessToken.isNotEmpty) {
+        headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkAccessToken)!] = accessToken;
+      }
+
+      if (requestId != null && requestId.isNotEmpty) {
+        headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkRequestId)!] = requestId;
+      }
+
+      final response = await gokwik.post(
+        cdnConfigInstance.getEndpoint(APIEndpointKeys.addAddress)!,
+        data: body,
+        options: Options(headers: headers),
+      );
+
+      return Success(response.data);
+    } catch (err) {
+      throw handleApiError(err);
+    }
+  }
 }

@@ -119,6 +119,14 @@ class APIEndpoint {
   static const shopifyMultipass = "kp/api/v2/customer/shopify/multipass";
   static const reverseKpAuthLogin = "kp/api/v1/auth/core-token/login";
   static const customerGoogleAd = "kp/api/v1/customers/lookup";
+  // KwikForms
+  static const getKfAssetsProperties = "kp/api/v1/kwikforms/components/merchants";
+  static const getKwikFormData = "kp/api/kwikforms/v1/cst/dt";
+  static const submitKwikFormData = "kp/api/kwikforms/v1/submit";
+  // Address
+  static const getAddressByPhone = "v3/address/getbyphone";
+  static const getGeoInfo = "v3/address/geoinfo";
+  static const addAddress = "v3/address";
 
   static const Map<String, String> values = {
     'kpHealthCheck': kpHealthCheck,
@@ -137,6 +145,12 @@ class APIEndpoint {
     'shopifyMultipass': shopifyMultipass,
     'reverseKpAuthLogin': reverseKpAuthLogin,
     'customerGoogleAd': customerGoogleAd,
+    'getKfAssetsProperties': getKfAssetsProperties,
+    'getKwikFormData': getKwikFormData,
+    'submitKwikFormData': submitKwikFormData,
+    'getAddressByPhone': getAddressByPhone,
+    'getGeoInfo': getGeoInfo,
+    'addAddress': addAddress,
   };
 }
 
@@ -159,6 +173,14 @@ class APIEndpointKeys {
   static const shopifyMultipass = 'shopifyMultipass';
   static const reverseKpAuthLogin = 'reverseKpAuthLogin';
   static const customerGoogleAd = 'customerGoogleAd';
+  // KwikForms
+  static const getKfAssetsProperties = 'getKfAssetsProperties';
+  static const getKwikFormData = 'getKwikFormData';
+  static const submitKwikFormData = 'submitKwikFormData';
+  // Address
+  static const getAddressByPhone = 'getAddressByPhone';
+  static const getGeoInfo = 'getGeoInfo';
+  static const addAddress = 'addAddress';
 }
 
 // ============================================================================
