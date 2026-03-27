@@ -946,7 +946,7 @@ class CheckoutProps extends CheckoutShopifyProps {
     String? webEngageID,
     String? moEngageID,
     String? sessionId,
-    String? discountCodes
+    String? discountCodes,
     Map<String, String>? utmParams,
   }) : super(
           cartId: cartId,
