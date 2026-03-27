@@ -36,7 +36,7 @@ class KPCheckout extends StatelessWidget {
       sessionId: merchantParams?.sessionId ?? '',
       utmParams: merchantParams?.utmParams ?? {},
       orderTags: merchantParams?.orderTags ?? '',
-      discountCodes: merchantParams?.discountCodes ?? [],
+      discountCodes: merchantParams?.discountCodes ?? '',
       onMessage: _handleCheckoutMessage,
       onError: (error) {
         if (checkoutData.onError != null) {
