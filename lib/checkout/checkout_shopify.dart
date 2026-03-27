@@ -95,6 +95,7 @@ class CheckoutShopify extends StatefulWidget {
   final String? sessionId;
   final Map<String, dynamic>? utmParams;
   final String? orderTags;
+  final String? discountCodes;
 
   const CheckoutShopify({
     Key? key,
@@ -112,6 +113,7 @@ class CheckoutShopify extends StatefulWidget {
     this.sessionId = '',
     this.utmParams = const {},
     this.orderTags,
+    this.discountCodes = '',
   }) : super(key: key);
 
   @override
@@ -349,6 +351,7 @@ window.addEventListener("gokwikLoaded", (event) => {
       'moEngageID': widget.moEngageID ?? '',
       'sessionId': widget.sessionId ?? '',
       'utmParams': widget.utmParams ?? {},
+      'discountCodes': widget.discountCodes ?? '',
       'storeData': {
         'cartId': 'gid://shopify/Cart/${widget.cartId}',
         'storefrontAccessToken': widget.storefrontToken ?? '',
