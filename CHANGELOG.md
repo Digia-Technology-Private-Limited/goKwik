@@ -1,3 +1,6 @@
+## [1.0.24]
+- Add shopify discount codes
+
 ## [1.0.23]
 - code optimisations and improvements
 
