@@ -1,3 +1,6 @@
+## [1.0.25]
+- Kwikforms integration
+
 ## [1.0.24]
 - Add shopify discount codes
 
