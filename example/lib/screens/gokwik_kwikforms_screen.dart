@@ -161,14 +161,14 @@ class GokwikKwikformsScreen extends StatelessWidget {
           style: _kwikFormsStyle,
           loginConfig: _kwikLoginConfig,
           onFormSubmit: (address) {
-            debugPrint(
-                'onFormSubmit: id=${address.id} name=${address.name} phone=${address.phone}');
-            debugPrint('  addressLine=${address.addressLine}');
-            debugPrint(
-                '  houseNo=${address.houseNo} area=${address.area} landmark=${address.landmark}');
-            debugPrint(
-                '  pincode=${address.pincode} city=${address.city} state=${address.state} country=${address.country}');
-            debugPrint('  json=${jsonEncode(address.toJson())}');
+            // debugPrint(
+            //     'onFormSubmit: id=${address.id} name=${address.name} phone=${address.phone}');
+            // debugPrint('  addressLine=${address.addressLine}');
+            // debugPrint(
+            //     '  houseNo=${address.houseNo} area=${address.area} landmark=${address.landmark}');
+            // debugPrint(
+            //     '  pincode=${address.pincode} city=${address.city} state=${address.state} country=${address.country}');
+            // debugPrint('  json=${jsonEncode(address.toJson())}');
             Navigator.of(context).pop(address);
           },
           onSubmissionFailed: (error) {

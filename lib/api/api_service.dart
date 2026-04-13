@@ -341,11 +341,8 @@ abstract class ApiService {
   static Future<Map<String, dynamic>> initializeSdk(
       InitializeSdkProps args) async {
     try {
-      final mid = args.mid;
-      final environment = args.environment;
-      final kcMerchantId = args.kcMerchantId ?? '';
-      final kcMerchantToken = args.kcMerchantToken ?? '';
-      final isSnowplowTrackingEnabled = args.isSnowplowTrackingEnabled ?? true;
+      final kwikpassConfig = args.kwikpassConfig;
+      final checkoutConfig = args.checkoutConfig;
       final mode = args.mode ?? (kDebugMode ? 'debug' : 'release');
 
       // await cdnConfigInstance.initialize();
@@ -354,38 +351,43 @@ abstract class ApiService {
       // callback function for analytics
       final Function analyticsCallback = args.onAnalytics ?? () {};
 
-      // Create settings with defaults, then merge with provided settings
-      final settingsWithDefaults = Settings(
-        enableKwikPass: args.settings?.enableKwikPass ?? true,
-        enableCheckout: args.settings?.enableCheckout ?? true,
-      );
-      
-      final enableKwikPass = settingsWithDefaults.enableKwikPass;
-      final enableCheckout = settingsWithDefaults.enableCheckout;
-      // await Logger().log(
-      //   'SDK Initialized',
-      //   data: jsonEncode({
-      //     'mid': mid,
-      //     'environment': environment.name,
-      //   }),
-      // );
+      final enableKwikPass = (kwikpassConfig?.enabled ?? true) && kwikpassConfig != null;
+      final enableCheckout = (checkoutConfig?.enabled ?? true) && checkoutConfig != null;
+
+      // KwikPass config values
+      final mid = kwikpassConfig?.mid ?? '';
+      final environment = kwikpassConfig?.environment;
+      final kcMerchantId = kwikpassConfig?.kcMerchantId ?? '';
+      final kcMerchantToken = kwikpassConfig?.kcMerchantToken ?? '';
+      final isSnowplowTrackingEnabled = kwikpassConfig?.isSnowplowTrackingEnabled ?? true;
+
+      // Use kwikpass env first, fall back to checkout env for notification URL
+      final effectiveEnvName = environment?.name ?? checkoutConfig?.environment.name ?? '';
+      final kpMerchantTypeName = kwikpassConfig?.merchantType.name ?? '';
+      final checkoutEnvName = checkoutConfig?.environment.name ?? '';
+      final checkoutMerchantTypeName = checkoutConfig?.merchantType.name ?? '';
 
       await Future.wait([
         cacheInstance.setValue(
           cdnConfigInstance.getKeys(StorageKeyKeys.gkMode)!,
           mode.toString(),
         ),
-        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkEnvironmentKey)!, environment.name),
-        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!, mid),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkKPEnabled)!, enableKwikPass.toString()),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkCheckoutEnabled)!, enableCheckout.toString()),
+        // KwikPass config cache
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkEnvironmentKey)!, environment?.name ?? ''),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!, kwikpassConfig?.mid ?? ''),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!, kpMerchantTypeName),
         cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.kcMerchantId)!, kcMerchantId),
         cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.kcMerchantToken)!, kcMerchantToken),
         cacheInstance.setValue(
           cdnConfigInstance.getKeys(StorageKeyKeys.kcNotificationEventUrl)!,
-          SdkConfig.getNotifEventsUrl(environment.name),
+          SdkConfig.getNotifEventsUrl(effectiveEnvName),
         ),
-        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkKPEnabled)!, enableKwikPass.toString()),
-        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkCheckoutEnabled)!, enableCheckout.toString()),
-        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!, args.merchantType.name),
+        // Checkout config cache
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutMerchantIdKey)!, checkoutConfig?.mid ?? ''),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutEnvironmentKey)!, checkoutEnvName),
+        cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutMerchantTypeKey)!, checkoutMerchantTypeName),
       ]);
 
       if (enableKwikPass == false) {
@@ -396,12 +398,12 @@ abstract class ApiService {
         cdnConfigInstance.getKeys(StorageKeyKeys.isSnowplowTrackingEnabled)!,
         isSnowplowTrackingEnabled.toString(),
       );
-      await DioClient().initialize(args.environment.name, args.merchantType.name);
+      await DioClient().initialize(environment!.name, kwikpassConfig!.merchantType.name);
       final gokwik = DioClient().getClient();
       gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkMerchantId)!] = mid;
       gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpSdkPlatform)!] = 'flutter';
       gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.kpSdkVersion)!] = KPSdkVersion.version;
-      gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkPlatform)!] = args.merchantType.name;
+      gokwik.options.headers[cdnConfigInstance.getHeader(APIHeaderKeys.gkPlatform)!] = kwikpassConfig.merchantType.name;
 
       // await Logger().log(
       //   'SDK Initialized',
@@ -463,7 +465,7 @@ abstract class ApiService {
         await cacheInstance.setValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantUrlKey)!, hostName);
       }
 
-      await SnowplowClient.initializeSnowplowClient(mid: args.mid, environment: args.environment);
+      await SnowplowClient.initializeSnowplowClient(mid: mid, environment: environment);
 
       final deviceInfo = DeviceInfoPlugin();
       String osVersion = 'Unknown';
@@ -1259,26 +1261,29 @@ abstract class ApiService {
       //   'customer_id': parsedUser['shopifyCustomerId']?.toString() ?? "",
       // });
 
-      final env = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkEnvironmentKey)!);
-      final mid = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!) ?? '';
-      final merchantTypeStr = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
-      final merchantType = MerchantType.values.firstWhere(
-        (e) => e.name == merchantTypeStr,
-        orElse: () => MerchantType.shopify,
-      );
-      final isSnowplowTrackingEnabled =
-          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.isSnowplowTrackingEnabled)!) ==
-              'true';
+      final results = await Future.wait([
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkEnvironmentKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.isSnowplowTrackingEnabled)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkKPEnabled)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkCheckoutEnabled)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutMerchantIdKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutEnvironmentKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutMerchantTypeKey)!),
+        cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMode)!),
+      ]);
 
-      final isKpEnabled =
-          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkKPEnabled)!) ==
-              'true';
-              final isCheckoutEnabled =
-          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkCheckoutEnabled)!) ==
-              'true';
-
-              final mode =
-          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMode)!);
+      final kpEnv = results[0];
+      final kpMid = results[1] ?? '';
+      final kpMerchantTypeStr = results[2];
+      final isSnowplowTrackingEnabled = results[3] == 'true';
+      final isKpEnabled = results[4] == 'true';
+      final isCheckoutEnabled = results[5] == 'true';
+      final checkoutMid = results[6] ?? '';
+      final checkoutEnvStr = results[7];
+      final checkoutMerchantTypeStr = results[8];
+      final mode = results[9];
 
       final gokwik = DioClient().getClient();
 
@@ -1299,16 +1304,32 @@ abstract class ApiService {
       await SecureStorage.clearAllSecureData();
 
       await initializeSdk(InitializeSdkProps(
-        mid: mid,
-        environment: Environment.values.firstWhere((e) => e.name == env,
-            orElse: () => Environment.production),
-        merchantType: merchantType,
-        isSnowplowTrackingEnabled: isSnowplowTrackingEnabled,
-        mode: mode ?? "",
-        settings: Settings(
-          enableKwikPass: isKpEnabled,
-          enableCheckout: isCheckoutEnabled,
-        ),
+        kwikpassConfig: isKpEnabled ? KwikPassConfig(
+          mid: kpMid,
+          environment: Environment.values.firstWhere(
+            (e) => e.name == kpEnv,
+            orElse: () => Environment.production,
+          ),
+          merchantType: MerchantType.values.firstWhere(
+            (e) => e.name == kpMerchantTypeStr,
+            orElse: () => MerchantType.shopify,
+          ),
+          isSnowplowTrackingEnabled: isSnowplowTrackingEnabled,
+          enabled: true,
+        ) : null,
+        checkoutConfig: isCheckoutEnabled ? CheckoutConfig(
+          mid: checkoutMid,
+          environment: Environment.values.firstWhere(
+            (e) => e.name == checkoutEnvStr,
+            orElse: () => Environment.production,
+          ),
+          merchantType: MerchantType.values.firstWhere(
+            (e) => e.name == checkoutMerchantTypeStr,
+            orElse: () => MerchantType.shopify,
+          ),
+          enabled: true,
+        ) : null,
+        mode: mode ?? '',
       ));
 
       // Logger().clearLogs();

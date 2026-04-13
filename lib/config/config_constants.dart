@@ -424,6 +424,9 @@ class StorageKey {
   static const gkBureauClientId = 'gk-bureau-client-id';
   static const gkBureauEnvironment = 'gk-bureau-environment';
   static const gkBureauTimeout = 'gk-bureau-timeout';
+  static const checkoutMerchantIdKey = 'checkout-merchant-id';
+  static const checkoutEnvironmentKey = 'checkout-environment';
+  static const checkoutMerchantTypeKey = 'checkout-merchant-type';
 
   static const Map<String, String> values = {
     'gkKPEnabled': gkKPEnabled,
@@ -478,6 +481,9 @@ class StorageKey {
     'gkBureauClientId': gkBureauClientId,
     'gkBureauEnvironment': gkBureauEnvironment,
     'gkBureauTimeout': gkBureauTimeout,
+    'checkoutMerchantIdKey': checkoutMerchantIdKey,
+    'checkoutEnvironmentKey': checkoutEnvironmentKey,
+    'checkoutMerchantTypeKey': checkoutMerchantTypeKey,
   };
 }
 
@@ -536,4 +542,7 @@ class StorageKeyKeys {
   static const gkBureauClientId = 'gkBureauClientId';
   static const gkBureauEnvironment = 'gkBureauEnvironment';
   static const gkBureauTimeout = 'gkBureauTimeout';
+  static const checkoutMerchantIdKey = 'checkoutMerchantIdKey';
+  static const checkoutEnvironmentKey = 'checkoutEnvironmentKey';
+  static const checkoutMerchantTypeKey = 'checkoutMerchantTypeKey';
 }

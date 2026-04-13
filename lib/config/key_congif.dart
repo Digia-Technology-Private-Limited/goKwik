@@ -51,6 +51,9 @@ class KeyConfig {
   static const kwikpassCurrentVersion = 'kwikpass_current_version';
   static const kwikpassBundlePrefix = 'kwikpass_bundle_';
   static const kwikpassManifestPrefix = 'kwikpass_manifest_';
+  static const checkoutMerchantIdKey = 'checkout-merchant-id';
+  static const checkoutEnvironmentKey = 'checkout-environment';
+  static const checkoutMerchantTypeKey = 'checkout-merchant-type';
   
   // Legacy keys (for backward compatibility - keeping old naming)
   static const enableKwikPass = 'gk-kp-enabled';  // Updated value to match JSON
@@ -105,6 +108,9 @@ class KeyConfig {
     kwikpassManifestPrefix,
     kpSdkVersion,
     kpSdkPlatform,
+    checkoutMerchantIdKey,
+    checkoutEnvironmentKey,
+    checkoutMerchantTypeKey,
   ];
 
   /// 🔄 Function to get all keys (optional if you want a method instead of accessing `KeyConfig.allKeys`)

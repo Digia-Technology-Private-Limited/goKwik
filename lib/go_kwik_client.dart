@@ -16,28 +16,11 @@ class GoKwikClient {
   // Add your methods and properties here
   Future<void> initializeSDK(InitializeSdkProps props) async {
     try {
-      // CHECK FOR MID AND ENVIRONMENT
-      final List<String> missingParams = [];
-      
-      if (props.mid.isEmpty) {
-        missingParams.add('Merchant ID (mid)');
-      }
-      
-      if (props.environment == null) {
-        missingParams.add('Environment');
-      }
-
-      // ignore: unnecessary_null_comparison
-      if (props.merchantType == null) {
-        missingParams.add('Merchant Type');
-      }
-      
-      if (missingParams.isNotEmpty) {
+      if (props.kwikpassConfig == null && props.checkoutConfig == null) {
         throw {
           'errorCode': 400,
           'error': 'Initialization Failed',
-          'message': 'SDK initialization requires ${missingParams.join(' and ')}. '
-              'Please provide ${missingParams.length > 1 ? 'these parameters' : 'this parameter'} to initialize the SDK.',
+          'message': 'SDK initialization requires at least one of kwikpassConfig or checkoutConfig.',
           'result': false,
           'timestamp': DateTime.now().toIso8601String(),
         };

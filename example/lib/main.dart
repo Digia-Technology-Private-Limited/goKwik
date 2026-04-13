@@ -53,20 +53,20 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _initializeData() async {
     try {
       await GoKwikClient.instance.initializeSDK(InitializeSdkProps(
-        // mid: '19g6jle2d5p3n',
-        // mid: "2be09imdmw6032",
-        // // mid: '19x8g5js05wj',
-        // // mid: "2be09imdmw6032",
-        // merchantType: MerchantType.shopify,
-        // environment: Environment.qa,
-        mid: "19x8g5js05wj",
-        // mid: '19x8g5js05wj',
-        // mid: "2be09imdmw6032",
-        merchantType: MerchantType.shopify,
-        environment: Environment.sandbox,
-        isSnowplowTrackingEnabled: true,
+        kwikpassConfig: KwikPassConfig(
+          mid: '19fjk2lgwg13',
+          merchantType: MerchantType.custom,
+          environment: Environment.production,
+          isSnowplowTrackingEnabled: true,
+          enabled: true,
+        ),
+        checkoutConfig: CheckoutConfig(
+          mid: '19dq590c5zxv',
+          merchantType: MerchantType.shopify,
+          environment: Environment.production,
+          enabled: true,
+        ),
         mode: 'debug',
-
         onAnalytics: (eventname, properties) {
           debugPrint("eventName::: $eventname");
           debugPrint("event properties::: $properties");

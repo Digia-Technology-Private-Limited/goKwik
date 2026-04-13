@@ -4,7 +4,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:gokwik/api/api_service.dart';
 import 'package:gokwik/api/sdk_config.dart';
+import 'package:gokwik/api/shopify_service.dart';
+import 'package:gokwik/api/snowplow_events.dart';
 import 'package:gokwik/config/cache_instance.dart';
 import 'package:gokwik/config/cdn_config.dart';
 import 'package:gokwik/config/config_constants.dart';
@@ -264,10 +267,10 @@ window.addEventListener("gokwikLoaded", (event) => {
 
   Future<void> initiateCheckout() async {
     final environment =
-        await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkEnvironmentKey)!);
+        await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutEnvironmentKey)!);
 
     final merchantType =
-        await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
+        await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutMerchantTypeKey)!);
     final sdkConfig = SdkConfig.fromEnvironment(environment!);
 
     // GET LOGGED IN USER EMAIL HERE
@@ -288,7 +291,7 @@ window.addEventListener("gokwikLoaded", (event) => {
     }
     if (merchantType == 'custom') {
       final merchantId =
-          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!);
+          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutMerchantIdKey)!);
       final token = await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!);
 
       String appplatform = Platform.operatingSystem.toLowerCase();
@@ -316,7 +319,7 @@ window.addEventListener("gokwikLoaded", (event) => {
     }
 
     final merchantInfo = {
-      'mid': await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantIdKey)!),
+      'mid': await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutMerchantIdKey)!),
       'environment': environment,
       'token': await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutAccessTokenKey)!),
       'shopDomain': await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantUrlKey)!),
@@ -410,9 +413,127 @@ window.addEventListener("gokwikLoaded", (event) => {
   Future<void> handleMessageAsync(String message) async {
     try {
       final decoded = jsonDecode(message.toString());
-      final merchantType =
-          await cacheInstance.getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
-      if (merchantType == 'custom') {
+
+      final checkoutMerchantType = await cacheInstance
+          .getValue(cdnConfigInstance.getKeys(StorageKeyKeys.checkoutMerchantTypeKey)!);
+      // final kpMerchantType = await cacheInstance
+      //     .getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkMerchantTypeKey)!);
+      // final isKpEnabled = await cacheInstance
+      //     .getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkKPEnabled)!) == 'true';
+      // final gkToken = await cacheInstance
+      //     .getValue(cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!);
+
+      // // Reverse login: Shopify/custom_shopify orderSuccess
+      // if (['shopify', 'custom_shopify'].contains(checkoutMerchantType) &&
+      //     decoded['type'] == 'orderSuccess' &&
+      //     gkToken == null &&
+      //     isKpEnabled) {
+      //   final orderSuccessBody = decoded['data']?['orderSuccessBody'];
+      //   final email = orderSuccessBody?['email']?.toString();
+      //   final phone = orderSuccessBody?['phone']?.toString();
+      //   final gkAccessToken = orderSuccessBody?['gk_access_token']?.toString();
+
+      //   if (gkAccessToken != null && gkAccessToken.isNotEmpty) {
+      //     await cacheInstance.setValue(
+      //       cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!,
+      //       gkAccessToken,
+      //     );
+
+      //     try {
+      //       final multipassResponse = await ShopifyService.getCheckoutMultiPassToken(
+      //         phone: phone ?? '',
+      //         email: email ?? '',
+      //         gkAccessToken: gkAccessToken,
+      //       );
+
+      //       final multipassData = multipassResponse['data'] as Map<String, dynamic>?;
+
+      //       if (multipassData?['accountActivationUrl'] != null) {
+      //         final regex = RegExp(r'^(?:https?:\/\/)?(?:www\.)?([^\/]+)');
+      //         final match = regex.firstMatch(multipassData!['accountActivationUrl'] as String);
+      //         final url = match?.group(1) ?? '';
+
+      //         await ApiService.activateUserAccount(
+      //           multipassData['shopifyCustomerId']?.toString() ?? '',
+      //           url,
+      //           multipassData['password']?.toString() ?? '',
+      //           multipassData['token']?.toString() ?? '',
+      //         );
+      //       }
+
+      //       if (multipassData?['multipassToken'] != null && decoded['data'] is Map) {
+      //         (decoded['data'] as Map)['multipass_token'] = multipassData!['multipassToken'];
+      //       }
+
+      //       if (multipassData?['email'] != null &&
+      //           multipassData?['password'] != null &&
+      //           decoded['data'] is Map) {
+      //         (decoded['data'] as Map)['email'] = multipassData!['email'];
+      //         (decoded['data'] as Map)['password'] = multipassData['password'];
+      //       }
+      //     } catch (_) {
+      //       // Ignore reverse login errors
+      //     }
+      //   }
+      // }
+      // // Reverse login: custom merchant user-login-successful (KP)
+      // else if (kpMerchantType == 'custom' &&
+      //     decoded['eventname'] == 'user-login-successful' &&
+      //     decoded['data']?['user_token'] != null &&
+      //     gkToken == null &&
+      //     isKpEnabled) {
+      //   final userToken = decoded['data']['user_token'].toString();
+
+      //   await cacheInstance.setValue(
+      //     cdnConfigInstance.getKeys(StorageKeyKeys.gkAccessTokenKey)!,
+      //     userToken,
+      //   );
+
+      //   try {
+      //     await ApiService.validateUserToken();
+
+      //     final loginResponse = await ApiService.loginKpUser();
+      //     if (loginResponse.isSuccess) {
+      //       final responseData = loginResponse.getDataOrThrow();
+      //       String? phoneNumber;
+
+      //       if (responseData?.phone != null && responseData!.phone.isNotEmpty) {
+      //         phoneNumber = responseData.phone;
+      //         await cacheInstance.setValue(
+      //           cdnConfigInstance.getKeys(StorageKeyKeys.gkUserPhone)!,
+      //           responseData.phone,
+      //         );
+      //       } else {
+      //         phoneNumber = await cacheInstance.getValue(
+      //           cdnConfigInstance.getKeys(StorageKeyKeys.gkUserPhone)!,
+      //         );
+      //       }
+
+      //       if (responseData?.merchantResponse.email != null &&
+      //           responseData!.merchantResponse.email.isNotEmpty) {
+      //         final data = responseData.toJson();
+      //         data['phone'] = phoneNumber;
+      //         await cacheInstance.setValue(
+      //           cdnConfigInstance.getKeys(StorageKeyKeys.gkVerifiedUserKey)!,
+      //           jsonEncode(data),
+      //         );
+      //       }
+
+      //       await SnowplowTrackerService.sendCustomEventToSnowPlow({
+      //         'category': 'sso_login',
+      //         'label': 'checkout_sso_logged_in',
+      //         'action': 'logged_in',
+      //         'property': 'phone_number',
+      //         'value': int.tryParse(phoneNumber ?? '0') ?? 0,
+      //       });
+      //     }
+      //   } catch (_) {
+      //     // Ignore reverse login errors
+      //   }
+      // }
+
+      // Handle checkout UI state and forward message
+      if (checkoutMerchantType == 'custom') {
         if (decoded['eventname'] == 'checkout-ready') {
           if (!checkoutLoaded) {
             checkoutLoaded = true;
@@ -421,10 +542,6 @@ window.addEventListener("gokwikLoaded", (event) => {
         }
         widget.onMessage?.call(decoded);
       } else {
-        // final event = decoded['type'];
-        // final data = decoded['data'];
-        // debugPrint("EVENT RECEIVED $event");
-        // debugPrint("DATA RECEIVED $data");
         if (decoded['type'] == 'gokwikLoaded') {
           if (!checkoutLoaded) {
             checkoutLoaded = true;

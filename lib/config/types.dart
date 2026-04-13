@@ -12,40 +12,52 @@ enum MerchantType {
   custom,
 }
 
-class Settings {
-  final bool enableKwikPass;
-  final bool enableCheckout;
+class KwikPassConfig {
+  final String mid;
+  final Environment environment;
+  final MerchantType merchantType;
+  final bool? enabled;
+  String? shopDomain;
+  bool? isSnowplowTrackingEnabled;
+  String? kcMerchantId;
+  String? kcMerchantToken;
 
-  Settings({
-    this.enableKwikPass = true,
-    this.enableCheckout = true,
+  KwikPassConfig({
+    required this.mid,
+    required this.environment,
+    required this.merchantType,
+    this.enabled,
+    this.shopDomain,
+    this.isSnowplowTrackingEnabled,
+    this.kcMerchantId,
+    this.kcMerchantToken,
+  });
+}
+
+class CheckoutConfig {
+  final String mid;
+  final Environment environment;
+  final MerchantType merchantType;
+  final bool? enabled;
+
+  CheckoutConfig({
+    required this.mid,
+    required this.environment,
+    required this.merchantType,
+    this.enabled,
   });
 }
 
 class InitializeSdkProps {
-  final String mid;
-  final Environment environment; // 'sandbox' or 'production'
-  String? shopDomain;
-  bool? isSnowplowTrackingEnabled;
-  MerchantType merchantType; // 'shopify' or 'custom'
-  String? kcMerchantId;
-  String? kcMerchantToken;
+  final KwikPassConfig? kwikpassConfig;
+  final CheckoutConfig? checkoutConfig;
   String? mode; // 'debug' or 'release'
-  Settings? settings;
-  String? moEngageId;
   Function? onAnalytics;
 
   InitializeSdkProps({
-    required this.mid,
-    required this.environment,
-    this.shopDomain,
-    this.isSnowplowTrackingEnabled,
-    required this.merchantType,
-    this.kcMerchantId,
-    this.kcMerchantToken,
+    this.kwikpassConfig,
+    this.checkoutConfig,
     this.mode,
-    this.settings,
-    this.moEngageId,
     this.onAnalytics,
   });
 }

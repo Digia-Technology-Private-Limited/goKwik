@@ -28,7 +28,6 @@ class _LoginScreenState extends State<LoginScreen> {
         child: GoKwikLoginAndSignUpFlow(
           onSuccess: (data) {
            //GoKwikClient.instance.logout();
-
             if (data.data['email'] != null) {
               // add 5 seconds of delay
               Future.delayed(const Duration(seconds: 5), () {
